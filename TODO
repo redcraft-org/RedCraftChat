@@ -1,0 +1,20 @@
+
+General:
+  ☐ Database models and migrations
+  ☐ Integrity checker scheduler
+
+Discord:
+  ☐ Language selector
+  ☐ Live translation Discord to Discord
+
+In-game:
+  ☐ Language selector
+  ☐ Live translation from upstream servers
+  ☐ CMI support for muted players
+  ☐ Commandspy
+  ☐ Private message
+  ☐ Mail command
+
+Bridge:
+  ☐ Account sync
+  ☐ Live translation Discord to Discord
