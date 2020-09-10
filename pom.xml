@@ -18,11 +18,6 @@
 			<name>jcenter-bintray</name>
 			<url>https://jcenter.bintray.com</url>
 		</repository>
-		<repository>
-			<id>in-project</id>
-			<name>In Project Repo</name>
-			<url>file://${project.basedir}/libs</url>
-		</repository>
 
 	</repositories>
 
@@ -120,12 +115,6 @@
 			<groupId>club.minnced</groupId>
 			<artifactId>discord-webhooks</artifactId>
 			<version>0.4.1</version>
-		</dependency>
-		<dependency>
-			<groupId>com.Zrips</groupId>
-			<artifactId>CMIB</artifactId>
-			<version>1.0.0.4</version>
-			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
