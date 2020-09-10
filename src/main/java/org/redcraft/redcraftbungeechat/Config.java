@@ -15,12 +15,20 @@ import net.md_5.bungee.config.YamlConfiguration;
 
 public class Config {
 
-	// TODO public static definitions of values here
+	public static String discordToken = "";
+
+	public static String deeplToken = "";
+	public static String deeplEndpoint = "";
+	public static String deeplFormality = "";
 
 	public static void readConfig(Plugin plugin) {
 		Configuration config = getConfig(plugin);
 
-		// TODO Read config here
+		discordToken = config.getString("discord-token");
+
+		deeplToken = config.getString("deepl-token");
+		deeplEndpoint = config.getString("deepl-endpoint");
+		deeplFormality = config.getString("deepl-formality");
 	}
 
 	public static Configuration getConfig(Plugin plugin) {

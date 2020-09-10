@@ -1,0 +1,44 @@
+
+- PlayerPreferences
+    - Player UUID
+    - Main language ID
+
+- PlayerLanguages
+    - Player UUID
+    - Language ID
+
+- DiscordUserPreferences
+    - Discord ID
+    - Main language ID
+
+- DiscordUserLanguages
+    - DiscordUserPreferences ID
+    - Language ID
+
+- Language
+    - Language ISO
+    - Deepl identifier
+    - DisplayName
+    - Emoji
+
+- DiscordChannelMapping
+    - Original channel ID
+    - Original channel DisplayName
+    - Original channel Language ID
+    - Target channel ID
+    - Target channel DisplayName
+    - Target channel Language ID
+
+- PrivateSpy
+    - Player UUID
+    - SocialSpy state
+    - CommandSpy state
+
+- DiscordMinecraftMapping
+    - Player UUID
+    - Discord user ID
+
+- LocalizedString
+    - String ID
+    - Language ID
+    - Value

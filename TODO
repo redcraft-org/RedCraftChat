@@ -6,15 +6,20 @@ General:
 Discord:
   ☐ Language selector
   ☐ Live translation Discord to Discord
+  ☐ Player list command
+  ☐ CMI support for AFK players
+  ☐ LuckPerms support for ranks
 
 In-game:
   ☐ Language selector
   ☐ Live translation from upstream servers
   ☐ CMI support for muted players
   ☐ Commandspy
+  ☐ Join message
   ☐ Private message
   ☐ Mail command
 
 Bridge:
   ☐ Account sync
-  ☐ Live translation Discord to Discord
+    ☐ Send PM on Discord
+  ☐ Forget sync command

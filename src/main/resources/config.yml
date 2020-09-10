@@ -5,3 +5,11 @@
 #                                              |___/
 #
 # A BungeeCord plugin to handle chat on Minecraft and Discord
+
+# This is the token for your Discord bot
+discord-token: ''
+
+# These are the settings for Deepl live translation
+deepl-token: ''
+deepl-endpoint: 'https://api.deepl.com/v2/translate' # If you use a proxy or something
+deepl-formality: 'less' # can be "normal", "more" or "less". Default is "less" so messages seem more friendly
