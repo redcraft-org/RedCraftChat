@@ -42,6 +42,9 @@ public class MessageReceivedListener extends ListenerAdapter {
             try {
                 String originalMessage = event.getMessage().getContentRaw();
 
+                // TODO properly handle this
+                originalMessage = originalMessage.replace("@everyone", "<at>everyone");
+
                 DeeplResponse deeplResponse;
                 TextChannel responseChannel;
                 if (event.getTextChannel().getName().equals("general-en")) {
