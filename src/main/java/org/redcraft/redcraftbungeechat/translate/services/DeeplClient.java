@@ -1,4 +1,4 @@
-package org.redcraft.redcraftbungeechat.translate;
+package org.redcraft.redcraftbungeechat.translate.services;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -12,8 +12,8 @@ import com.google.gson.GsonBuilder;
 
 import org.apache.http.client.utils.URIBuilder;
 import org.redcraft.redcraftbungeechat.Config;
-import org.redcraft.redcraftbungeechat.models.DeeplResponse;
-import org.redcraft.redcraftbungeechat.models.DeeplTranslation;
+import org.redcraft.redcraftbungeechat.models.deepl.DeeplResponse;
+import org.redcraft.redcraftbungeechat.models.deepl.DeeplTranslation;
 
 public class DeeplClient {
 

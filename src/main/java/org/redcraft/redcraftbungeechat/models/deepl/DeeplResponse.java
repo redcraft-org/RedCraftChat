@@ -1,4 +1,4 @@
-package org.redcraft.redcraftbungeechat.models;
+package org.redcraft.redcraftbungeechat.models.deepl;
 
 import java.util.ArrayList;
 

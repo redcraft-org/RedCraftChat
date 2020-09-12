@@ -1,4 +1,4 @@
-package org.redcraft.redcraftbungeechat.models;
+package org.redcraft.redcraftbungeechat.models.deepl;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

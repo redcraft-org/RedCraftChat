@@ -2,10 +2,10 @@ package org.redcraft.redcraftbungeechat.listeners.discord;
 
 import org.redcraft.redcraftbungeechat.RedCraftBungeeChat;
 import org.redcraft.redcraftbungeechat.discord.DiscordClient;
-import org.redcraft.redcraftbungeechat.models.DeeplResponse;
-import org.redcraft.redcraftbungeechat.translate.DeeplClient;
+import org.redcraft.redcraftbungeechat.translate.TranslationManager;
 
 import club.minnced.discord.webhook.WebhookClient;
+import club.minnced.discord.webhook.send.AllowedMentions;
 import club.minnced.discord.webhook.send.WebhookMessageBuilder;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.TextChannel;
@@ -42,19 +42,15 @@ public class MessageReceivedListener extends ListenerAdapter {
             try {
                 String originalMessage = event.getMessage().getContentRaw();
 
-                // TODO properly handle this
-                originalMessage = originalMessage.replace("@everyone", "<at>everyone");
-
-                DeeplResponse deeplResponse;
+                String translatedMessage;
                 TextChannel responseChannel;
                 if (event.getTextChannel().getName().equals("general-en")) {
-                    deeplResponse = DeeplClient.translate(originalMessage, "EN", "FR");
-                    responseChannel = DiscordClient.getClient().getTextChannelsByName("general-fr", false).get(0);
+                    translatedMessage = TranslationManager.translate(originalMessage, "EN", "FR");
+                    responseChannel = event.getTextChannel().getGuild().getTextChannelsByName("general-fr", false).get(0);
                 } else {
-                    deeplResponse = DeeplClient.translate(originalMessage, "FR", "EN");
-                    responseChannel = DiscordClient.getClient().getTextChannelsByName("general-en", false).get(0);
+                    translatedMessage = TranslationManager.translate(originalMessage, "FR", "EN");
+                    responseChannel = event.getTextChannel().getGuild().getTextChannelsByName("general-en", false).get(0);
                 }
-                String translatedMessage = DeeplClient.parseDeeplResponse(deeplResponse);
 
                 String webhookName = RedCraftBungeeChat.getInstance().getDescription().getName();
 
@@ -67,6 +63,11 @@ public class MessageReceivedListener extends ListenerAdapter {
                 builder.setUsername(event.getMember().getEffectiveName());
                 builder.setAvatarUrl(event.getMember().getUser().getAvatarUrl());
                 builder.setContent(translatedMessage);
+
+                AllowedMentions mentions = new AllowedMentions();
+                mentions.withParseEveryone(false);
+                builder.setAllowedMentions(mentions);
+
                 webhookClient.send(builder.build());
 
             } catch (Exception e) {
