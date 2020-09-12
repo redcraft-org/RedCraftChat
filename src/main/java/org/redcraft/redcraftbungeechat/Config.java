@@ -18,8 +18,9 @@ public class Config {
 	public static String discordToken = "";
 
 	public static String deeplToken = "";
-	public static String deeplEndpoint = "";
-	public static String deeplFormality = "";
+	public static String deeplEndpoint = "https://api.deepl.com/v2/translate";
+	public static String deeplFormality = "normal";
+	public static boolean deeplPreserveFormatting = false;
 
 	public static void readConfig(Plugin plugin) {
 		Configuration config = getConfig(plugin);
@@ -29,6 +30,7 @@ public class Config {
 		deeplToken = config.getString("deepl-token");
 		deeplEndpoint = config.getString("deepl-endpoint");
 		deeplFormality = config.getString("deepl-formality");
+		deeplPreserveFormatting = config.getBoolean("deepl-preserve-formatting");
 	}
 
 	public static Configuration getConfig(Plugin plugin) {

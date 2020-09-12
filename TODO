@@ -2,6 +2,7 @@
 General:
   ☐ Database models and migrations
   ☐ Integrity checker scheduler
+  ☐ Spell checker?
 
 Discord:
   ☐ Language selector
