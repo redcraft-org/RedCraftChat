@@ -6,11 +6,20 @@
 #
 # A BungeeCord plugin to handle chat on Minecraft and Discord
 
-# This is the token for your Discord bot
+# This is for your Discord bot
+discord-enabled: true
 discord-token: ''
+discord-channel-minecraft: 'minecraft'
+
+# This is for the translation service
+translation-enabled: true
+translation-service: 'deepl'
+translation-supported-languages: ['en', 'fr']
+translation-discord-category-format: '[%lang%] %topic%'
+translation-discord-category-template: 'en'
 
 # These are the settings for Deepl live translation
 deepl-token: ''
 deepl-endpoint: 'https://api.deepl.com/v2/translate' # If you use a proxy or something
 deepl-formality: 'less' # can be "normal", "more" or "less". Default is "less" so messages seem more friendly
-deepl-preserve-formatting: false # whether the translation engine should respect the original formatting, even if it would usually correct some aspects.
+deepl-preserve-formatting: false # whether the translation engine should respect the original formatting, even if it would usually correct some aspects

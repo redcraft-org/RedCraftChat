@@ -10,6 +10,7 @@ import club.minnced.discord.webhook.send.WebhookMessageBuilder;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.Webhook;
+import net.dv8tion.jda.api.entities.Message.Attachment;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.md_5.bungee.api.ProxyServer;
@@ -62,6 +63,11 @@ public class MessageReceivedListener extends ListenerAdapter {
                 WebhookMessageBuilder builder = new WebhookMessageBuilder();
                 builder.setUsername(event.getMember().getEffectiveName());
                 builder.setAvatarUrl(event.getMember().getUser().getAvatarUrl());
+
+                for (Attachment attachment : event.getMessage().getAttachments()) {
+                    builder.addFile(attachment.getFileName(), attachment.retrieveInputStream().join());
+                }
+
                 builder.setContent(translatedMessage);
 
                 AllowedMentions mentions = new AllowedMentions();

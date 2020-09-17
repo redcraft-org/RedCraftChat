@@ -72,7 +72,7 @@ public class DeeplClient {
         if (!supportedLanguagesInitialized) {
             supportedLanguagesInitialized = true;
 
-            supportedLanguages.put("EN", new DeeplSupportedLanguage("EN-US", false));
+            supportedLanguages.put("EN", new DeeplSupportedLanguage("EN", false));
             supportedLanguages.put("FR", new DeeplSupportedLanguage("FR", true));
             supportedLanguages.put("DE", new DeeplSupportedLanguage("DE", true));
             supportedLanguages.put("IT", new DeeplSupportedLanguage("IT", true));
@@ -81,7 +81,6 @@ public class DeeplClient {
             supportedLanguages.put("NL", new DeeplSupportedLanguage("NL", true));
             supportedLanguages.put("PL", new DeeplSupportedLanguage("PL", true));
             supportedLanguages.put("PT", new DeeplSupportedLanguage("PT", true));
-            supportedLanguages.put("BR", new DeeplSupportedLanguage("PT-BR", true));
             supportedLanguages.put("RU", new DeeplSupportedLanguage("RU", true));
             supportedLanguages.put("ZH", new DeeplSupportedLanguage("ZH", false));
         }
