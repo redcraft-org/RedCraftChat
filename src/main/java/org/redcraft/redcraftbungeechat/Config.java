@@ -32,6 +32,8 @@ public class Config {
 	public static String deeplFormality = "normal";
 	public static boolean deeplPreserveFormatting = false;
 
+	public static boolean redisEnabled = false;
+
 	public static void readConfig(Plugin plugin) {
 		Configuration config = getConfig(plugin);
 
@@ -49,6 +51,8 @@ public class Config {
 		deeplEndpoint = config.getString("deepl-endpoint");
 		deeplFormality = config.getString("deepl-formality");
 		deeplPreserveFormatting = config.getBoolean("deepl-preserve-formatting");
+
+		redisEnabled = config.getBoolean("redis-enabled");
 	}
 
 	public static Configuration getConfig(Plugin plugin) {
