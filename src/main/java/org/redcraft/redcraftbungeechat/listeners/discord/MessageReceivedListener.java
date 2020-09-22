@@ -1,10 +1,13 @@
 package org.redcraft.redcraftbungeechat.listeners.discord;
 
 import org.redcraft.redcraftbungeechat.RedCraftBungeeChat;
+import org.redcraft.redcraftbungeechat.caching.CacheManager;
 import org.redcraft.redcraftbungeechat.discord.DiscordClient;
+import org.redcraft.redcraftbungeechat.models.caching.CacheCategory;
 import org.redcraft.redcraftbungeechat.translate.TranslationManager;
 
 import club.minnced.discord.webhook.WebhookClient;
+import club.minnced.discord.webhook.receive.ReadonlyMessage;
 import club.minnced.discord.webhook.send.AllowedMentions;
 import club.minnced.discord.webhook.send.WebhookMessageBuilder;
 import net.dv8tion.jda.api.entities.ChannelType;
@@ -13,7 +16,6 @@ import net.dv8tion.jda.api.entities.Webhook;
 import net.dv8tion.jda.api.entities.Message.Attachment;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.md_5.bungee.api.ProxyServer;
 
 public class MessageReceivedListener extends ListenerAdapter {
 
@@ -27,8 +29,7 @@ public class MessageReceivedListener extends ListenerAdapter {
     }
 
     public void handlePrivateMessage(MessageReceivedEvent event) {
-        String debugMessage = "[PM] " + event.getAuthor().getName() + " " + event.getMessage().getContentDisplay();
-        ProxyServer.getInstance().getLogger().info(debugMessage);
+        event.getChannel().sendMessage("Sorry, I don't handle private messages yet!");
     }
 
     public void handlePublicMessage(MessageReceivedEvent event) {
@@ -74,8 +75,11 @@ public class MessageReceivedListener extends ListenerAdapter {
                 mentions.withParseEveryone(false);
                 builder.setAllowedMentions(mentions);
 
-                webhookClient.send(builder.build());
+                ReadonlyMessage webhookMessage = webhookClient.send(builder.build()).join();
+                String webhookMessageId = String.valueOf(webhookMessage.getId());
 
+                CacheManager.put(CacheCategory.MESSAGE_WEBHOOK_MAPPING, event.getMessageId(), webhookMessageId);
+                CacheManager.put(CacheCategory.WEBHOOK_MESSAGE_MAPPING, webhookMessageId, event.getMessageId());
             } catch (Exception e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();

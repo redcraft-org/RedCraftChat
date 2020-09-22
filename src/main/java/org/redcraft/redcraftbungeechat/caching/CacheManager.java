@@ -62,4 +62,16 @@ public class CacheManager {
     private static Object deserializeObject(String element, Class<?> classType) {
         return new Gson().fromJson(element, classType);
     }
+
+    public static Object get(String category, String key, Class<?> classType) {
+        return get(formatCategoryKey(category, key), classType);
+    }
+
+    public static boolean put(String category, String key, Object element) {
+        return put(formatCategoryKey(category, key), element);
+    }
+
+    public static String formatCategoryKey(String category, String key) {
+        return String.format("%s;%s", category, key);
+    }
 }

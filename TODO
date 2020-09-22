@@ -2,14 +2,19 @@
 General:
   ☐ Database models and migrations
   ☐ Integrity checker scheduler
+  ☐ Language detection?
   ☐ Spell checker?
+  ☐ URL shortner support
 
 Discord:
   ☐ Language selector
   ☐ Live translation Discord to Discord
   ☐ Player list command
-  ☐ CMI support for AFK players
   ☐ LuckPerms support for ranks
+  ☐ Mentions bugs
+  ☐ Message edit scaffholding
+  ☐ Message reactions
+  ☐ Emoji bugs
 
 In-game:
   ☐ Language selector

@@ -1,16 +1,10 @@
 package org.redcraft.redcraftbungeechat.listeners.discord;
 
-import org.redcraft.redcraftbungeechat.RedCraftBungeeChat;
-import org.redcraft.redcraftbungeechat.discord.DiscordClient;
-import org.redcraft.redcraftbungeechat.translate.TranslationManager;
+import org.redcraft.redcraftbungeechat.caching.CacheManager;
+import org.redcraft.redcraftbungeechat.models.caching.CacheCategory;
 
-import club.minnced.discord.webhook.WebhookClient;
-import club.minnced.discord.webhook.send.AllowedMentions;
-import club.minnced.discord.webhook.send.WebhookMessageBuilder;
+import club.minnced.discord.webhook.send.WebhookMessage;
 import net.dv8tion.jda.api.entities.ChannelType;
-import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.entities.Webhook;
-import net.dv8tion.jda.api.entities.Message.Attachment;
 import net.dv8tion.jda.api.events.message.MessageUpdateEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.md_5.bungee.api.ProxyServer;
@@ -19,16 +13,9 @@ public class MessageEditedListener extends ListenerAdapter {
 
     @Override
     public void onMessageUpdate(MessageUpdateEvent event) {
-        if (event.isFromType(ChannelType.PRIVATE)) {
-            this.handlePrivateMessage(event);
-        } else if (event.isFromType(ChannelType.TEXT)) {
+        if (event.isFromType(ChannelType.TEXT)) {
             this.handlePublicMessage(event);
         }
-    }
-
-    public void handlePrivateMessage(MessageUpdateEvent event) {
-        String debugMessage = "[PM] " + event.getAuthor().getName() + " " + event.getMessage().getContentDisplay();
-        ProxyServer.getInstance().getLogger().info(debugMessage);
     }
 
     public void handlePublicMessage(MessageUpdateEvent event) {
@@ -36,6 +23,11 @@ public class MessageEditedListener extends ListenerAdapter {
             return;
         }
 
-        // TODO
+        String webhookId = (String) CacheManager.get(CacheCategory.MESSAGE_WEBHOOK_MAPPING, event.getMessageId(), String.class);
+
+        String messageTemplate = "Got an edit on %s that should have edited %s but can't edit because of this https://support.discord.com/hc/en-us/community/posts/360034557771";
+        String debugMessage = String.format(messageTemplate, event.getMessageId(), webhookId);
+
+        ProxyServer.getInstance().getLogger().info(debugMessage);
     }
 }
