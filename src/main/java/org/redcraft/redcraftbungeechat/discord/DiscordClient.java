@@ -13,6 +13,7 @@ import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.Webhook;
+import net.dv8tion.jda.api.entities.Activity.ActivityType;
 import net.dv8tion.jda.api.requests.RestAction;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.md_5.bungee.api.ProxyServer;
@@ -30,7 +31,11 @@ public class DiscordClient {
 
         builder.disableCache(CacheFlag.MEMBER_OVERRIDES, CacheFlag.VOICE_STATE);
 
-        builder.setActivity(Activity.playing("RedCraft.org"));
+        if (Config.discordActivityEnabled) {
+            ActivityType activityType = ActivityType.valueOf(Config.discordActivityType.toUpperCase());
+            Activity activity = Activity.of(activityType, Config.discordActivityValue);
+            builder.setActivity(activity);
+        }
 
         try {
             jdaClient = builder.build();

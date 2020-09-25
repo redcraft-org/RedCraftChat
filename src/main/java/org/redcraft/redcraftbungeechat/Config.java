@@ -20,6 +20,9 @@ public class Config {
 	public static boolean discordEnabled = false;
 	public static String discordToken = "";
 	public static String discordChannelMinecraft = "minecraft";
+	public static boolean discordActivityEnabled = true;
+	public static String discordActivityType = "playing";
+	public static String discordActivityValue = "RedCraft.org";
 
 	public static boolean translationEnabled = false;
 	public static String translationService = "deepl";
@@ -40,6 +43,9 @@ public class Config {
 		discordEnabled = config.getBoolean("discord-enabled");
 		discordToken = config.getString("discord-token");
 		discordChannelMinecraft = config.getString("discord-channel-minecraft");
+		discordActivityEnabled = config.getBoolean("discord-activity-enabled");
+		discordActivityType = config.getString("discord-activity-type");
+		discordActivityValue = config.getString("discord-activity-value");
 
 		translationEnabled = config.getBoolean("translation-enabled");
 		translationService = config.getString("translation-service");
