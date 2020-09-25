@@ -30,13 +30,11 @@ public class DiscordClient {
 
         builder.disableCache(CacheFlag.MEMBER_OVERRIDES, CacheFlag.VOICE_STATE);
 
-        builder.setBulkDeleteSplittingEnabled(false);
-
         builder.setActivity(Activity.playing("RedCraft.org"));
 
         try {
             jdaClient = builder.build();
-            ProxyServer.getInstance().getLogger().info("Connected to Discord " + jdaClient.getGuilds());
+            ProxyServer.getInstance().getLogger().info("Connected to Discord!");
         } catch (LoginException e) {
             jdaCrashed = true;
             ProxyServer.getInstance().getLogger().warning("Could not connect to Discord, check console");

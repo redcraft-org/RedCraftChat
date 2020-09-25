@@ -5,6 +5,8 @@ import com.google.gson.GsonBuilder;
 
 import org.redcraft.redcraftbungeechat.Config;
 
+import net.md_5.bungee.api.ProxyServer;
+
 public class CacheManager {
     public static Object get(String key, Class<?> classType) {
         if (Config.redisEnabled) {

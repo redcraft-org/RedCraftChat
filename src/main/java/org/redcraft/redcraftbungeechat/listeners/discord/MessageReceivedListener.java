@@ -4,6 +4,8 @@ import org.redcraft.redcraftbungeechat.RedCraftBungeeChat;
 import org.redcraft.redcraftbungeechat.caching.CacheManager;
 import org.redcraft.redcraftbungeechat.discord.DiscordClient;
 import org.redcraft.redcraftbungeechat.models.caching.CacheCategory;
+import org.redcraft.redcraftbungeechat.models.discord.UserMessageMapping;
+import org.redcraft.redcraftbungeechat.models.discord.WebhookMessageMapping;
 import org.redcraft.redcraftbungeechat.translate.TranslationManager;
 
 import club.minnced.discord.webhook.WebhookClient;
@@ -78,8 +80,15 @@ public class MessageReceivedListener extends ListenerAdapter {
                 ReadonlyMessage webhookMessage = webhookClient.send(builder.build()).join();
                 String webhookMessageId = String.valueOf(webhookMessage.getId());
 
-                CacheManager.put(CacheCategory.MESSAGE_WEBHOOK_MAPPING, event.getMessageId(), webhookMessageId);
-                CacheManager.put(CacheCategory.WEBHOOK_MESSAGE_MAPPING, webhookMessageId, event.getMessageId());
+                String guildId = event.getGuild().getId();
+                String sourceChannelId = event.getTextChannel().getId();
+                String targetChannelId =  String.valueOf(webhookMessage.getChannelId());
+
+                WebhookMessageMapping webhookMessageMapping = new WebhookMessageMapping(guildId, targetChannelId, webhookMessageId);
+                UserMessageMapping userMessageMapping = new UserMessageMapping(guildId, sourceChannelId, event.getMessageId());
+
+                CacheManager.put(CacheCategory.WEBHOOK_MESSAGE_MAPPING, event.getMessageId(), webhookMessageMapping);
+                CacheManager.put(CacheCategory.USER_MESSAGE_MAPPING, webhookMessageId, userMessageMapping);
             } catch (Exception e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
