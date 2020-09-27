@@ -5,24 +5,23 @@ import com.google.gson.GsonBuilder;
 
 import org.redcraft.redcraftbungeechat.Config;
 
-import net.md_5.bungee.api.ProxyServer;
-
 public class CacheManager {
     public static Object get(String key, Class<?> classType) {
+        String stringifiedObject;
+
         if (Config.redisEnabled) {
-            // TODO
-            return null;
+            stringifiedObject = RedisCache.getRaw(key);
         } else {
-            String stringifiedObject = MemoryCache.getRaw(key);
-            return deserializeObject(stringifiedObject, classType);
+            stringifiedObject = MemoryCache.getRaw(key);
         }
+
+        return deserializeObject(stringifiedObject, classType);
     }
 
     public static boolean put(String key, Object element) {
         String serializedObject = serializeObject(element);
         if (Config.redisEnabled) {
-            // TODO
-            return true;
+            return RedisCache.putRaw(key, serializedObject);
         } else {
             return MemoryCache.putRaw(key, serializedObject);
         }
@@ -30,8 +29,7 @@ public class CacheManager {
 
     public static boolean delete(String key) {
         if (Config.redisEnabled) {
-            // TODO
-            return false;
+            return RedisCache.delete(key);
         } else {
             return MemoryCache.delete(key);
         }
@@ -39,8 +37,7 @@ public class CacheManager {
 
     public static boolean flush() {
         if (Config.redisEnabled) {
-            // TODO
-            return false;
+            return RedisCache.flush();
         } else {
             return MemoryCache.flush();
         }
@@ -48,8 +45,7 @@ public class CacheManager {
 
     public static boolean exists(String key) {
         if (Config.redisEnabled) {
-            // TODO
-            return false;
+            return RedisCache.exists(key);
         } else {
             return MemoryCache.exists(key);
         }

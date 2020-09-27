@@ -36,6 +36,8 @@ public class Config {
 	public static boolean deeplPreserveFormatting = false;
 
 	public static boolean redisEnabled = false;
+	public static String redisUri = "";
+	public static String redisKeyPrefix = "rcbc";
 
 	public static void readConfig(Plugin plugin) {
 		Configuration config = getConfig(plugin);
@@ -59,6 +61,8 @@ public class Config {
 		deeplPreserveFormatting = config.getBoolean("deepl-preserve-formatting");
 
 		redisEnabled = config.getBoolean("redis-enabled");
+		redisUri = config.getString("redis-uri");
+		redisKeyPrefix = config.getString("redis-key-prefix");
 	}
 
 	public static Configuration getConfig(Plugin plugin) {
