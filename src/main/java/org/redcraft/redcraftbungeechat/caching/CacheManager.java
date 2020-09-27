@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import org.redcraft.redcraftbungeechat.Config;
+import org.redcraft.redcraftbungeechat.models.caching.CacheCategory;
 
 public class CacheManager {
     public static Object get(String key, Class<?> classType) {
@@ -61,15 +62,15 @@ public class CacheManager {
         return new Gson().fromJson(element, classType);
     }
 
-    public static Object get(String category, String key, Class<?> classType) {
+    public static Object get(CacheCategory category, String key, Class<?> classType) {
         return get(formatCategoryKey(category, key), classType);
     }
 
-    public static boolean put(String category, String key, Object element) {
+    public static boolean put(CacheCategory category, String key, Object element) {
         return put(formatCategoryKey(category, key), element);
     }
 
-    public static String formatCategoryKey(String category, String key) {
+    public static String formatCategoryKey(CacheCategory category, String key) {
         return String.format("%s;%s", category, key);
     }
 }
