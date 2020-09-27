@@ -28,7 +28,7 @@ public class RedisCache {
     }
 
     public static boolean connectIfDisconnected() {
-        if (!redisConnection.isOpen()) {
+        if (redisConnection == null || !redisConnection.isOpen()) {
             return connect();
         }
         return true;
