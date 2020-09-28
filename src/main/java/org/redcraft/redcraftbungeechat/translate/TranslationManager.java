@@ -77,7 +77,7 @@ public class TranslationManager {
 
             while (matcher.find()) {
                 String match = matcher.group();
-                String token = DigestUtils.sha1Hex(match).substring(0, 7); // TODO replace with uuid
+                String token = DigestUtils.sha1Hex(match).substring(0, 7);
 
                 tokenizedElements.put(token, match);
                 tokenizedMessage = matcher.replaceAll(token);
