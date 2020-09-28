@@ -2,16 +2,16 @@
 General:
   ☐ Database models and migrations
   ☐ Integrity checker scheduler
-  ☐ Language detection?
+  ✔ Language detection?
   ☐ Spell checker?
   ☐ URL shortner support
 
 Discord:
   ☐ Language selector
-  ☐ Live translation Discord to Discord
+  ✔ Live translation Discord to Discord
   ☐ Player list command
   ☐ LuckPerms support for ranks
-  ☐ Mentions bugs
+  ✔ Mentions bugs
   ✔ Message edit scaffholding
   ✔ Deleted messages
   ☐ Message reactions
