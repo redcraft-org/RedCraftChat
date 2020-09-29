@@ -31,7 +31,7 @@ public class MessageReceivedListener extends ListenerAdapter {
     }
 
     public void handlePrivateMessage(MessageReceivedEvent event) {
-        event.getChannel().sendMessage("Sorry, I don't handle private messages yet!");
+        event.getChannel().sendMessage("Sorry, I can't handle private messages yet!");
     }
 
     public void handlePublicMessage(MessageReceivedEvent event) {

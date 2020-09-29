@@ -69,9 +69,7 @@ public class TranslationManager {
             }
         }
 
-        // Tokenize emojis
-        // TODO
-
+        // Apply patterns
         for (Pattern pattern : patterns) {
             Matcher matcher = pattern.matcher(tokenizedMessage);
 
@@ -83,6 +81,9 @@ public class TranslationManager {
                 tokenizedMessage = matcher.replaceAll(token);
             }
         }
+
+        // Remove non printable characters
+        tokenizedMessage = tokenizedMessage.replaceAll("\\p{C}", "");
 
         return new TokenizedMessage(tokenizedMessage, tokenizedElements);
     }
@@ -96,6 +97,7 @@ public class TranslationManager {
             message = message.replaceAll(pair.getKey(), pair.getValue());
             it.remove(); // avoids a ConcurrentModificationException
         }
+
         return message;
     }
 }
