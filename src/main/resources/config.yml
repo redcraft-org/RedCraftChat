@@ -27,6 +27,12 @@ deepl-endpoint: 'https://api.deepl.com/v2/translate' # If you use a proxy or som
 deepl-formality: 'less' # can be "normal", "more" or "less". Default is "less" so messages seem more friendly
 deepl-preserve-formatting: false # whether the translation engine should respect the original formatting, even if it would usually correct some aspects
 
+# Database related settings
+# MySQL example: jdbc:mysql://localhost:3306/redcraft_bungee_chat?useSSL=false&autoReconnect=true
+database-uri: 'jdbc:sqlite:%plugin_config_path%/database.db'
+database-username: 'root'
+database-password: 'password'
+
 # Used for caching
 redis-enabled: false
 redis-uri: 'redis://localhost:6379/0'

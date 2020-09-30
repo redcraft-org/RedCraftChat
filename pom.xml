@@ -100,9 +100,9 @@
 			<version>4.5.12</version>
 		</dependency>
 		<dependency>
-			<groupId>org.hibernate</groupId>
-			<artifactId>hibernate-core</artifactId>
-			<version>5.4.21.Final</version>
+			<groupId>com.dieselpoint</groupId>
+			<artifactId>norm</artifactId>
+			<version>0.8.5</version>
 		</dependency>
 		<dependency>
 			<groupId>net.dv8tion</groupId>

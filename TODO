@@ -1,6 +1,6 @@
 
 General:
-  ☐ Database models and migrations
+  ✔ Database models and migrations
   ☐ Integrity checker scheduler
   ✔ Language detection?
   ☐ Spell checker?

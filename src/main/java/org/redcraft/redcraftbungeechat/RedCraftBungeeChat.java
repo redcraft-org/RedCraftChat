@@ -2,6 +2,7 @@ package org.redcraft.redcraftbungeechat;
 
 import net.md_5.bungee.api.plugin.Plugin;
 
+import org.redcraft.redcraftbungeechat.database.DatabaseManager;
 import org.redcraft.redcraftbungeechat.discord.DiscordClient;
 import org.redcraft.redcraftbungeechat.listeners.discord.MessageDeletedListener;
 import org.redcraft.redcraftbungeechat.listeners.discord.MessageEditedListener;
@@ -20,6 +21,8 @@ public class RedCraftBungeeChat extends Plugin {
 		instance = this;
 
 		Config.readConfig(this);
+
+		DatabaseManager.connect();
 
 		DiscordClient.getClient().addEventListener(messageReceivedListener);
 		DiscordClient.getClient().addEventListener(messageEditedListener);

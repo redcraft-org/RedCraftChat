@@ -35,6 +35,10 @@ public class Config {
 	public static String deeplFormality = "normal";
 	public static boolean deeplPreserveFormatting = false;
 
+	public static String databaseUri = "jdbc:sqlite:%plugin_config_path%/plugins/RedCraftBungeeChat/database.db";
+	public static String databaseUsername = "";
+	public static String databasePassword = "";
+
 	public static boolean redisEnabled = false;
 	public static String redisUri = "";
 	public static String redisKeyPrefix = "rcbc";
@@ -59,6 +63,10 @@ public class Config {
 		deeplEndpoint = config.getString("deepl-endpoint");
 		deeplFormality = config.getString("deepl-formality");
 		deeplPreserveFormatting = config.getBoolean("deepl-preserve-formatting");
+
+		databaseUri = config.getString("database-uri");
+		databaseUsername = config.getString("database-username");
+		databasePassword = config.getString("database-password");
 
 		redisEnabled = config.getBoolean("redis-enabled");
 		redisUri = config.getString("redis-uri");
