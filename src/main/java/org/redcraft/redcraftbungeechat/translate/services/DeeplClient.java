@@ -37,18 +37,18 @@ public class DeeplClient {
             ub.addParameter("formality", Config.deeplFormality);
         }
 
-        URL url = new URL(ub.toString());
+        URL endpointUrl = new URL(ub.toString());
 
-        HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
+        HttpURLConnection httpURLConnection = (HttpURLConnection) endpointUrl.openConnection();
         httpURLConnection.setRequestMethod("GET");
         httpURLConnection.setDoOutput(true);
 
         BufferedReader in = new BufferedReader(new InputStreamReader(httpURLConnection.getInputStream()));
         String inputLine;
-        StringBuffer response = new StringBuffer();
+        StringBuffer rawResponse = new StringBuffer();
 
         while ((inputLine = in.readLine()) != null) {
-            response.append(inputLine);
+            rawResponse.append(inputLine);
         }
         in.close();
 
@@ -56,7 +56,7 @@ public class DeeplClient {
             .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
             .create();
 
-        return gson.fromJson(response.toString(), DeeplResponse.class);
+        return gson.fromJson(rawResponse.toString(), DeeplResponse.class);
     }
 
     public static String parseDeeplResponse(DeeplResponse dr) {
@@ -88,7 +88,7 @@ public class DeeplClient {
         try {
             return supportedLanguages.get(id.toUpperCase());
         } catch (Exception ex) {
-            throw new Exception("Could not find language " + id + " in the supported languages", ex.fillInStackTrace());
+            throw new Exception(String.format("Could not find language %s in the supported languages: %s", id), ex.fillInStackTrace());
         }
     }
 }

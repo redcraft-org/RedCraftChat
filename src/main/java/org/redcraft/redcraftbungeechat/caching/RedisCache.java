@@ -87,6 +87,6 @@ public class RedisCache {
     }
 
     public static String getKeyName(String keyName) {
-        return Config.redisKeyPrefix + keyName;
+        return String.format("%s%s", Config.redisKeyPrefix, keyName);
     }
 }

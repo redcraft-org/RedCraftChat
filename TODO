@@ -4,7 +4,7 @@ General:
   ☐ Integrity checker scheduler
   ✔ Language detection?
   ☐ Spell checker?
-  ☐ URL shortner support
+  ✔ URL shortner support
 
 Discord:
   ☐ Language selector
@@ -28,5 +28,7 @@ In-game:
 
 Bridge:
   ☐ Account sync
-    ☐ Send PM on Discord
+    ☐ Create temporary hidden channel
+    ☐ Add nickname change detection
+    ☐ Add scheduler to check that people have the right username on Discord
   ☐ Forget sync command

@@ -3,7 +3,7 @@ import junit.framework.*;
 import java.util.HashMap;
 
 import org.redcraft.redcraftbungeechat.models.translate.TokenizedMessage;
-import org.redcraft.redcraftbungeechat.translate.TranslationManager;
+import org.redcraft.redcraftbungeechat.tokenizer.TokenizerManager;
 
 public class MessageTokenizerTest extends TestCase {
 
@@ -17,7 +17,7 @@ public class MessageTokenizerTest extends TestCase {
         expectedRawTokenizedElements.put("dc20cb6", "`/contact.html`");
 
         TokenizedMessage expectedTokenizedMessage = new TokenizedMessage(expectedRawTokenizedMessage, expectedRawTokenizedElements);
-        TokenizedMessage actualTokenizedMessage = TranslationManager.tokenizeElements(testMessage, false);
+        TokenizedMessage actualTokenizedMessage = TokenizerManager.tokenizeElements(testMessage, false);
         assertEquals(expectedTokenizedMessage.toString(), actualTokenizedMessage.toString());
     }
 
@@ -31,7 +31,7 @@ public class MessageTokenizerTest extends TestCase {
         TokenizedMessage testTokenizedMessage = new TokenizedMessage(testRawMessage, testRawTokenizedElements);
 
         String expectedUntokenizedMessage = "Hello <@lululombard#1337>, can you check `/contact.html` on https://redcraft.org please?";
-        String actualUntokenizedMessage = TranslationManager.untokenizeElements(testTokenizedMessage);
+        String actualUntokenizedMessage = TokenizerManager.untokenizeElements(testTokenizedMessage);
         assertEquals(expectedUntokenizedMessage, actualUntokenizedMessage);
     }
 }

@@ -35,6 +35,11 @@ public class Config {
 	public static String deeplFormality = "normal";
 	public static boolean deeplPreserveFormatting = false;
 
+	public static boolean urlShorteningEnabled = false;
+	public static String urlShorteningService = "redcraft_url_shortener";
+	public static String urlShorteningEndpoint = "https://redcraft.org/api/v1/url";
+	public static String urlShorteningToken = "";
+
 	public static String databaseUri = "jdbc:sqlite:%plugin_config_path%/plugins/RedCraftBungeeChat/database.db";
 	public static String databaseUsername = "";
 	public static String databasePassword = "";
