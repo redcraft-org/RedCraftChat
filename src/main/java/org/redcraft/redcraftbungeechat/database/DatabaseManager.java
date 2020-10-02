@@ -30,7 +30,7 @@ public class DatabaseManager {
         classes.add(SupportedLanguage.class);
         createStructure(classes);
 
-        ProxyServer.getInstance().getLogger().info("Connected to database!");
+        RedCraftBungeeChat.getInstance().getLogger().info("Connected to database!");
     }
 
     public static void createStructure(List<Class<?>> classes) {

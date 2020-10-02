@@ -5,6 +5,7 @@ import java.util.List;
 import javax.security.auth.login.LoginException;
 
 import org.redcraft.redcraftbungeechat.Config;
+import org.redcraft.redcraftbungeechat.RedCraftBungeeChat;
 
 import club.minnced.discord.webhook.WebhookClient;
 import club.minnced.discord.webhook.WebhookClientBuilder;
@@ -16,7 +17,6 @@ import net.dv8tion.jda.api.entities.Webhook;
 import net.dv8tion.jda.api.entities.Activity.ActivityType;
 import net.dv8tion.jda.api.requests.RestAction;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
-import net.md_5.bungee.api.ProxyServer;
 
 public class DiscordClient {
     private static JDA jdaClient = null;
@@ -39,10 +39,10 @@ public class DiscordClient {
 
         try {
             jdaClient = builder.build();
-            ProxyServer.getInstance().getLogger().info("Connected to Discord!");
+            RedCraftBungeeChat.getInstance().getLogger().info("Connected to Discord!");
         } catch (LoginException e) {
             jdaCrashed = true;
-            ProxyServer.getInstance().getLogger().warning("Could not connect to Discord, check console");
+            RedCraftBungeeChat.getInstance().getLogger().warning("Could not connect to Discord, check console");
             e.printStackTrace();
         }
         return jdaClient;
