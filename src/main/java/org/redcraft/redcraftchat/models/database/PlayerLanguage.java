@@ -9,7 +9,7 @@ import javax.persistence.Table;
 
 import org.redcraft.redcraftchat.database.DatabaseManager;
 
-@Table(name = "rcbc_player_languages")
+@Table(name = "rcc_player_languages")
 public class PlayerLanguage extends DatabaseModel {
     @Id
     @GeneratedValue

@@ -46,7 +46,7 @@ public class Config {
 
 	public static boolean redisEnabled = false;
 	public static String redisUri = "";
-	public static String redisKeyPrefix = "rcbc";
+	public static String redisKeyPrefix = "rcc";
 
 	public static void readConfig(Plugin plugin) {
 		Configuration config = getConfig(plugin);

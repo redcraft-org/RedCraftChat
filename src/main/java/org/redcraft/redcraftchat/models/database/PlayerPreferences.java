@@ -9,7 +9,7 @@ import javax.persistence.Table;
 
 import org.redcraft.redcraftchat.database.DatabaseManager;
 
-@Table(name = "rcbc_player_preferences")
+@Table(name = "rcc_player_preferences")
 public class PlayerPreferences extends DatabaseModel {
     @Id
     @Column(name = "id")

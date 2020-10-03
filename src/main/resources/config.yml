@@ -42,4 +42,4 @@ database-password: 'password'
 # Used for caching
 redis-enabled: false
 redis-uri: 'redis://localhost:6379/0'
-redis-key-prefix: 'rcbc'
+redis-key-prefix: 'rcc'

@@ -4,7 +4,7 @@ import javax.persistence.Column;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-@Table(name = "rcbc_supported_languages")
+@Table(name = "rcc_supported_languages")
 public class SupportedLanguage extends DatabaseModel {
     @Id
     @Column(name = "language_iso")
