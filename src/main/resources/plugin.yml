@@ -1,5 +1,5 @@
-name: RedCraftBungeeChat
-main: org.redcraft.redcraftbungeechat.RedCraftBungeeChat
+name: RedCraftChat
+main: org.redcraft.redcraftchat.RedCraftChat
 version: 0.0.1-SNAPSHOT
 author: RedCraft
 authors: [lululombard]

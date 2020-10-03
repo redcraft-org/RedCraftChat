@@ -2,8 +2,8 @@ import junit.framework.*;
 
 import java.util.HashMap;
 
-import org.redcraft.redcraftbungeechat.models.translate.TokenizedMessage;
-import org.redcraft.redcraftbungeechat.tokenizer.TokenizerManager;
+import org.redcraft.redcraftchat.models.translate.TokenizedMessage;
+import org.redcraft.redcraftchat.tokenizer.TokenizerManager;
 
 public class MessageTokenizerTest extends TestCase {
 

@@ -1,7 +1,7 @@
 import junit.framework.*;
 
-import org.redcraft.redcraftbungeechat.Config;
-import org.redcraft.redcraftbungeechat.detection.DetectionManager;
+import org.redcraft.redcraftchat.Config;
+import org.redcraft.redcraftchat.detection.DetectionManager;
 
 public class DetectionManagerTest extends TestCase {
 	protected void setUp() {

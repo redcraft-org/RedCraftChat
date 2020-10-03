@@ -4,8 +4,8 @@
 		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>org.redcraft.redcraftbungeechat</groupId>
-	<artifactId>RedCraftBungeeChat</artifactId>
+	<groupId>org.redcraft.redcraftchat</groupId>
+	<artifactId>RedCraftChat</artifactId>
 	<version>0.1.0-SNAPSHOT</version>
 
 	<repositories>
@@ -45,7 +45,7 @@
 							<relocations>
 								<relocation>
 									<pattern>net.dv8tion.jda</pattern>
-									<shadedPattern>org.redcraft.redcraftbungeechat.dependencies.jda</shadedPattern>
+									<shadedPattern>org.redcraft.redcraftchat.dependencies.jda</shadedPattern>
 								</relocation>
 							</relocations>
 
