@@ -12,8 +12,6 @@ import org.redcraft.redcraftbungeechat.models.database.PlayerLanguage;
 import org.redcraft.redcraftbungeechat.models.database.PlayerPreferences;
 import org.redcraft.redcraftbungeechat.models.database.SupportedLanguage;
 
-import net.md_5.bungee.api.ProxyServer;
-
 public class DatabaseManager {
     private static Database database;
 
