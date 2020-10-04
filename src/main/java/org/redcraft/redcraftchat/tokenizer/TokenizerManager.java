@@ -25,7 +25,7 @@ public class TokenizerManager {
         ArrayList<Pattern> patterns = new ArrayList<Pattern>();
 
         // Tokenize code blocks
-        Pattern codeBlockPattern = Pattern.compile("```(.*)```");
+        Pattern codeBlockPattern = Pattern.compile("```(.*)```", Pattern.MULTILINE);
         patterns.add(codeBlockPattern);
 
         // Tokenize code quotes
@@ -70,11 +70,11 @@ public class TokenizerManager {
     public static String untokenizeElements(TokenizedMessage tokenizedMessage) {
         String message = tokenizedMessage.tokenizedMessage;
 
-        Iterator<Map.Entry<String, String>> it = tokenizedMessage.tokenizedElements.entrySet().iterator();
-        while (it.hasNext()) {
-            Entry<String, String> pair = it.next();
-            message = message.replaceAll(pair.getKey(), pair.getValue());
-            it.remove(); // avoids a ConcurrentModificationException
+        Iterator<Map.Entry<String, String>> tokenizedElementsIterator = tokenizedMessage.tokenizedElements.entrySet().iterator();
+        while (tokenizedElementsIterator.hasNext()) {
+            Entry<String, String> tokenizedElementsEntry = tokenizedElementsIterator.next();
+            message = message.replaceAll(tokenizedElementsEntry.getKey(), tokenizedElementsEntry.getValue());
+            tokenizedElementsIterator.remove(); // avoids a ConcurrentModificationException
         }
 
         return message;

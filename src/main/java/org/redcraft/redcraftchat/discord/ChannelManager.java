@@ -2,12 +2,17 @@ package org.redcraft.redcraftchat.discord;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
+import org.redcraft.redcraftchat.models.discord.TranslatedChannel;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Category;
@@ -17,24 +22,19 @@ import net.dv8tion.jda.api.entities.GuildChannel;
 
 public class ChannelManager {
 
+    private static HashMap<TranslatedChannel, List<TranslatedChannel>> translatedChannelsMapping = new HashMap<TranslatedChannel, List<TranslatedChannel>>();
+    private static ReadWriteLock translatedChannelsMappingLock = new ReentrantReadWriteLock();
+
+    private static List<TranslatedChannel> minecraftBridgeChannels = new ArrayList<TranslatedChannel>();
+    private static ReadWriteLock minecraftBridgeChannelsLock = new ReentrantReadWriteLock();
+
     public void syncChannelCategories() {
         JDA discordClient = DiscordClient.getClient();
 
+        HashMap<TranslatedChannel, List<TranslatedChannel>> translatedChannelsMapping = new HashMap<TranslatedChannel, List<TranslatedChannel>>();
+
         for (Guild guild : discordClient.getGuilds()) {
-            List<String> detectedTopics = new ArrayList<String>();
-
-            for (Category category : guild.getCategories()) {
-                for (String supportedLanguage : Config.translationSupportedLanguages) {
-                    Matcher channelMatcher = getCategoryRegexMatcher(supportedLanguage, category.getName());
-
-                    if (channelMatcher.matches()) {
-                        String topic = channelMatcher.group(1);
-                        if (!detectedTopics.contains(topic)) {
-                            detectedTopics.add(topic);
-                        }
-                    }
-                }
-            }
+            List<String> detectedTopics = getTopics(guild);
 
             HashMap<String, List<String>> textChannels = new HashMap<String, List<String>>();
             HashMap<String, List<String>> voiceChannels = new HashMap<String, List<String>>();
@@ -72,6 +72,7 @@ public class ChannelManager {
                 }
             }
 
+            // Loop a first time to Creating missing channels
             for (String topic : detectedTopics) {
                 List<String> topicTextChannels = textChannels.get(topic);
                 List<String> topicVoiceChannels = voiceChannels.get(topic);
@@ -79,7 +80,99 @@ public class ChannelManager {
                 createCategoryChannels(guild, topic, topicTextChannels, ChannelType.TEXT);
                 createCategoryChannels(guild, topic, topicVoiceChannels, ChannelType.VOICE);
             }
+
+            // Loop a third time to update the channel mapping
+            for (String topic : detectedTopics) {
+                HashMap<String, List<TranslatedChannel>> channelsList = new HashMap<String, List<TranslatedChannel>>();
+
+                for (String language : Config.translationSupportedLanguages) {
+                    String categoryName = getCategoryName(language, topic);
+                    List<Category> matchingCategories = guild.getCategoriesByName(categoryName, false);
+
+                    for (Category category: matchingCategories) {
+                        for (GuildChannel channel: category.getChannels()) {
+                            if (channel.getType().equals(ChannelType.TEXT)) {
+                                String channelName = channel.getName();
+                                if (!channelsList.containsKey(channelName)) {
+                                    channelsList.put(channelName, new ArrayList<TranslatedChannel>());
+                                }
+
+                                TranslatedChannel translatedChannel = new TranslatedChannel(
+                                    guild.getId(),
+                                    channel.getId(),
+                                    language.toLowerCase()
+                                );
+
+                                channelsList.get(channelName).add(translatedChannel);
+                            }
+                        }
+                    }
+                }
+
+                // Update Minecraft channels list
+                String bridgeChannelName = Config.discordChannelMinecraft;
+                if (channelsList.containsKey(bridgeChannelName)) {
+                    saveMinecraftBridgeChannels(channelsList.get(bridgeChannelName));
+                }
+
+                // Update translated channel mapping
+                Iterator<Map.Entry<String, List<TranslatedChannel>>> channelsListIterator = channelsList.entrySet().iterator();
+                while (channelsListIterator.hasNext()) {
+                    Map.Entry<String, List<TranslatedChannel>> channelsListEntry = channelsListIterator.next();
+                    for (TranslatedChannel translatedSourceChannel: channelsListEntry.getValue()) {
+                        String translatedSourceChannelId = translatedSourceChannel.channelId;
+                        translatedChannelsMapping.put(translatedSourceChannel, new ArrayList<TranslatedChannel>());
+                        List<TranslatedChannel> channelMapping = translatedChannelsMapping.get(translatedSourceChannel);
+
+                        for (TranslatedChannel translatedTargetChannel: channelsListEntry.getValue()) {
+                            if (!translatedSourceChannelId.equals(translatedTargetChannel.channelId)) {
+                                channelMapping.add(translatedTargetChannel);
+                            }
+                        }
+                    }
+                    channelsListIterator.remove(); // avoids a ConcurrentModificationException
+                }
+            }
         }
+
+        saveTranslatedChannelsMapping(translatedChannelsMapping);
+    }
+
+    public static HashMap<TranslatedChannel, List<TranslatedChannel>> getTranslatedChannelsMapping() {
+        translatedChannelsMappingLock.readLock().lock();
+        try {
+            return translatedChannelsMapping;
+        } finally {
+            translatedChannelsMappingLock.readLock().unlock();
+        }
+    }
+
+    public static List<TranslatedChannel> getMinecraftBridgeChannels() {
+        minecraftBridgeChannelsLock.readLock().lock();
+        try {
+            return minecraftBridgeChannels;
+        } finally {
+            minecraftBridgeChannelsLock.readLock().unlock();
+        }
+    }
+
+    public List<String> getTopics(Guild guild) {
+        List<String> detectedTopics = new ArrayList<String>();
+
+        for (Category category : guild.getCategories()) {
+            for (String supportedLanguage : Config.translationSupportedLanguages) {
+                Matcher channelMatcher = getCategoryRegexMatcher(supportedLanguage, category.getName());
+
+                if (channelMatcher.matches()) {
+                    String topic = channelMatcher.group(1);
+                    if (!detectedTopics.contains(topic)) {
+                        detectedTopics.add(topic);
+                    }
+                }
+            }
+        }
+
+        return detectedTopics;
     }
 
     public void createCategoryChannels(Guild guild, String topic, List<String> channelNames, ChannelType channelType) {
@@ -167,5 +260,23 @@ public class ChannelManager {
         name = name.replace("%topic%", topic);
 
         return name;
+    }
+
+    private static void saveTranslatedChannelsMapping(HashMap<TranslatedChannel, List<TranslatedChannel>> updatedMapping) {
+        translatedChannelsMappingLock.writeLock().lock();
+        try {
+            translatedChannelsMapping = updatedMapping;
+        } finally {
+            translatedChannelsMappingLock.writeLock().unlock();
+        }
+    }
+
+    private static void saveMinecraftBridgeChannels(List<TranslatedChannel> updatedChannels) {
+        minecraftBridgeChannelsLock.writeLock().lock();
+        try {
+            minecraftBridgeChannels = updatedChannels;
+        } finally {
+            minecraftBridgeChannelsLock.writeLock().unlock();
+        }
     }
 }

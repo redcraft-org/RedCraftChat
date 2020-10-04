@@ -30,16 +30,16 @@ public class RedCraftChat extends Plugin {
 		Config.readConfig(this);
 		DatabaseManager.connect();
 
-		// Discord event
+		// Discord events
 		DiscordClient.getClient().addEventListener(messageReceivedListener);
 		DiscordClient.getClient().addEventListener(messageEditedListener);
 		DiscordClient.getClient().addEventListener(messageDeletedListener);
 
 		getLogger().info("Discord events registered");
 
-		// TODO Schedulers here
+		// Schedulers
 		TaskScheduler scheduler = getProxy().getScheduler();
-		scheduler.schedule(this, discordChannelSynchronizerTask, 0, 1, TimeUnit.MINUTES);
+		scheduler.schedule(this, discordChannelSynchronizerTask, 5, 60, TimeUnit.SECONDS);
 
 		// TODO Game listeners here
 	}

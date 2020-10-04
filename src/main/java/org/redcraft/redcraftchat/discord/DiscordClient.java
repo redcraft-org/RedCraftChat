@@ -6,15 +6,21 @@ import javax.security.auth.login.LoginException;
 
 import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
+import org.redcraft.redcraftchat.models.discord.WebhookAsUser;
 
 import club.minnced.discord.webhook.WebhookClient;
 import club.minnced.discord.webhook.WebhookClientBuilder;
+import club.minnced.discord.webhook.receive.ReadonlyMessage;
+import club.minnced.discord.webhook.send.AllowedMentions;
+import club.minnced.discord.webhook.send.WebhookMessageBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.Webhook;
 import net.dv8tion.jda.api.entities.Activity.ActivityType;
+import net.dv8tion.jda.api.entities.Message.Attachment;
 import net.dv8tion.jda.api.requests.RestAction;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 
@@ -68,5 +74,36 @@ public class DiscordClient {
         });
         builder.setWait(true);
         return builder.build();
+    }
+
+    public static ReadonlyMessage postAsUser(WebhookAsUser webhookAsUser) {
+        return postAsUser(webhookAsUser.responseChannel, webhookAsUser.member, webhookAsUser.content, webhookAsUser.attachments);
+    }
+
+    public static ReadonlyMessage postAsUser(TextChannel responseChannel, Member member, String content, List<Attachment> attachments) {
+        String webhookName = RedCraftChat.getInstance().getDescription().getName();
+
+        Webhook webhookDestination = DiscordClient.getOrCreateWebhook(responseChannel, webhookName);
+
+        WebhookClient webhookClient = DiscordClient.getWebhookClient(webhookDestination.getUrl());
+
+        // Change appearance of webhook message
+        WebhookMessageBuilder builder = new WebhookMessageBuilder();
+        builder.setUsername(member.getEffectiveName());
+        builder.setAvatarUrl(member.getUser().getAvatarUrl());
+
+        if (attachments != null) {
+            for (Attachment attachment : attachments) {
+                builder.addFile(attachment.getFileName(), attachment.retrieveInputStream().join());
+            }
+        }
+
+        builder.setContent(content);
+
+        AllowedMentions mentions = new AllowedMentions();
+        mentions.withParseEveryone(false);
+        builder.setAllowedMentions(mentions);
+
+        return webhookClient.send(builder.build()).join();
     }
 }

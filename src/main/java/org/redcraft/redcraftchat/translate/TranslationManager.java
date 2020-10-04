@@ -14,7 +14,7 @@ public class TranslationManager {
         switch (Config.translationService) {
             case "deepl":
                 TokenizedMessage tokenizedMessage = TokenizerManager.tokenizeElements(text, true);
-                DeeplResponse dr = DeeplClient.translate(tokenizedMessage.tokenizedMessage, sourceLanguage, targetLanguage);
+                DeeplResponse dr = DeeplClient.translate(tokenizedMessage.tokenizedMessage, sourceLanguage.toUpperCase(), targetLanguage.toUpperCase());
                 String translated = DeeplClient.parseDeeplResponse(dr);
                 tokenizedMessage.tokenizedMessage = translated;
                 return TokenizerManager.untokenizeElements(tokenizedMessage);
