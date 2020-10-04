@@ -1,12 +1,18 @@
 package org.redcraft.redcraftchat.discord;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.security.auth.login.LoginException;
 
 import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
+import org.redcraft.redcraftchat.caching.CacheManager;
+import org.redcraft.redcraftchat.models.caching.CacheCategory;
 import org.redcraft.redcraftchat.models.discord.WebhookAsUser;
+import org.redcraft.redcraftchat.models.discord.WebhookMessageMapping;
+import org.redcraft.redcraftchat.models.discord.WebhookMessageMappingList;
 
 import club.minnced.discord.webhook.WebhookClient;
 import club.minnced.discord.webhook.WebhookClientBuilder;
@@ -105,5 +111,10 @@ public class DiscordClient {
         builder.setAllowedMentions(mentions);
 
         return webhookClient.send(builder.build()).join();
+    }
+
+    public static WebhookMessageMappingList getWebhookMessagesFromOriginalMessage(String messageId) {
+        Object cachedObject = CacheManager.get(CacheCategory.WEBHOOK_MESSAGE_MAPPING, messageId, WebhookMessageMappingList.class);
+        return (WebhookMessageMappingList) cachedObject;
     }
 }

@@ -1,9 +1,8 @@
 package org.redcraft.redcraftchat.models.discord;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import org.redcraft.redcraftchat.models.SerializableModel;
 
-public class TranslatedChannel {
+public class TranslatedChannel extends SerializableModel {
     public String guildId;
     public String channelId;
     public String languageId;
@@ -12,11 +11,5 @@ public class TranslatedChannel {
         this.guildId = guildId;
         this.channelId = channelId;
         this.languageId = languageId;
-    }
-
-    public String toString() {
-        GsonBuilder builder = new GsonBuilder();
-        Gson gson = builder.create();
-        return gson.toJson(this);
     }
 }

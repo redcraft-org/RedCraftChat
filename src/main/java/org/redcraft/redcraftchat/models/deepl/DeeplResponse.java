@@ -2,19 +2,12 @@ package org.redcraft.redcraftchat.models.deepl;
 
 import java.util.ArrayList;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import org.redcraft.redcraftchat.models.SerializableModel;
 
-public class DeeplResponse {
+public class DeeplResponse extends SerializableModel {
     public ArrayList<DeeplTranslation> translations;
 
     public DeeplResponse(ArrayList<DeeplTranslation> translations) {
         this.translations = translations;
-    }
-
-    public String toString() {
-        GsonBuilder builder = new GsonBuilder();
-        Gson gson = builder.create();
-        return gson.toJson(this);
     }
 }

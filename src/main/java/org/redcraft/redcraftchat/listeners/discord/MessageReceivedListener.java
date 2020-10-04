@@ -12,6 +12,7 @@ import org.redcraft.redcraftchat.models.discord.TranslatedChannel;
 import org.redcraft.redcraftchat.models.discord.UserMessageMapping;
 import org.redcraft.redcraftchat.models.discord.WebhookAsUser;
 import org.redcraft.redcraftchat.models.discord.WebhookMessageMapping;
+import org.redcraft.redcraftchat.models.discord.WebhookMessageMappingList;
 import org.redcraft.redcraftchat.translate.TranslationManager;
 
 import club.minnced.discord.webhook.receive.ReadonlyMessage;
@@ -77,6 +78,8 @@ public class MessageReceivedListener extends ListenerAdapter {
                     webhooksToPost.add(webhookToPost);
                 }
 
+                List<WebhookMessageMapping> webhookMessagesMapping = new ArrayList<WebhookMessageMapping>();
+
 				for (WebhookAsUser webhookToPost: webhooksToPost) {
                     ReadonlyMessage webhookMessage = DiscordClient.postAsUser(webhookToPost);
                     String webhookMessageId = String.valueOf(webhookMessage.getId());
@@ -88,9 +91,13 @@ public class MessageReceivedListener extends ListenerAdapter {
                     WebhookMessageMapping webhookMessageMapping = new WebhookMessageMapping(guildId, targetChannelId, webhookMessageId);
                     UserMessageMapping userMessageMapping = new UserMessageMapping(guildId, sourceChannelId, event.getMessageId());
 
-                    CacheManager.put(CacheCategory.WEBHOOK_MESSAGE_MAPPING, event.getMessageId(), webhookMessageMapping);
+                    webhookMessagesMapping.add(webhookMessageMapping);
                     CacheManager.put(CacheCategory.USER_MESSAGE_MAPPING, webhookMessageId, userMessageMapping);
                 }
+
+                WebhookMessageMappingList webhookMessagesMappingList = new WebhookMessageMappingList(webhookMessagesMapping);
+
+                CacheManager.put(CacheCategory.WEBHOOK_MESSAGE_MAPPING, event.getMessageId(), webhookMessagesMappingList);
             } catch (Exception e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();

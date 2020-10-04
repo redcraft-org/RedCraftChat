@@ -1,9 +1,8 @@
 package org.redcraft.redcraftchat.models.redcraft_website;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import org.redcraft.redcraftchat.models.SerializableModel;
 
-public class RedCraftUrlShortenerRequest {
+public class RedCraftUrlShortenerRequest extends SerializableModel {
     public String token;
     public String url;
     public String shortened;
@@ -18,11 +17,5 @@ public class RedCraftUrlShortenerRequest {
         this.token = token;
         this.url = url;
         this.shortened = shortened;
-    }
-
-    public String toString() {
-        GsonBuilder builder = new GsonBuilder();
-        Gson gson = builder.create();
-        return gson.toJson(this);
     }
 }

@@ -1,6 +1,8 @@
 package org.redcraft.redcraftchat.models.deepl;
 
-public class DeeplSupportedLanguage {
+import org.redcraft.redcraftchat.models.SerializableModel;
+
+public class DeeplSupportedLanguage extends SerializableModel {
     public String languageId;
     public boolean formalityAvailable;
 

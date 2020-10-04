@@ -1,9 +1,8 @@
 package org.redcraft.redcraftchat.models.discord;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import org.redcraft.redcraftchat.models.SerializableModel;
 
-public class WebhookMessageMapping {
+public class WebhookMessageMapping extends SerializableModel {
     public String guildId;
     public String channelId;
     public String messageId;
@@ -12,11 +11,5 @@ public class WebhookMessageMapping {
         this.guildId = guildId;
         this.channelId = channelId;
         this.messageId = messageId;
-    }
-
-    public String toString() {
-        GsonBuilder builder = new GsonBuilder();
-        Gson gson = builder.create();
-        return gson.toJson(this);
     }
 }

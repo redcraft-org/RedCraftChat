@@ -39,7 +39,7 @@ public class RedisCache {
             return false;
         }
 
-        redisConnection.sync().set(key, serializedObject);
+        redisConnection.sync().set(getKeyName(key), serializedObject);
         return true;
     }
 
@@ -48,11 +48,7 @@ public class RedisCache {
             return null;
         }
 
-        if (exists(key)) {
-            return redisConnection.sync().get(getKeyName((key)));
-        }
-
-        return null;
+        return redisConnection.sync().get(getKeyName(key));
     }
 
     public static boolean delete(String key) {
@@ -87,6 +83,6 @@ public class RedisCache {
     }
 
     public static String getKeyName(String keyName) {
-        return String.format("%s%s", Config.redisKeyPrefix, keyName);
+        return String.format("%s;%s", Config.redisKeyPrefix, keyName);
     }
 }

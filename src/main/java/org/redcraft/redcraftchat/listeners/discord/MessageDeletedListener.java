@@ -1,9 +1,8 @@
 package org.redcraft.redcraftchat.listeners.discord;
 
-import org.redcraft.redcraftchat.caching.CacheManager;
 import org.redcraft.redcraftchat.discord.DiscordClient;
-import org.redcraft.redcraftchat.models.caching.CacheCategory;
 import org.redcraft.redcraftchat.models.discord.WebhookMessageMapping;
+import org.redcraft.redcraftchat.models.discord.WebhookMessageMappingList;
 
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.events.message.MessageDeleteEvent;
@@ -19,10 +18,12 @@ public class MessageDeletedListener extends ListenerAdapter {
     }
 
     public void handlePublicMessage(MessageDeleteEvent event) {
-        WebhookMessageMapping webhookMessage = (WebhookMessageMapping) CacheManager.get(CacheCategory.WEBHOOK_MESSAGE_MAPPING, event.getMessageId(), WebhookMessageMapping.class);
+        WebhookMessageMappingList webhookMessages = DiscordClient.getWebhookMessagesFromOriginalMessage(event.getMessageId());
 
-        if (webhookMessage != null) {
-            DiscordClient.getClient().getTextChannelById(webhookMessage.channelId).deleteMessageById(webhookMessage.messageId).complete();
+        if (webhookMessages != null) {
+            for (WebhookMessageMapping webhookMessage: webhookMessages.mappingList) {
+             DiscordClient.getClient().getTextChannelById(webhookMessage.channelId).deleteMessageById(webhookMessage.messageId).complete();
+            }
         }
     }
 }
