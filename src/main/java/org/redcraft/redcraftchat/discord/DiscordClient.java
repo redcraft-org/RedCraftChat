@@ -1,7 +1,5 @@
 package org.redcraft.redcraftchat.discord;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import javax.security.auth.login.LoginException;
@@ -11,7 +9,6 @@ import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.caching.CacheManager;
 import org.redcraft.redcraftchat.models.caching.CacheCategory;
 import org.redcraft.redcraftchat.models.discord.WebhookAsUser;
-import org.redcraft.redcraftchat.models.discord.WebhookMessageMapping;
 import org.redcraft.redcraftchat.models.discord.WebhookMessageMappingList;
 
 import club.minnced.discord.webhook.WebhookClient;
