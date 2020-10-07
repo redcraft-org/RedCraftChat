@@ -28,7 +28,6 @@ public class Config {
 	public static String translationService = "deepl";
 	public static List<String> translationSupportedLanguages = new ArrayList<String>();
 	public static String translationDiscordCategoryFormat = "[%lang%] %topic%";
-	public static String translationDiscordCategoryTemplate = "en";
 
 	public static String deeplToken = "";
 	public static String deeplEndpoint = "https://api.deepl.com/v2/translate";
@@ -62,7 +61,6 @@ public class Config {
 		translationService = config.getString("translation-service");
 		translationSupportedLanguages = config.getStringList("translation-supported-languages");
 		translationDiscordCategoryFormat = config.getString("translation-discord-category-format");
-		translationDiscordCategoryTemplate = config.getString("translation-discord-category-template");
 
 		deeplToken = config.getString("deepl-token");
 		deeplEndpoint = config.getString("deepl-endpoint");

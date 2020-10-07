@@ -19,7 +19,6 @@ translation-enabled: true
 translation-service: 'deepl'
 translation-supported-languages: ['en', 'fr']
 translation-discord-category-format: '[%lang%] %topic%'
-translation-discord-category-template: 'en'
 
 # These are the settings for Deepl live translation
 deepl-token: ''
