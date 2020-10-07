@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.caching.CacheManager;
 import org.redcraft.redcraftchat.discord.ChannelManager;
 import org.redcraft.redcraftchat.discord.DiscordClient;
@@ -19,8 +20,8 @@ import club.minnced.discord.webhook.receive.ReadonlyMessage;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.entities.Message.Attachment;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
@@ -36,7 +37,7 @@ public class DiscordMessageReceivedListener extends ListenerAdapter {
     }
 
     public void handlePrivateMessage(MessageReceivedEvent event) {
-        event.getChannel().sendMessage("Sorry, I can't handle private messages yet!");
+        event.getChannel().sendMessage("Sorry, I don't handle private messages yet!");
     }
 
     public void handlePublicMessage(MessageReceivedEvent event) {
@@ -47,62 +48,61 @@ public class DiscordMessageReceivedListener extends ListenerAdapter {
 
         HashMap<TranslatedChannel, List<TranslatedChannel>> translatedChannelsMappings = ChannelManager.getTranslatedChannelsMapping();
 
-        String channelId = event.getChannel().getId();
-        TranslatedChannel sourceChannel = null;
+        TranslatedChannel sourceChannel = this.getTranslatedChannelFromId(translatedChannelsMappings, event.getChannel().getId());
 
-        for (TranslatedChannel potentialChannel : translatedChannelsMappings.keySet()) {
-            if (potentialChannel.channelId.equals(channelId)) {
-                sourceChannel = potentialChannel;
-                break;
-            }
-        }
+        if (sourceChannel != null && translatedChannelsMappings.containsKey(sourceChannel)) {
+            Message message = event.getMessage();
+            Member member = event.getMember();
 
-        if (translatedChannelsMappings.containsKey(sourceChannel)) {
             try {
-                String originalMessage = event.getMessage().getContentRaw();
+                List<TranslatedChannel> targetChannels = translatedChannelsMappings.get(sourceChannel);
 
-                List<WebhookAsUser> webhooksToPost = new ArrayList<WebhookAsUser>();
+                List<WebhookMessageMapping> postedWebhooks = new ArrayList<WebhookMessageMapping>();
 
-                Member member = event.getMember();
-                List<Attachment> attachments = event.getMessage().getAttachments();
-
-                List<TranslatedChannel> translatedChannels = translatedChannelsMappings.get(sourceChannel);
-
-                for (TranslatedChannel translatedChannel : translatedChannels) {
-                    Guild guild = DiscordClient.getClient().getGuildById(translatedChannel.guildId);
-
-                    String translatedMessage = TranslationManager.translate(originalMessage, sourceChannel.languageId, translatedChannel.languageId);
-                    TextChannel responseChannel = guild.getTextChannelById(translatedChannel.channelId);
-
-                    WebhookAsUser webhookToPost = new WebhookAsUser(responseChannel, member, translatedMessage, attachments);
-                    webhooksToPost.add(webhookToPost);
+                for (TranslatedChannel targetChannel : targetChannels) {
+                    postedWebhooks.add(
+                        this.translateAndPublishMessage(sourceChannel, targetChannel, member, message)
+                    );
                 }
 
-                List<WebhookMessageMapping> webhookMessagesMapping = new ArrayList<WebhookMessageMapping>();
+                WebhookMessageMappingList postedWebhooksList = new WebhookMessageMappingList(postedWebhooks);
 
-				for (WebhookAsUser webhookToPost: webhooksToPost) {
-                    ReadonlyMessage webhookMessage = DiscordClient.postAsUser(webhookToPost);
-                    String webhookMessageId = String.valueOf(webhookMessage.getId());
-
-                    String guildId = event.getGuild().getId();
-                    String sourceChannelId = event.getTextChannel().getId();
-                    String targetChannelId = String.valueOf(webhookMessage.getChannelId());
-
-                    WebhookMessageMapping webhookMessageMapping = new WebhookMessageMapping(guildId, targetChannelId, webhookMessageId);
-                    UserMessageMapping userMessageMapping = new UserMessageMapping(guildId, sourceChannelId, event.getMessageId());
-
-                    webhookMessagesMapping.add(webhookMessageMapping);
-                    CacheManager.put(CacheCategory.USER_MESSAGE_MAPPING, webhookMessageId, userMessageMapping);
-                }
-
-                WebhookMessageMappingList webhookMessagesMappingList = new WebhookMessageMappingList(webhookMessagesMapping);
-
-                CacheManager.put(CacheCategory.WEBHOOK_MESSAGE_MAPPING, event.getMessageId(), webhookMessagesMappingList);
+                CacheManager.put(CacheCategory.WEBHOOK_MESSAGE_MAPPING, event.getMessageId(), postedWebhooksList);
             } catch (Exception e) {
-                // TODO Auto-generated catch block
+                String messageTemplate = "Error while handling incoming message from server %s channel %s [%s] from user %s";
+                String errorMessage = String.format(messageTemplate, event.getGuild().getName(), event.getChannel().getName(), sourceChannel.languageId, member.getEffectiveName());
+                RedCraftChat.getInstance().getLogger().severe(errorMessage);
                 e.printStackTrace();
             }
-
         }
+    }
+
+    private TranslatedChannel getTranslatedChannelFromId(HashMap<TranslatedChannel, List<TranslatedChannel>> translatedChannelsMappings, String channelId) {
+        for (TranslatedChannel channel : translatedChannelsMappings.keySet()) {
+            if (channel.channelId.equals(channelId)) {
+                return channel;
+            }
+        }
+
+        return null;
+    }
+
+    private WebhookMessageMapping translateAndPublishMessage(TranslatedChannel sourceChannel, TranslatedChannel targetChannel, Member member, Message message) throws Exception {
+        Guild guild = DiscordClient.getClient().getGuildById(sourceChannel.guildId);
+
+        String translatedMessage = TranslationManager.translate(message.getContentRaw(), sourceChannel.languageId, targetChannel.languageId);
+        TextChannel responseChannel = guild.getTextChannelById(targetChannel.channelId);
+
+        WebhookAsUser webhookToPost = new WebhookAsUser(responseChannel, member, translatedMessage, message.getAttachments());
+
+        ReadonlyMessage webhookMessage = DiscordClient.postAsUser(webhookToPost);
+        String webhookMessageId = String.valueOf(webhookMessage.getId());
+
+        WebhookMessageMapping webhookMessageMapping = new WebhookMessageMapping(sourceChannel.guildId, targetChannel.channelId, webhookMessageId);
+        UserMessageMapping userMessageMapping = new UserMessageMapping(sourceChannel.guildId, sourceChannel.channelId, message.getId());
+
+        CacheManager.put(CacheCategory.USER_MESSAGE_MAPPING, webhookMessageId, userMessageMapping);
+
+        return webhookMessageMapping;
     }
 }

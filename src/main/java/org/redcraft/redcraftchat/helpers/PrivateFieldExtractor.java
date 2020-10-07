@@ -2,7 +2,7 @@ package org.redcraft.redcraftchat.helpers;
 
 import java.lang.reflect.Field;
 
-public class DeObfuscation {
+public class PrivateFieldExtractor {
     public static Object extractPrivateApiField(Object object, String fieldName) {
         Object extractedObject;
         Field field = null;

@@ -1,7 +1,7 @@
 package org.redcraft.redcraftchat.listeners.minecraft;
 
 import org.redcraft.redcraftchat.RedCraftChat;
-import org.redcraft.redcraftchat.helpers.DeObfuscation;
+import org.redcraft.redcraftchat.helpers.PrivateFieldExtractor;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
@@ -42,10 +42,10 @@ public class MinecraftServerMessageListener implements Listener {
 
                 MinecraftServerMessageListener.handleChatPacket(event.getServer(), event.getPlayer(), messages);
             } catch (Exception e) {
-                String messageTemplate = "Encountered an exception while parsing incoming message from server %s to player %s: %s\n%s";
-                String warningMessage = String.format(messageTemplate, server.getInfo().getName(), player.getName(),
-                        e.getMessage(), e.getStackTrace());
-                RedCraftChat.getInstance().getLogger().severe(warningMessage);
+                String messageTemplate = "Encountered an exception while parsing incoming message from server %s to player %s: %s";
+                String errorMessage = String.format(messageTemplate, server.getInfo().getName(), player.getName(), e.getMessage());
+                RedCraftChat.getInstance().getLogger().severe(errorMessage);
+                e.printStackTrace();
             }
         }
     }
@@ -53,8 +53,8 @@ public class MinecraftServerMessageListener implements Listener {
     @EventHandler (priority = EventPriority.LOWEST)
     public void onServerConnected(ServerConnectedEvent event) {
         Server serverConnection = event.getServer();
-        Object channelWrapper = DeObfuscation.extractPrivateApiField(serverConnection, "ch");
-        Channel channel = (Channel) DeObfuscation.extractPrivateApiField(channelWrapper, "ch");
+        Object channelWrapper = PrivateFieldExtractor.extractPrivateApiField(serverConnection, "ch");
+        Channel channel = (Channel) PrivateFieldExtractor.extractPrivateApiField(channelWrapper, "ch");
 
         ChannelPipeline pipeline = channel.pipeline();
 
