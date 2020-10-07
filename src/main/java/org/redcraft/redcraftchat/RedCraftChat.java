@@ -22,7 +22,7 @@ import org.redcraft.redcraftchat.runnables.DiscordChannelSynchronizerTask;
 
 public class RedCraftChat extends Plugin {
 
-	private static Plugin instance;
+	private static RedCraftChat instance;
 
 	private DiscordMessageReceivedListener discordMessageReceivedListener = new DiscordMessageReceivedListener();
 	private DiscordMessageEditedListener discordMessageEditedListener = new DiscordMessageEditedListener();
@@ -73,7 +73,7 @@ public class RedCraftChat extends Plugin {
 		getProxy().getPluginManager().unregisterListeners(this);
 	}
 
-	static public Plugin getInstance() {
+	static public RedCraftChat getInstance() {
 		return instance;
 	}
 }
