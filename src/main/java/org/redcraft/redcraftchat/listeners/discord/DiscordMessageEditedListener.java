@@ -1,11 +1,20 @@
 package org.redcraft.redcraftchat.listeners.discord;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.redcraft.redcraftchat.RedCraftChat;
+import org.redcraft.redcraftchat.caching.CacheManager;
 import org.redcraft.redcraftchat.discord.DiscordClient;
+import org.redcraft.redcraftchat.models.caching.CacheCategory;
+import org.redcraft.redcraftchat.models.discord.TranslatedChannel;
 import org.redcraft.redcraftchat.models.discord.WebhookMessageMapping;
 import org.redcraft.redcraftchat.models.discord.WebhookMessageMappingList;
 
 import net.dv8tion.jda.api.entities.ChannelType;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageUpdateEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
@@ -20,14 +29,45 @@ public class DiscordMessageEditedListener extends ListenerAdapter {
 
     public void handlePublicMessage(MessageUpdateEvent event) {
         WebhookMessageMappingList webhookMessages = DiscordClient.getWebhookMessagesFromOriginalMessage(event.getMessageId());
+        Guild guild = event.getGuild();
+        Member member = event.getMember();
 
-        if (webhookMessages != null) {
-            for (WebhookMessageMapping webhookMessage: webhookMessages.mappingList) {
-                String messageTemplate = "Got an edit on %s that should have edited %s but can't edit because of this https://support.discord.com/hc/en-us/community/posts/360034557771";
-                String debugMessage = String.format(messageTemplate, event.getMessageId(), webhookMessage.messageId);
+        if (member != null && webhookMessages != null) {
+            List<WebhookMessageMapping> postedWebhooks = new ArrayList<WebhookMessageMapping>();
 
-                RedCraftChat.getInstance().getLogger().info(debugMessage);
+            for (WebhookMessageMapping webhookMessage : webhookMessages.mappingList) {
+                TranslatedChannel sourceChannel = new TranslatedChannel(webhookMessage.guildId, event.getMessageId(), webhookMessages.originalLangId);
+                try {
+                    TextChannel channel = guild.getTextChannelById(webhookMessage.channelId);
+
+                    if (channel != null && channel.getLatestMessageId().equals(webhookMessage.messageId)) {
+                        channel.deleteMessageById(webhookMessage.messageId).complete();
+
+                        TranslatedChannel targetChannel = new TranslatedChannel(webhookMessage.guildId, webhookMessage.channelId, webhookMessage.languageId);
+
+                        postedWebhooks.add(
+                            DiscordMessageReceivedListener.translateAndPublishMessage(sourceChannel, targetChannel, member, event.getMessage(), true)
+                        );
+                    } else {
+                        String messageTemplate = "Got an edit on %s that should have edited %s but can't edit because of this https://support.discord.com/hc/en-us/community/posts/360034557771";
+                        String debugMessage = String.format(messageTemplate, event.getMessageId(), webhookMessage.messageId);
+
+                        RedCraftChat.getInstance().getLogger().info(debugMessage);
+                    }
+                } catch (Exception e) {
+                    String messageTemplate = "Error while handling performing message edit from %s channel %s [%s] from user %s";
+                    String warningMessage = String.format(messageTemplate, event.getGuild().getName(), event.getChannel().getName(), sourceChannel.languageId, member.getEffectiveName());
+                    RedCraftChat.getInstance().getLogger().warning(warningMessage);
+                    e.printStackTrace();
+
+                    // keep original message mapping if we can't replace it
+                    postedWebhooks.add(webhookMessage);
+                }
             }
+
+            WebhookMessageMappingList postedWebhooksList = new WebhookMessageMappingList(postedWebhooks, webhookMessages.originalLangId);
+
+            CacheManager.put(CacheCategory.WEBHOOK_MESSAGE_MAPPING, event.getMessageId(), postedWebhooksList);
         }
     }
 }

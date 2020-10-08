@@ -50,6 +50,10 @@ public class DiscordMessageReceivedListener extends ListenerAdapter {
 
         TranslatedChannel sourceChannel = this.getTranslatedChannelFromId(translatedChannelsMappings, event.getChannel().getId());
 
+        if (ChannelManager.getMinecraftBridgeChannels().contains(sourceChannel)) {
+            // TODO send to Minecraft
+        }
+
         if (sourceChannel != null && translatedChannelsMappings.containsKey(sourceChannel)) {
             Message message = event.getMessage();
             Member member = event.getMember();
@@ -61,11 +65,11 @@ public class DiscordMessageReceivedListener extends ListenerAdapter {
 
                 for (TranslatedChannel targetChannel : targetChannels) {
                     postedWebhooks.add(
-                        this.translateAndPublishMessage(sourceChannel, targetChannel, member, message)
+                        translateAndPublishMessage(sourceChannel, targetChannel, member, message, false)
                     );
                 }
 
-                WebhookMessageMappingList postedWebhooksList = new WebhookMessageMappingList(postedWebhooks);
+                WebhookMessageMappingList postedWebhooksList = new WebhookMessageMappingList(postedWebhooks, sourceChannel.languageId);
 
                 CacheManager.put(CacheCategory.WEBHOOK_MESSAGE_MAPPING, event.getMessageId(), postedWebhooksList);
             } catch (Exception e) {
@@ -77,6 +81,31 @@ public class DiscordMessageReceivedListener extends ListenerAdapter {
         }
     }
 
+    public static WebhookMessageMapping translateAndPublishMessage(TranslatedChannel sourceChannel, TranslatedChannel targetChannel, Member member, Message message, boolean isEdited) throws Exception {
+        Guild guild = DiscordClient.getClient().getGuildById(sourceChannel.guildId);
+
+        String translatedMessage = TranslationManager.translate(message.getContentRaw(), sourceChannel.languageId, targetChannel.languageId);
+        TextChannel responseChannel = guild.getTextChannelById(targetChannel.channelId);
+
+        WebhookAsUser webhookToPost = new WebhookAsUser(responseChannel, member, translatedMessage, message.getAttachments());
+
+        String suffix = String.format("[%s->%s]", sourceChannel.languageId.toUpperCase(), targetChannel.languageId.toUpperCase());
+
+        if (isEdited) {
+            suffix += " [edited]";
+        }
+
+        ReadonlyMessage webhookMessage = DiscordClient.postAsUser(webhookToPost, suffix);
+        String webhookMessageId = String.valueOf(webhookMessage.getId());
+
+        WebhookMessageMapping webhookMessageMapping = new WebhookMessageMapping(sourceChannel.guildId, targetChannel.channelId, webhookMessageId, targetChannel.languageId, member.getId());
+        UserMessageMapping userMessageMapping = new UserMessageMapping(sourceChannel.guildId, sourceChannel.channelId, message.getId());
+
+        CacheManager.put(CacheCategory.USER_MESSAGE_MAPPING, webhookMessageId, userMessageMapping);
+
+        return webhookMessageMapping;
+    }
+
     private TranslatedChannel getTranslatedChannelFromId(HashMap<TranslatedChannel, List<TranslatedChannel>> translatedChannelsMappings, String channelId) {
         for (TranslatedChannel channel : translatedChannelsMappings.keySet()) {
             if (channel.channelId.equals(channelId)) {
@@ -85,24 +114,5 @@ public class DiscordMessageReceivedListener extends ListenerAdapter {
         }
 
         return null;
-    }
-
-    private WebhookMessageMapping translateAndPublishMessage(TranslatedChannel sourceChannel, TranslatedChannel targetChannel, Member member, Message message) throws Exception {
-        Guild guild = DiscordClient.getClient().getGuildById(sourceChannel.guildId);
-
-        String translatedMessage = TranslationManager.translate(message.getContentRaw(), sourceChannel.languageId, targetChannel.languageId);
-        TextChannel responseChannel = guild.getTextChannelById(targetChannel.channelId);
-
-        WebhookAsUser webhookToPost = new WebhookAsUser(responseChannel, member, translatedMessage, message.getAttachments());
-
-        ReadonlyMessage webhookMessage = DiscordClient.postAsUser(webhookToPost);
-        String webhookMessageId = String.valueOf(webhookMessage.getId());
-
-        WebhookMessageMapping webhookMessageMapping = new WebhookMessageMapping(sourceChannel.guildId, targetChannel.channelId, webhookMessageId);
-        UserMessageMapping userMessageMapping = new UserMessageMapping(sourceChannel.guildId, sourceChannel.channelId, message.getId());
-
-        CacheManager.put(CacheCategory.USER_MESSAGE_MAPPING, webhookMessageId, userMessageMapping);
-
-        return webhookMessageMapping;
     }
 }

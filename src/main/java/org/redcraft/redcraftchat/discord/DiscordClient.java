@@ -79,11 +79,11 @@ public class DiscordClient {
         return builder.build();
     }
 
-    public static ReadonlyMessage postAsUser(WebhookAsUser webhookAsUser) {
-        return postAsUser(webhookAsUser.responseChannel, webhookAsUser.member, webhookAsUser.content, webhookAsUser.attachments);
+    public static ReadonlyMessage postAsUser(WebhookAsUser webhookAsUser, String suffix) {
+        return postAsUser(webhookAsUser.responseChannel, webhookAsUser.member, webhookAsUser.content, webhookAsUser.attachments, suffix);
     }
 
-    public static ReadonlyMessage postAsUser(TextChannel responseChannel, Member member, String content, List<Attachment> attachments) {
+    public static ReadonlyMessage postAsUser(TextChannel responseChannel, Member member, String content, List<Attachment> attachments, String suffix) {
         String webhookName = RedCraftChat.getInstance().getDescription().getName();
 
         Webhook webhookDestination = DiscordClient.getOrCreateWebhook(responseChannel, webhookName);
@@ -92,7 +92,13 @@ public class DiscordClient {
 
         // Change appearance of webhook message
         WebhookMessageBuilder builder = new WebhookMessageBuilder();
-        builder.setUsername(member.getEffectiveName());
+        String username = member.getEffectiveName();
+
+        if (suffix != null) {
+            username = String.format("%s %s", username, suffix);
+        }
+
+        builder.setUsername(username);
         builder.setAvatarUrl(member.getUser().getAvatarUrl());
 
         if (attachments != null) {
