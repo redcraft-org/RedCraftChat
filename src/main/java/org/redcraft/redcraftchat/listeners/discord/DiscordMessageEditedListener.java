@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.caching.CacheManager;
+import org.redcraft.redcraftchat.discord.ChannelManager;
 import org.redcraft.redcraftchat.discord.DiscordClient;
 import org.redcraft.redcraftchat.models.caching.CacheCategory;
 import org.redcraft.redcraftchat.models.discord.TranslatedChannel;
@@ -46,7 +47,7 @@ public class DiscordMessageEditedListener extends ListenerAdapter {
                         TranslatedChannel targetChannel = new TranslatedChannel(webhookMessage.guildId, webhookMessage.channelId, webhookMessage.languageId);
 
                         postedWebhooks.add(
-                            DiscordMessageReceivedListener.translateAndPublishMessage(sourceChannel, targetChannel, member, event.getMessage(), true)
+                            ChannelManager.translateAndPublishMessage(sourceChannel, targetChannel, member, event.getMessage(), true)
                         );
                     } else {
                         String messageTemplate = "Got an edit on %s that should have edited %s but can't edit because of this https://support.discord.com/hc/en-us/community/posts/360034557771";

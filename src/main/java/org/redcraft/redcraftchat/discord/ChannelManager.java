@@ -12,13 +12,23 @@ import java.util.regex.Pattern;
 
 import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
+import org.redcraft.redcraftchat.caching.CacheManager;
+import org.redcraft.redcraftchat.models.caching.CacheCategory;
 import org.redcraft.redcraftchat.models.discord.TranslatedChannel;
+import org.redcraft.redcraftchat.models.discord.UserMessageMapping;
+import org.redcraft.redcraftchat.models.discord.WebhookAsUser;
+import org.redcraft.redcraftchat.models.discord.WebhookMessageMapping;
+import org.redcraft.redcraftchat.translate.TranslationManager;
 
+import club.minnced.discord.webhook.receive.ReadonlyMessage;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Category;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.GuildChannel;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.TextChannel;
 
 public class ChannelManager {
 
@@ -136,6 +146,32 @@ public class ChannelManager {
         }
 
         saveTranslatedChannelsMapping(translatedChannelsMapping);
+    }
+
+
+    public static WebhookMessageMapping translateAndPublishMessage(TranslatedChannel sourceChannel, TranslatedChannel targetChannel, Member member, Message message, boolean isEdited) throws Exception {
+        Guild guild = DiscordClient.getClient().getGuildById(sourceChannel.guildId);
+
+        String translatedMessage = TranslationManager.translate(message.getContentRaw(), sourceChannel.languageId, targetChannel.languageId);
+        TextChannel responseChannel = guild.getTextChannelById(targetChannel.channelId);
+
+        WebhookAsUser webhookToPost = new WebhookAsUser(responseChannel, member, translatedMessage, message.getAttachments());
+
+        String suffix = String.format("[%s->%s]", sourceChannel.languageId.toUpperCase(), targetChannel.languageId.toUpperCase());
+
+        if (isEdited) {
+            suffix += " [edited]";
+        }
+
+        ReadonlyMessage webhookMessage = DiscordClient.postAsUser(webhookToPost, suffix);
+        String webhookMessageId = String.valueOf(webhookMessage.getId());
+
+        WebhookMessageMapping webhookMessageMapping = new WebhookMessageMapping(sourceChannel.guildId, targetChannel.channelId, webhookMessageId, targetChannel.languageId, member.getId());
+        UserMessageMapping userMessageMapping = new UserMessageMapping(sourceChannel.guildId, sourceChannel.channelId, message.getId());
+
+        CacheManager.put(CacheCategory.USER_MESSAGE_MAPPING, webhookMessageId, userMessageMapping);
+
+        return webhookMessageMapping;
     }
 
     public static HashMap<TranslatedChannel, List<TranslatedChannel>> getTranslatedChannelsMapping() {

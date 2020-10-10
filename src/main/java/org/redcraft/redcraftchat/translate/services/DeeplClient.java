@@ -13,6 +13,8 @@ import com.google.gson.GsonBuilder;
 
 import org.apache.http.client.utils.URIBuilder;
 import org.redcraft.redcraftchat.Config;
+import org.redcraft.redcraftchat.caching.CacheManager;
+import org.redcraft.redcraftchat.models.caching.CacheCategory;
 import org.redcraft.redcraftchat.models.deepl.DeeplResponse;
 import org.redcraft.redcraftchat.models.deepl.DeeplTranslation;
 import org.redcraft.redcraftchat.models.deepl.DeeplSupportedLanguage;
@@ -23,6 +25,14 @@ public class DeeplClient {
     private static boolean supportedLanguagesInitialized = false;
 
     public static DeeplResponse translate(String text, String sourceLanguageId, String targetLanguageId) throws Exception {
+        String cacheKey = String.format("%s;%s;%s", sourceLanguageId, targetLanguageId, text);
+
+        DeeplResponse cachedDeeplResponse = (DeeplResponse) CacheManager.get(CacheCategory.DEEPL_TRANSLATED_MESSAGE, cacheKey, DeeplResponse.class);
+
+        if (cachedDeeplResponse != null) {
+            return cachedDeeplResponse;
+        }
+
         DeeplSupportedLanguage sourceLang = DeeplClient.getLanguage(sourceLanguageId);
         DeeplSupportedLanguage targetLang = DeeplClient.getLanguage(targetLanguageId);
 
@@ -56,7 +66,11 @@ public class DeeplClient {
             .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
             .create();
 
-        return gson.fromJson(rawResponse.toString(), DeeplResponse.class);
+        DeeplResponse deeplResponse = gson.fromJson(rawResponse.toString(), DeeplResponse.class);
+
+        CacheManager.put(CacheCategory.DEEPL_TRANSLATED_MESSAGE, cacheKey, deeplResponse);
+
+        return deeplResponse;
     }
 
     public static String parseDeeplResponse(DeeplResponse dr) {
