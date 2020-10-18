@@ -18,7 +18,7 @@ public class DatabaseManager {
 
     public static void connect() {
         database = new Database();
-        database.setJdbcUrl(getUri());
+        database.setJdbcUrl(Config.databaseUri);
 
         database.setUser(Config.databaseUsername);
         database.setPassword(Config.databasePassword);
@@ -40,18 +40,14 @@ public class DatabaseManager {
             try {
                 database.createTable(classToCreate);
             } catch (Exception ex) {
-                // Ignore, table already exists
+                // TODO handle exeptions
+                // PS: it's normal some are thrown if the table already exists
             }
         }
     }
 
     public static Database getDatabase() {
         return database;
-    }
-
-    private static String getUri() {
-        String pluginConfigPath = RedCraftChat.getInstance().getDataFolder().getAbsolutePath();
-        return Config.databaseUri.replace("%plugin_config_path%", pluginConfigPath);
     }
 
 }
