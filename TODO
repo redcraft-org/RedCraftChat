@@ -16,6 +16,12 @@ Discord:
   ✔ Deleted messages
   ☐ Message reactions
   ✔ Emoji bugs
+  ☐ Account sync
+    ☐ Create temporary hidden channel
+    ☐ Add nickname change detection
+    ☐ Add scheduler to check that people have the right username on Discord
+  ☐ Forget sync command
+  ☐ Discord to MC
 
 In-game:
   ☐ Language selector
@@ -25,10 +31,4 @@ In-game:
   ☐ Join message
   ☐ Private message
   ☐ Mail command
-
-Bridge:
-  ☐ Account sync
-    ☐ Create temporary hidden channel
-    ☐ Add nickname change detection
-    ☐ Add scheduler to check that people have the right username on Discord
-  ☐ Forget sync command
+  ☐ MC to Discord
