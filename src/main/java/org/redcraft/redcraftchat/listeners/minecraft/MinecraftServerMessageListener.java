@@ -2,12 +2,15 @@ package org.redcraft.redcraftchat.listeners.minecraft;
 
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.helpers.PrivateFieldExtractor;
+import org.redcraft.redcraftchat.translate.TranslationManager;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
+import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.connection.Server;
 
@@ -38,19 +41,33 @@ public class MinecraftServerMessageListener implements Listener {
             try {
                 String rawJson = chatPacket.getMessage();
 
-                BaseComponent[] messages = ComponentSerializer.parse(rawJson).clone();
+                BaseComponent[] messages = ComponentSerializer.parse(rawJson);
 
-                MinecraftServerMessageListener.handleChatPacket(event.getServer(), event.getPlayer(), messages);
+                ChatMessageType messageType;
+
+                switch (chatPacket.getPosition()) {
+                    case 2:
+                        messageType = ChatMessageType.ACTION_BAR;
+                        break;
+
+                    default:
+                        messageType = ChatMessageType.CHAT;
+                        break;
+                }
+
+                MinecraftServerMessageListener.handleChatPacket(event.getServer(), event.getPlayer(), messages,
+                        messageType);
             } catch (Exception e) {
                 String messageTemplate = "Encountered an exception while parsing incoming message from server %s to player %s: %s";
-                String errorMessage = String.format(messageTemplate, server.getInfo().getName(), player.getName(), e.getMessage());
+                String errorMessage = String.format(messageTemplate, server.getInfo().getName(), player.getName(),
+                        e.getMessage());
                 RedCraftChat.getInstance().getLogger().severe(errorMessage);
                 e.printStackTrace();
             }
         }
     }
 
-    @EventHandler (priority = EventPriority.LOWEST)
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onServerConnected(ServerConnectedEvent event) {
         Server serverConnection = event.getServer();
         Object channelWrapper = PrivateFieldExtractor.extractPrivateApiField(serverConnection, "ch");
@@ -61,16 +78,26 @@ public class MinecraftServerMessageListener implements Listener {
         pipeline.addBefore("inbound-boss", "packet_interceptor", getPacketInterceptor(event));
     }
 
-    public static void handleChatPacket(Server server, ProxiedPlayer player, BaseComponent[] messages) {
-        // Log messages
+    public static void handleChatPacket(Server server, ProxiedPlayer player, BaseComponent[] messages, ChatMessageType position) {
         for (BaseComponent message : messages) {
-            String messageTemplate = "[Intercepted server message][%s -> %s] %s";
+            String messageTemplate = "[%s -> %s] %s";
             String debugMessage = String.format(messageTemplate, server.getInfo().getName(), player.getName(), message.toLegacyText());
             RedCraftChat.getInstance().getLogger().info(debugMessage);
-        }
 
-        // Send original message
-        player.sendMessage(messages);
+            String translatedMessage = message.toLegacyText();
+            try {
+                // TODO this is very much temporary
+                translatedMessage = TranslationManager.translate(translatedMessage, "EN", "FR");
+            } catch (Exception e) {
+                RedCraftChat.getInstance().getLogger().severe("Error while translating message");
+                e.printStackTrace();
+            }
+
+            BaseComponent[] translatedMessageComponents = new ComponentBuilder(translatedMessage).create();
+
+            // Send original message
+            player.sendMessage(position, translatedMessageComponents);
+        }
     }
 
     private ChannelDuplexHandler getPacketInterceptor(ServerConnectedEvent event) {

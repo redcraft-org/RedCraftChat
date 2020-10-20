@@ -2,6 +2,10 @@
 General:
   ✔ Database models and migrations
   ☐ Integrity checker scheduler
+    ✔ Channel sync
+    ☐ Mute sync
+    ☐ CommandSpy perms check
+    ☐ Check that people have the right username on Discord
   ✔ Language detection?
   ☐ Spell checker?
   ✔ URL shortner support
@@ -15,18 +19,18 @@ Discord:
   ✔ Message edit scaffholding
   ✔ Deleted messages
   ☐ Message reactions
-  ✔ Emoji bugs
+  ✔ Translated emojis bug
+  ☐ Multi unicode char Emoji bugs
   ☐ Account sync
     ☐ Create temporary hidden channel
     ☐ Add nickname change detection
-    ☐ Add scheduler to check that people have the right username on Discord
   ☐ Forget sync command
   ☐ Discord to MC
 
 In-game:
   ☐ Language selector
-  ☐ Live translation from upstream servers
-  ☐ CMI support for muted players
+  ☐ Live translation from upstream servers @started
+  ☐ Litebans support for muted players
   ☐ Commandspy
   ☐ Join message
   ☐ Private message

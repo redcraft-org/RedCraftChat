@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -15,6 +16,25 @@ import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 public class TokenizerManager {
+    static final Map<String, String> minecraftColorsMappings = new TreeMap<String, String>();
+
+    static {
+        // Color codes
+        for (int i = 0; i <= 15; i++) {
+            String originalCode = String.format("§%01x", i);
+            String escapedCode = String.format("§%02d", i);
+
+            minecraftColorsMappings.put(originalCode, escapedCode);
+        }
+
+        // bold, italic, etc...
+        minecraftColorsMappings.put("§k", "§75");
+        minecraftColorsMappings.put("§l", "§76");
+        minecraftColorsMappings.put("§m", "§77");
+        minecraftColorsMappings.put("§n", "§78");
+        minecraftColorsMappings.put("§o", "§79");
+        minecraftColorsMappings.put("§r", "§82");
+    }
 
     public static TokenizedMessage tokenizeElements(String originalMessage, boolean tokenizePlayers) {
         // Tokenization is used so important elements of messages don't get translated
@@ -61,6 +81,11 @@ public class TokenizerManager {
             }
         }
 
+        // Tokenize Minecraft color codes
+        for (Entry<String, String> mapping : minecraftColorsMappings.entrySet()) {
+            tokenizedMessage = tokenizedMessage.replaceAll(mapping.getKey(), mapping.getValue());
+        }
+
         // Remove non printable characters
         tokenizedMessage = tokenizedMessage.replaceAll("\\p{C}", "");
 
@@ -69,6 +94,10 @@ public class TokenizerManager {
 
     public static String untokenizeElements(TokenizedMessage tokenizedMessage) {
         String message = tokenizedMessage.tokenizedMessage;
+
+        for (Entry<String, String> mapping : minecraftColorsMappings.entrySet()) {
+            message = message.replaceAll(mapping.getValue(), mapping.getKey());
+        }
 
         Iterator<Map.Entry<String, String>> tokenizedElementsIterator = tokenizedMessage.tokenizedElements.entrySet().iterator();
         while (tokenizedElementsIterator.hasNext()) {
