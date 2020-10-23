@@ -22,7 +22,7 @@ import net.md_5.bungee.event.EventPriority;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.packet.Chat;
 
-public class MinecraftServerMessageListener implements Listener {
+public class MinecraftRemoteServerMessageListener implements Listener {
 
     public class AsyncChatParser implements Runnable {
         ServerConnectedEvent event;
@@ -55,7 +55,7 @@ public class MinecraftServerMessageListener implements Listener {
                         break;
                 }
 
-                MinecraftServerMessageListener.handleChatPacket(event.getServer(), event.getPlayer(), messages,
+                MinecraftRemoteServerMessageListener.handleChatPacket(event.getServer(), event.getPlayer(), messages,
                         messageType);
             } catch (Exception e) {
                 String messageTemplate = "Encountered an exception while parsing incoming message from server %s to player %s: %s";

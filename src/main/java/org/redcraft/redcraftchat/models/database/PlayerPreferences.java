@@ -12,7 +12,7 @@ import org.redcraft.redcraftchat.database.DatabaseManager;
 @Table(name = "rcc_player_preferences")
 public class PlayerPreferences extends DatabaseModel {
     @Id
-    @Column(name = "id")
+    @Column(name = "id", unique = true)
     public UUID uuid;
 
     @Column(name = "discord_id", unique = true)
