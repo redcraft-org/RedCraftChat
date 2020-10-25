@@ -103,8 +103,8 @@ public class MinecraftRemoteServerMessageListener implements Listener {
     private ChannelDuplexHandler getPacketInterceptor(ServerConnectedEvent event) {
         return new ChannelDuplexHandler() {
             @Override
-            public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-                PacketWrapper wrapper = (PacketWrapper) msg;
+            public void channelRead(ChannelHandlerContext context, Object message) throws Exception {
+                PacketWrapper wrapper = (PacketWrapper) message;
 
                 if (wrapper.packet instanceof Chat) {
                     RedCraftChat pluginInstance = RedCraftChat.getInstance();
@@ -115,7 +115,7 @@ public class MinecraftRemoteServerMessageListener implements Listener {
                     return; // Do not forward original packet
                 }
 
-                super.channelRead(ctx, msg); // send to client, not a Chat packet
+                super.channelRead(context, message); // send to client, not a Chat packet
             }
         };
     }
