@@ -48,22 +48,7 @@
 									<shadedPattern>org.redcraft.redcraftchat.dependencies.jda</shadedPattern>
 								</relocation>
 							</relocations>
-
 							<minimizeJar>true</minimizeJar>
-							<filters>
-								<filter>
-									<artifact>commons-logging:commons-logging</artifact>
-									<includes>
-										<include>**</include>
-									</includes>
-								</filter>
-								<filter>
-									<artifact>com.fasterxml.jackson.core:jackson-databind</artifact>
-									<includes>
-										<include>**</include>
-									</includes>
-								</filter>
-							</filters>
 						</configuration>
 					</execution>
 				</executions>
