@@ -17,8 +17,10 @@ Discord:
   ☐ LuckPerms support for ranks
   ✔ Mentions bugs
   ✔ Message edit scaffholding
+    ☐ Message edit https://support.discord.com/hc/en-us/community/posts/360034557771/comments/360013401954
   ✔ Deleted messages
   ☐ Message reactions
+  ☐ Message replies threads
   ✔ Translated emojis bug
   ☐ Multi unicode char Emoji bugs
   ☐ Account sync
