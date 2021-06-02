@@ -58,7 +58,7 @@ public class DiscordMessageReceivedListener extends ListenerAdapter {
 
                 for (TranslatedChannel targetChannel : targetChannels) {
                     postedWebhooks.add(
-                        ChannelManager.translateAndPublishMessage(sourceChannel, targetChannel, member, message, false)
+                        ChannelManager.translateAndPublishMessage(sourceChannel, targetChannel, member, message, null)
                     );
                 }
 

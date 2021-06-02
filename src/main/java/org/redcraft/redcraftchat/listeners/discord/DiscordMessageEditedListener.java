@@ -41,19 +41,14 @@ public class DiscordMessageEditedListener extends ListenerAdapter {
                 try {
                     TextChannel channel = guild.getTextChannelById(webhookMessage.channelId);
 
-                    if (channel != null && channel.getLatestMessageId().equals(webhookMessage.messageId)) {
+                    if (channel != null) {
                         channel.deleteMessageById(webhookMessage.messageId).complete();
 
                         TranslatedChannel targetChannel = new TranslatedChannel(webhookMessage.guildId, webhookMessage.channelId, webhookMessage.languageId);
 
                         postedWebhooks.add(
-                            ChannelManager.translateAndPublishMessage(sourceChannel, targetChannel, member, event.getMessage(), true)
+                            ChannelManager.translateAndPublishMessage(sourceChannel, targetChannel, member, event.getMessage(), webhookMessage.messageId)
                         );
-                    } else {
-                        String messageTemplate = "Got an edit on %s that should have edited %s but can't edit because of this https://support.discord.com/hc/en-us/community/posts/360034557771";
-                        String debugMessage = String.format(messageTemplate, event.getMessageId(), webhookMessage.messageId);
-
-                        RedCraftChat.getInstance().getLogger().info(debugMessage);
                     }
                 } catch (Exception e) {
                     String messageTemplate = "Error while handling performing message edit from %s channel %s [%s] from user %s";

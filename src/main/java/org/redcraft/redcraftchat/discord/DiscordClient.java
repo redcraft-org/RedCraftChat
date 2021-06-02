@@ -79,11 +79,11 @@ public class DiscordClient {
         return builder.build();
     }
 
-    public static ReadonlyMessage postAsUser(WebhookAsUser webhookAsUser, String suffix) {
-        return postAsUser(webhookAsUser.responseChannel, webhookAsUser.member, webhookAsUser.content, webhookAsUser.attachments, suffix);
+    public static ReadonlyMessage postAsUser(WebhookAsUser webhookAsUser, String suffix, String previousMessageId) {
+        return postAsUser(webhookAsUser.responseChannel, webhookAsUser.member, webhookAsUser.content, webhookAsUser.attachments, suffix, previousMessageId);
     }
 
-    public static ReadonlyMessage postAsUser(TextChannel responseChannel, Member member, String content, List<Attachment> attachments, String suffix) {
+    public static ReadonlyMessage postAsUser(TextChannel responseChannel, Member member, String content, List<Attachment> attachments, String suffix, String previousMessageId) {
         String webhookName = RedCraftChat.getInstance().getDescription().getName();
 
         Webhook webhookDestination = DiscordClient.getOrCreateWebhook(responseChannel, webhookName);
@@ -113,6 +113,10 @@ public class DiscordClient {
         mentions.withParseEveryone(false);
         builder.setAllowedMentions(mentions);
 
+        if (previousMessageId != null) {
+            long messageId = Long.parseLong(previousMessageId);
+            return webhookClient.edit(messageId, builder.build()).join();
+        }
         return webhookClient.send(builder.build()).join();
     }
 
