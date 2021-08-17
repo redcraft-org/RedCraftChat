@@ -42,8 +42,6 @@ public class DiscordMessageEditedListener extends ListenerAdapter {
                     TextChannel channel = guild.getTextChannelById(webhookMessage.channelId);
 
                     if (channel != null) {
-                        channel.deleteMessageById(webhookMessage.messageId).complete();
-
                         TranslatedChannel targetChannel = new TranslatedChannel(webhookMessage.guildId, webhookMessage.channelId, webhookMessage.languageId);
 
                         postedWebhooks.add(
