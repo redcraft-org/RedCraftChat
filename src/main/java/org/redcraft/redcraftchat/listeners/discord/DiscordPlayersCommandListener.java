@@ -2,7 +2,6 @@ package org.redcraft.redcraftchat.listeners.discord;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.atteo.evo.inflector.English;
 import org.redcraft.redcraftchat.RedCraftChat;
