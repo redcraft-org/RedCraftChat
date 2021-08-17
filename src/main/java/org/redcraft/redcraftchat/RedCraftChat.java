@@ -12,6 +12,7 @@ import org.redcraft.redcraftchat.discord.DiscordClient;
 import org.redcraft.redcraftchat.listeners.discord.DiscordMessageDeletedListener;
 import org.redcraft.redcraftchat.listeners.discord.DiscordMessageEditedListener;
 import org.redcraft.redcraftchat.listeners.discord.DiscordMessageReceivedListener;
+import org.redcraft.redcraftchat.listeners.discord.DiscordPlayersCommandListener;
 import org.redcraft.redcraftchat.listeners.minecraft.MinecraftChatListener;
 import org.redcraft.redcraftchat.listeners.minecraft.MinecraftPlayerPreferencesListener;
 import org.redcraft.redcraftchat.listeners.minecraft.MinecraftRemoteServerMessageListener;
@@ -25,6 +26,7 @@ public class RedCraftChat extends Plugin {
 	private DiscordMessageReceivedListener discordMessageReceivedListener = new DiscordMessageReceivedListener();
 	private DiscordMessageEditedListener discordMessageEditedListener = new DiscordMessageEditedListener();
 	private DiscordMessageDeletedListener discordMessageDeletedListener = new DiscordMessageDeletedListener();
+	private DiscordPlayersCommandListener discordPlayersCommandListener = new DiscordPlayersCommandListener();
 
 	private DiscordChannelSynchronizerTask discordChannelSynchronizerTask = new DiscordChannelSynchronizerTask();
 
@@ -46,6 +48,10 @@ public class RedCraftChat extends Plugin {
 		discordClient.addEventListener(discordMessageReceivedListener);
 		discordClient.addEventListener(discordMessageEditedListener);
 		discordClient.addEventListener(discordMessageDeletedListener);
+
+		discordClient.addEventListener(discordPlayersCommandListener);
+
+		discordClient.upsertCommand("players", "List players on Minecraft servers").queue();
 
 		getLogger().info("Discord events registered");
 

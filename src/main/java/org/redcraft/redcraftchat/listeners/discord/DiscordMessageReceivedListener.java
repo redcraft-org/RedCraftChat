@@ -35,7 +35,7 @@ public class DiscordMessageReceivedListener extends ListenerAdapter {
 
     public void handlePublicMessage(MessageReceivedEvent event) {
         // Ignore messages coming from bots
-        if (event.getMember() == null) {
+        if (event.getMember() == null || event.getAuthor().isBot()) {
             return;
         }
 

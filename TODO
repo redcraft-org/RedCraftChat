@@ -13,7 +13,7 @@ General:
 Discord:
   ☐ Language selector
   ✔ Live translation Discord to Discord
-  ☐ Player list command
+  ✔ Player list command
   ☐ LuckPerms support for ranks
   ✔ Mentions bugs
   ✔ Message edit scaffholding
@@ -31,7 +31,7 @@ Discord:
 
 In-game:
   ☐ Language selector
-  ☐ Live translation from upstream servers @started
+  ✔ Live translation from upstream servers
   ☐ Litebans support for muted players
   ☐ Commandspy
   ☐ Join message
