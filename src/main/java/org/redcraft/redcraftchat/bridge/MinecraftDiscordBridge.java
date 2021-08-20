@@ -30,8 +30,6 @@ public class MinecraftDiscordBridge {
                 sourceLanguage = playerPreferencesManager.getMainPlayerLanguage(sender);
             }
 
-            ProxyServer.getInstance().getLogger().info("Source lang " + sourceLanguage);
-
             for (ProxiedPlayer receiver : ProxyServer.getInstance().getPlayers()) {
                 String translatedMessage = message;
                 String languagePrefix = sourceLanguage;

@@ -1,6 +1,8 @@
 package org.redcraft.redcraftchat.listeners.minecraft;
 
 import org.redcraft.redcraftchat.RedCraftChat;
+import org.redcraft.redcraftchat.database.PlayerPreferencesManager;
+import org.redcraft.redcraftchat.detection.DetectionManager;
 import org.redcraft.redcraftchat.helpers.PrivateFieldExtractor;
 import org.redcraft.redcraftchat.translate.TranslationManager;
 
@@ -67,6 +69,8 @@ public class MinecraftRemoteServerMessageListener implements Listener {
         }
     }
 
+    private static PlayerPreferencesManager playerPreferencesManager = new PlayerPreferencesManager();
+
     @EventHandler(priority = EventPriority.LOWEST)
     public void onServerConnected(ServerConnectedEvent event) {
         Server serverConnection = event.getServer();
@@ -80,17 +84,18 @@ public class MinecraftRemoteServerMessageListener implements Listener {
 
     public static void handleChatPacket(Server server, ProxiedPlayer player, BaseComponent[] messages, ChatMessageType position) {
         for (BaseComponent message : messages) {
-            String messageTemplate = "[%s -> %s] %s";
-            String debugMessage = String.format(messageTemplate, server.getInfo().getName(), player.getName(), message.toLegacyText());
-            RedCraftChat.getInstance().getLogger().info(debugMessage);
-
             String translatedMessage = message.toLegacyText();
             try {
-                // TODO this is very much temporary
-                translatedMessage = TranslationManager.translate(translatedMessage, "EN", "FR");
+                String sourceLanguage = DetectionManager.getLanguage(translatedMessage);
+                String targetLanguage = playerPreferencesManager.getMainPlayerLanguage(player);
+                if (sourceLanguage != null && !sourceLanguage.equalsIgnoreCase(targetLanguage)) {
+                    translatedMessage = TranslationManager.translate(translatedMessage, sourceLanguage, targetLanguage);
+                }
             } catch (Exception e) {
-                RedCraftChat.getInstance().getLogger().severe("Error while translating message");
                 e.printStackTrace();
+                String messageTemplate = "Error while translating message [%s -> %s] %s";
+                String debugMessage = String.format(messageTemplate, server.getInfo().getName(), player.getName(), message.toLegacyText());
+                RedCraftChat.getInstance().getLogger().severe(debugMessage);
             }
 
             BaseComponent[] translatedMessageComponents = new ComponentBuilder(translatedMessage).create();

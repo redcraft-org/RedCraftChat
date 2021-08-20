@@ -25,7 +25,7 @@ public class PlayerPreferencesManager {
             return cachedPlayerPreferences;
         }
 
-        PlayerPreferences playerPreferences = db.where("id=?", playerUniqueId.toString()).first(PlayerPreferences.class);
+        PlayerPreferences playerPreferences = db.where("player_uuid=?", playerUniqueId.toString()).first(PlayerPreferences.class);
 
         boolean updated = false;
 
@@ -40,7 +40,6 @@ public class PlayerPreferencesManager {
         }
 
         if (updated) {
-            ProxyServer.getInstance().getLogger().info("" + playerPreferences);
             this.updatePlayerPreferences(playerPreferences);
         }
 
@@ -69,7 +68,7 @@ public class PlayerPreferencesManager {
 
         // upsert is not supported with MySQL
         Database db = DatabaseManager.getDatabase();
-        boolean playerAlreadyExists = db.where("id=?", playerUniqueId).results(PlayerPreferences.class).size() > 0;
+        boolean playerAlreadyExists = db.where("player_uuid=?", playerUniqueId).results(PlayerPreferences.class).size() > 0;
         if (playerAlreadyExists) {
             db.update(preferences);
         } else {

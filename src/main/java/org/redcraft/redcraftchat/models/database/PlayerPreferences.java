@@ -36,6 +36,9 @@ public class PlayerPreferences extends DatabaseModel {
     @Column(name = "command_spy_enabled")
     public Boolean commandSpyEnabled;
 
+    public PlayerPreferences() {
+    }
+
     public PlayerPreferences(UUID playerUniqueId) {
         this.playerUniqueId = playerUniqueId.toString();
     }
