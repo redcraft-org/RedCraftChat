@@ -7,6 +7,7 @@ import com.dieselpoint.norm.Database;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.caching.CacheManager;
 import org.redcraft.redcraftchat.models.caching.CacheCategory;
+import org.redcraft.redcraftchat.models.database.PlayerLanguage;
 import org.redcraft.redcraftchat.models.database.PlayerPreferences;
 
 import net.md_5.bungee.api.ProxyServer;
@@ -15,10 +16,7 @@ import net.md_5.bungee.api.connection.ProxiedPlayer;
 public class PlayerPreferencesManager {
 
     public PlayerPreferences getPlayerPreferences(ProxiedPlayer player) {
-        return getPlayerPreferences(player.getUniqueId());
-    }
-
-    public PlayerPreferences getPlayerPreferences(UUID playerUniqueId) {
+        UUID playerUniqueId = player.getUniqueId();
         Database db = DatabaseManager.getDatabase();
 
         PlayerPreferences cachedPlayerPreferences = (PlayerPreferences) CacheManager
@@ -27,17 +25,32 @@ public class PlayerPreferencesManager {
             return cachedPlayerPreferences;
         }
 
-        PlayerPreferences playerPreferences = db.where("id=?", playerUniqueId).first(PlayerPreferences.class);
+        PlayerPreferences playerPreferences = db.where("id=?", playerUniqueId.toString()).first(PlayerPreferences.class);
+
+        boolean updated = false;
+
+        if (playerPreferences == null) {
+            playerPreferences = createPlayerPreferences(player);
+            updated = true;
+        } else if (playerPreferences.lastKnownName != player.getName()) {
+            // Detect username change
+            playerPreferences.previousKnownName = playerPreferences.lastKnownName;
+            playerPreferences.lastKnownName = player.getName();
+            updated = true;
+        }
+
+        if (updated) {
+            ProxyServer.getInstance().getLogger().info("" + playerPreferences);
+            this.updatePlayerPreferences(playerPreferences);
+        }
 
         CacheManager.put(CacheCategory.PLAYER_PREFERENCES, playerUniqueId.toString(), playerPreferences);
 
         return playerPreferences;
     }
 
-    public PlayerPreferences createPlayerPreferences(UUID playerUniqueId) {
-        PlayerPreferences playerPreferences = new PlayerPreferences(playerUniqueId);
-
-        ProxiedPlayer player = ProxyServer.getInstance().getPlayer(playerUniqueId);
+    public PlayerPreferences createPlayerPreferences(ProxiedPlayer player) {
+        PlayerPreferences playerPreferences = new PlayerPreferences(player.getUniqueId());
 
         String detectedPlayerLanguage = extractPlayerLanguage(player);
 
@@ -48,15 +61,14 @@ public class PlayerPreferencesManager {
             playerPreferences.lastKnownName = player.getName();
         }
 
-        // TODO call PlayerLanguageManager and add detected language
-
         return playerPreferences;
     }
 
     public void updatePlayerPreferences(PlayerPreferences preferences) {
-        Database db = DatabaseManager.getDatabase();
-        UUID playerUniqueId = preferences.uuid;
+        String playerUniqueId = preferences.playerUniqueId;
 
+        // upsert is not supported with MySQL
+        Database db = DatabaseManager.getDatabase();
         boolean playerAlreadyExists = db.where("id=?", playerUniqueId).results(PlayerPreferences.class).size() > 0;
         if (playerAlreadyExists) {
             db.update(preferences);
@@ -64,10 +76,32 @@ public class PlayerPreferencesManager {
             db.insert(preferences);
         }
 
-        CacheManager.put(CacheCategory.PLAYER_PREFERENCES, playerUniqueId.toString(), preferences);
+        CacheManager.put(CacheCategory.PLAYER_PREFERENCES, playerUniqueId, preferences);
     }
 
-    private String extractPlayerLanguage(ProxiedPlayer player) {
+    public boolean playerSpeaksLanguage(ProxiedPlayer player, String languageIsoCode) {
+        PlayerPreferences playerPreferences = this.getPlayerPreferences(player);
+        for (PlayerLanguage language : playerPreferences.languages()) {
+            if (language.languageIso.equalsIgnoreCase(languageIsoCode)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public String getMainPlayerLanguage(ProxiedPlayer player) {
+        PlayerPreferences playerPreferences = this.getPlayerPreferences(player);
+        for (PlayerLanguage language : playerPreferences.languages()) {
+            if (language.isMainLanguage) {
+                return language.languageIso;
+            }
+        }
+
+        return extractPlayerLanguage(player);
+    }
+
+    public static String extractPlayerLanguage(ProxiedPlayer player) {
         if (player != null) {
             return player.getLocale().getLanguage();
         }

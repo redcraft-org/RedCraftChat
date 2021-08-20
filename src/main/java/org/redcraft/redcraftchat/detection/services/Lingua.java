@@ -22,8 +22,16 @@ public class Lingua {
 
             Language[] argsList = supportedLanguages.toArray(new Language[supportedLanguages.size()]);
 
-            detector = LanguageDetectorBuilder.fromLanguages(argsList).build();
+            // TODO move that relative distant to config
+            detector = LanguageDetectorBuilder.fromLanguages(argsList).withMinimumRelativeDistance(0.1).build();
         }
-        return detector.detectLanguageOf(text).getIsoCode639_1().toString();
+
+        Language language = detector.detectLanguageOf(text);
+
+        if (language.equals(Language.UNKNOWN)) {
+            return null;
+        }
+
+        return language.getIsoCode639_1().toString();
     }
 }

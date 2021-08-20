@@ -1,7 +1,6 @@
 package org.redcraft.redcraftchat.models.database;
 
 import java.time.LocalDate;
-import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.GeneratedValue;
@@ -15,10 +14,10 @@ public class PlayerMail extends DatabaseModel {
     public long id;
 
     @Column(name = "sender_uuid")
-    public UUID senderUuid;
+    public String senderUuid;
 
     @Column(name = "recipient_uuid")
-    public UUID recipientUuid;
+    public String recipientUuid;
 
     @Column(name = "sent_at")
     public LocalDate sent_at;

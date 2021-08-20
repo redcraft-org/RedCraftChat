@@ -11,13 +11,19 @@ public class DetectionManagerTest extends TestCase {
 
     public void testFrench() {
         String expectedDetection = "fr";
-        String actualDetection = DetectionManager.getLanguage("Bonjour mon nom est lululombard");
+        String actualDetection = DetectionManager.getLanguage("Bonjour mon nom est Peter");
         assertEquals(expectedDetection, actualDetection);
     }
 
     public void testEnglish() {
         String expectedDetection = "en";
-        String actualDetection = DetectionManager.getLanguage("Hello my name is lululombard");
+        String actualDetection = DetectionManager.getLanguage("Hello my name is Peter");
+        assertEquals(expectedDetection, actualDetection);
+    }
+
+    public void testUnknown() {
+        String expectedDetection = null;
+        String actualDetection = DetectionManager.getLanguage("Maya nama eta Peter");
         assertEquals(expectedDetection, actualDetection);
     }
 }

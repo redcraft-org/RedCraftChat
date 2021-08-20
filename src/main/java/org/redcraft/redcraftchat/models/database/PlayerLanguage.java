@@ -1,7 +1,5 @@
 package org.redcraft.redcraftchat.models.database;
 
-import java.util.UUID;
-
 import javax.persistence.Column;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -16,7 +14,7 @@ public class PlayerLanguage extends DatabaseModel {
     public long id;
 
     @Column(name = "player_uuid")
-    public UUID playerUuid;
+    public String playerUniqueId;
 
     @Column(name = "language_iso")
     public String languageIso;
