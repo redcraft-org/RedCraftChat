@@ -1,5 +1,11 @@
 package org.redcraft.redcraftchat.bridge;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.database.PlayerPreferencesManager;
 import org.redcraft.redcraftchat.detection.DetectionManager;
@@ -30,31 +36,50 @@ public class MinecraftDiscordBridge {
                 sourceLanguage = playerPreferencesManager.getMainPlayerLanguage(sender);
             }
 
-            for (ProxiedPlayer receiver : ProxyServer.getInstance().getPlayers()) {
-                String translatedMessage = message;
-                String languagePrefix = sourceLanguage;
-                String serverPrefix = sender.getServer().getInfo().getName() + ChatColor.RESET;
-                String senderPrefix = sender.getDisplayName() + ChatColor.RESET;
+            // Gather languages
+            List<String> targetLanguages = new ArrayList<String>(Config.translationSupportedLanguages);
 
+            for (ProxiedPlayer receiver : ProxyServer.getInstance().getPlayers()) {
                 if (!playerPreferencesManager.playerSpeaksLanguage(receiver, sourceLanguage)) {
-                    String targetLanguage = playerPreferencesManager.getMainPlayerLanguage(receiver);
-                    if (!targetLanguage.equalsIgnoreCase(sourceLanguage)) {
-                        try {
-                            translatedMessage = TranslationManager.translate(translatedMessage, sourceLanguage, targetLanguage);
-                            languagePrefix = sourceLanguage + "->" + targetLanguage;
-                        } catch (Exception e) {
-                            languagePrefix = sourceLanguage + " (translation error)";
-                            e.printStackTrace();
-                        }
+                    String playerLanguage = playerPreferencesManager.getMainPlayerLanguage(receiver).toLowerCase();
+                    if (!targetLanguages.contains(playerLanguage)) {
+                        targetLanguages.add(playerLanguage);
                     }
                 }
-
-                BaseComponent[] formattedMessage = new ComponentBuilder(
-                        "[" + languagePrefix.toUpperCase() + "][" + serverPrefix + "][" + senderPrefix + "] " + translatedMessage)
-                                .create();
-
-                receiver.sendMessage(formattedMessage);
             }
+
+            // Translate
+            // TODO parallelize
+            Map<String, String> translatedLanguages = new HashMap<String, String>();
+
+            for (String targetLanguage: targetLanguages) {
+                if (targetLanguage.equalsIgnoreCase(sourceLanguage)) {
+                    translatedLanguages.put(targetLanguage, message);
+                    continue;
+                }
+                try {
+                    translatedLanguages.put(targetLanguage, TranslationManager.translate(message, sourceLanguage, targetLanguage));
+                } catch (Exception e) {
+                    translatedLanguages.put(targetLanguage, message);
+                    e.printStackTrace();
+                }
+            }
+
+            // Send to players
+            for (ProxiedPlayer receiver : ProxyServer.getInstance().getPlayers()) {
+                String targetLanguage = sourceLanguage;
+                if (!playerPreferencesManager.playerSpeaksLanguage(receiver, sourceLanguage)) {
+                    targetLanguage = playerPreferencesManager.getMainPlayerLanguage(receiver).toLowerCase();
+                }
+                String translatedMessage = translatedLanguages.get(targetLanguage);
+                if (translatedMessage == null) {
+                    translatedMessage = message;
+                }
+                MinecraftDiscordBridge.getInstance().formatAndSendMessageToPlayer(sender, receiver, translatedMessage, sourceLanguage);
+            }
+
+            // Send to Discord
+            // TODO
         }
     }
 
@@ -68,6 +93,30 @@ public class MinecraftDiscordBridge {
         }
 
         return instance;
+    }
+
+    public void formatAndSendMessageToPlayer(ProxiedPlayer sender, ProxiedPlayer receiver, String translatedMessage, String sourceLanguage) {
+        String languagePrefix = sourceLanguage;
+        String serverPrefix = sender.getServer().getInfo().getName() + ChatColor.RESET;
+        String senderPrefix = sender.getDisplayName() + ChatColor.RESET;
+
+        if (!playerPreferencesManager.playerSpeaksLanguage(receiver, sourceLanguage)) {
+            String targetLanguage = playerPreferencesManager.getMainPlayerLanguage(receiver);
+            if (!targetLanguage.equalsIgnoreCase(sourceLanguage)) {
+                try {
+                    languagePrefix = sourceLanguage + "->" + targetLanguage;
+                } catch (Exception e) {
+                    languagePrefix = sourceLanguage + " (translation error)";
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        BaseComponent[] formattedMessage = new ComponentBuilder(
+                "[" + languagePrefix.toUpperCase() + "][" + serverPrefix + "][" + senderPrefix + "] " + translatedMessage)
+                        .create();
+
+        receiver.sendMessage(formattedMessage);
     }
 
     public void translateAndPostMessage(ProxiedPlayer sender, String message) {
