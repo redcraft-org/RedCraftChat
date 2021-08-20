@@ -27,7 +27,7 @@ Discord:
     ☐ Create temporary hidden channel
     ☐ Add nickname change detection
   ☐ Forget sync command
-  ☐ Discord to MC
+  ✔ Discord to MC
 
 In-game:
   ☐ Language selector
@@ -38,4 +38,4 @@ In-game:
   ☐ Private message
   ☐ Mail command
   ☐ /me command
-  ☐ MC to Discord
+  ✔ MC to Discord
