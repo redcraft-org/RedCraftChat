@@ -25,7 +25,8 @@ import net.dv8tion.jda.api.entities.Webhook;
 import net.dv8tion.jda.api.entities.Activity.ActivityType;
 import net.dv8tion.jda.api.entities.Message.Attachment;
 import net.dv8tion.jda.api.requests.RestAction;
-import net.dv8tion.jda.api.utils.cache.CacheFlag;
+import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 public class DiscordClient {
     private static JDA jdaClient = null;
@@ -38,7 +39,7 @@ public class DiscordClient {
 
         JDABuilder builder = JDABuilder.createDefault(Config.discordToken);
 
-        builder.disableCache(CacheFlag.MEMBER_OVERRIDES, CacheFlag.VOICE_STATE);
+        // builder.disableCache(CacheFlag.MEMBER_OVERRIDES, CacheFlag.VOICE_STATE);
 
         if (Config.discordActivityEnabled) {
             ActivityType activityType = ActivityType.valueOf(Config.discordActivityType.toUpperCase());
@@ -117,6 +118,30 @@ public class DiscordClient {
             long messageId = Long.parseLong(previousMessageId);
             return webhookClient.edit(messageId, builder.build()).join();
         }
+        return webhookClient.send(builder.build()).join();
+    }
+
+    public static ReadonlyMessage postAsPlayer(String responseChannelId, ProxiedPlayer player, String message, String suffix) {
+        TextChannel responseChannel = jdaClient.getTextChannelById(responseChannelId);
+        String webhookName = RedCraftChat.getInstance().getDescription().getName();
+
+        Webhook webhookDestination = DiscordClient.getOrCreateWebhook(responseChannel, webhookName);
+
+        WebhookClient webhookClient = DiscordClient.getWebhookClient(webhookDestination.getUrl());
+
+        // Change appearance of webhook message
+        WebhookMessageBuilder builder = new WebhookMessageBuilder();
+        String username = ChatColor.stripColor(player.getDisplayName());
+
+        builder.setUsername("[" + player.getServer().getInfo().getName() + "] " + username + suffix);
+        builder.setAvatarUrl("https://testing.redcraft.org/api/v1/skin/head/" + player.getUniqueId().toString() + "?size=128");
+
+        builder.setContent(message);
+
+        AllowedMentions mentions = new AllowedMentions();
+        mentions.withParseEveryone(false);
+        builder.setAllowedMentions(mentions);
+
         return webhookClient.send(builder.build()).join();
     }
 

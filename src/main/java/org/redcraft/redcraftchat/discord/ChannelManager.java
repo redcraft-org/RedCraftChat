@@ -148,7 +148,6 @@ public class ChannelManager {
         saveTranslatedChannelsMapping(translatedChannelsMapping);
     }
 
-
     public static WebhookMessageMapping translateAndPublishMessage(TranslatedChannel sourceChannel, TranslatedChannel targetChannel, Member member, Message message, String previousMessageId) throws Exception {
         Guild guild = DiscordClient.getClient().getGuildById(sourceChannel.guildId);
 
@@ -157,11 +156,7 @@ public class ChannelManager {
 
         WebhookAsUser webhookToPost = new WebhookAsUser(responseChannel, member, translatedMessage, message.getAttachments());
 
-        String suffix = String.format("[%s->%s]", sourceChannel.languageId.toUpperCase(), targetChannel.languageId.toUpperCase());
-
-        if (previousMessageId != null) {
-            suffix += " [edited]";
-        }
+        String suffix = "[" + TranslationManager.getLanguagePrefix(sourceChannel.languageId, targetChannel.languageId) + "]";
 
         ReadonlyMessage webhookMessage = DiscordClient.postAsUser(webhookToPost, suffix, previousMessageId);
         String webhookMessageId = String.valueOf(webhookMessage.getId());

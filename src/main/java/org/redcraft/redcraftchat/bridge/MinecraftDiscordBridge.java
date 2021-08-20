@@ -1,13 +1,13 @@
 package org.redcraft.redcraftchat.bridge;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.database.PlayerPreferencesManager;
-import org.redcraft.redcraftchat.detection.DetectionManager;
+import org.redcraft.redcraftchat.discord.ChannelManager;
+import org.redcraft.redcraftchat.discord.DiscordClient;
+import org.redcraft.redcraftchat.models.discord.TranslatedChannel;
 import org.redcraft.redcraftchat.translate.TranslationManager;
 
 import net.md_5.bungee.api.ChatColor;
@@ -29,42 +29,22 @@ public class MinecraftDiscordBridge {
 
         @Override
         public void run() {
-            String sourceLanguage = DetectionManager.getLanguage(message);
-
-            if (sourceLanguage == null) {
-                sourceLanguage = playerPreferencesManager.getMainPlayerLanguage(sender);
-            }
+            // Detect source language
+            String sourceLanguage = TranslationManager.getSourceLanguage(message, sender);
 
             // Gather languages
-            List<String> targetLanguages = new ArrayList<String>(Config.translationSupportedLanguages);
-
-            for (ProxiedPlayer receiver : ProxyServer.getInstance().getPlayers()) {
-                if (!playerPreferencesManager.playerSpeaksLanguage(receiver, sourceLanguage)) {
-                    String playerLanguage = playerPreferencesManager.getMainPlayerLanguage(receiver).toLowerCase();
-                    if (!targetLanguages.contains(playerLanguage)) {
-                        targetLanguages.add(playerLanguage);
-                    }
-                }
-            }
+            List<String> targetLanguages = TranslationManager.getTargetLanguages(sourceLanguage);
 
             // Translate
             Map<String, String> translatedLanguages = TranslationManager.translateBulk(message, sourceLanguage, targetLanguages);
 
+            String server = sender.getServer().getInfo().getName();
+
             // Send to players
-            for (ProxiedPlayer receiver : ProxyServer.getInstance().getPlayers()) {
-                String targetLanguage = sourceLanguage;
-                if (!playerPreferencesManager.playerSpeaksLanguage(receiver, sourceLanguage)) {
-                    targetLanguage = playerPreferencesManager.getMainPlayerLanguage(receiver).toLowerCase();
-                }
-                String translatedMessage = translatedLanguages.get(targetLanguage);
-                if (translatedMessage == null) {
-                    translatedMessage = message;
-                }
-                MinecraftDiscordBridge.getInstance().formatAndSendMessageToPlayer(sender, receiver, translatedMessage, sourceLanguage);
-            }
+            MinecraftDiscordBridge.getInstance().sendMessageToPlayers(server, sender.getDisplayName(), sourceLanguage, message, translatedLanguages);
 
             // Send to Discord
-            // TODO
+            MinecraftDiscordBridge.getInstance().sendMessageToDiscord(server, sender, sourceLanguage, message, translatedLanguages);
         }
     }
 
@@ -80,21 +60,43 @@ public class MinecraftDiscordBridge {
         return instance;
     }
 
-    public void formatAndSendMessageToPlayer(ProxiedPlayer sender, ProxiedPlayer receiver, String translatedMessage, String sourceLanguage) {
+    public void sendMessageToDiscord(String server, ProxiedPlayer sender, String sourceLanguage, String originalMessage, Map<String, String> translatedLanguages) {
+        List<TranslatedChannel> channels = ChannelManager.getMinecraftBridgeChannels();
+
+        for (TranslatedChannel channel : channels) {
+            String translatedMessage = translatedLanguages.get(channel.languageId);
+            if (translatedMessage == null) {
+                translatedMessage = originalMessage;
+            }
+
+            String suffix = " [" + TranslationManager.getLanguagePrefix(sourceLanguage, channel.languageId) + "]";
+
+            DiscordClient.postAsPlayer(channel.channelId, sender, translatedMessage, suffix);
+        }
+    }
+
+    public void sendMessageToPlayers(String server, String sender, String sourceLanguage, String originalMessage, Map<String, String> translatedLanguages) {
+        for (ProxiedPlayer receiver : ProxyServer.getInstance().getPlayers()) {
+            String targetLanguage = sourceLanguage;
+            if (!playerPreferencesManager.playerSpeaksLanguage(receiver, sourceLanguage)) {
+                targetLanguage = playerPreferencesManager.getMainPlayerLanguage(receiver).toLowerCase();
+            }
+            String translatedMessage = translatedLanguages.get(targetLanguage);
+            if (translatedMessage == null) {
+                translatedMessage = originalMessage;
+            }
+            formatAndSendMessageToPlayer(server, sender, receiver, translatedMessage, sourceLanguage);
+        }
+    }
+
+    public void formatAndSendMessageToPlayer(String server, String sender, ProxiedPlayer receiver, String translatedMessage, String sourceLanguage) {
         String languagePrefix = sourceLanguage;
-        String serverPrefix = sender.getServer().getInfo().getName() + ChatColor.RESET;
-        String senderPrefix = sender.getDisplayName() + ChatColor.RESET;
+        String serverPrefix = server + ChatColor.RESET;
+        String senderPrefix = sender + ChatColor.RESET;
 
         if (!playerPreferencesManager.playerSpeaksLanguage(receiver, sourceLanguage)) {
             String targetLanguage = playerPreferencesManager.getMainPlayerLanguage(receiver);
-            if (!targetLanguage.equalsIgnoreCase(sourceLanguage)) {
-                try {
-                    languagePrefix = sourceLanguage + "->" + targetLanguage;
-                } catch (Exception e) {
-                    languagePrefix = sourceLanguage + " (translation error)";
-                    e.printStackTrace();
-                }
-            }
+            languagePrefix = TranslationManager.getLanguagePrefix(sourceLanguage, targetLanguage);
         }
 
         BaseComponent[] formattedMessage = new ComponentBuilder(

@@ -3,14 +3,17 @@ package org.redcraft.redcraftchat.listeners.discord;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.redcraft.redcraftchat.RedCraftChat;
+import org.redcraft.redcraftchat.bridge.MinecraftDiscordBridge;
 import org.redcraft.redcraftchat.caching.CacheManager;
 import org.redcraft.redcraftchat.discord.ChannelManager;
 import org.redcraft.redcraftchat.models.caching.CacheCategory;
 import org.redcraft.redcraftchat.models.discord.TranslatedChannel;
 import org.redcraft.redcraftchat.models.discord.WebhookMessageMapping;
 import org.redcraft.redcraftchat.models.discord.WebhookMessageMappingList;
+import org.redcraft.redcraftchat.translate.TranslationManager;
 
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Member;
@@ -41,16 +44,18 @@ public class DiscordMessageReceivedListener extends ListenerAdapter {
 
         HashMap<TranslatedChannel, List<TranslatedChannel>> translatedChannelsMappings = ChannelManager.getTranslatedChannelsMapping();
 
+        Message message = event.getMessage();
+        Member member = event.getMember();
+
         TranslatedChannel sourceChannel = this.getTranslatedChannelFromId(translatedChannelsMappings, event.getChannel().getId());
 
         if (ChannelManager.getMinecraftBridgeChannels().contains(sourceChannel)) {
-            // TODO send to Minecraft
+            List<String> targetLanguages = TranslationManager.getTargetLanguages(sourceChannel.languageId);
+            Map<String, String> translatedLanguages = TranslationManager.translateBulk(message.getContentDisplay(), sourceChannel.languageId, targetLanguages);
+            MinecraftDiscordBridge.getInstance().sendMessageToPlayers("Discord", member.getEffectiveName(), sourceChannel.languageId, message.getContentDisplay(), translatedLanguages);
         }
 
         if (sourceChannel != null && translatedChannelsMappings.containsKey(sourceChannel)) {
-            Message message = event.getMessage();
-            Member member = event.getMember();
-
             try {
                 List<TranslatedChannel> targetChannels = translatedChannelsMappings.get(sourceChannel);
 
