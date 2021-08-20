@@ -10,7 +10,6 @@ import org.redcraft.redcraftchat.models.caching.CacheCategory;
 import org.redcraft.redcraftchat.models.database.PlayerLanguage;
 import org.redcraft.redcraftchat.models.database.PlayerPreferences;
 
-import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 public class PlayerPreferencesManager {
