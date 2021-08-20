@@ -1,4 +1,8 @@
 package org.redcraft.redcraftchat.translate;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.models.deepl.DeeplResponse;
 import org.redcraft.redcraftchat.models.translate.TokenizedMessage;
@@ -21,5 +25,25 @@ public class TranslationManager {
             default:
                 throw new Exception(String.format("Unknown translation service \"%s\"", Config.translationService));
         }
+    }
+
+    // TODO parallelize
+    public static Map<String, String> translateBulk(String text, String sourceLanguage, List<String> targetLanguages) {
+        Map<String, String> translatedLanguages = new HashMap<String, String>();
+
+        for (String targetLanguage : targetLanguages) {
+            if (targetLanguage.equalsIgnoreCase(sourceLanguage)) {
+                translatedLanguages.put(targetLanguage, text);
+                continue;
+            }
+            try {
+                translatedLanguages.put(targetLanguage, TranslationManager.translate(text, sourceLanguage, targetLanguage));
+            } catch (Exception e) {
+                translatedLanguages.put(targetLanguage, text);
+                e.printStackTrace();
+            }
+        }
+
+        return translatedLanguages;
     }
 }

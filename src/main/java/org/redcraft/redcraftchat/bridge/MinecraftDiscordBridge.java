@@ -1,7 +1,6 @@
 package org.redcraft.redcraftchat.bridge;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -49,21 +48,7 @@ public class MinecraftDiscordBridge {
             }
 
             // Translate
-            // TODO parallelize
-            Map<String, String> translatedLanguages = new HashMap<String, String>();
-
-            for (String targetLanguage: targetLanguages) {
-                if (targetLanguage.equalsIgnoreCase(sourceLanguage)) {
-                    translatedLanguages.put(targetLanguage, message);
-                    continue;
-                }
-                try {
-                    translatedLanguages.put(targetLanguage, TranslationManager.translate(message, sourceLanguage, targetLanguage));
-                } catch (Exception e) {
-                    translatedLanguages.put(targetLanguage, message);
-                    e.printStackTrace();
-                }
-            }
+            Map<String, String> translatedLanguages = TranslationManager.translateBulk(message, sourceLanguage, targetLanguages);
 
             // Send to players
             for (ProxiedPlayer receiver : ProxyServer.getInstance().getPlayers()) {
