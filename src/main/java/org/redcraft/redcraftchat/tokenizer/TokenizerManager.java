@@ -60,6 +60,14 @@ public class TokenizerManager {
         Pattern urlPattern = UrlDetection.getUrlPattern();
         patterns.add(urlPattern);
 
+        // Tokenize slash commands
+        Pattern slashCommandPattern = Pattern.compile("/([/a-z]+)\\b");
+        patterns.add(slashCommandPattern);
+
+        // Tokenize line returns
+        Pattern lineReturnPattern = Pattern.compile("\n", Pattern.MULTILINE);
+        patterns.add(lineReturnPattern);
+
         // Tokenize Minecraft usernames
         if (tokenizePlayers) {
             for (ProxiedPlayer player : ProxyServer.getInstance().getPlayers()) {

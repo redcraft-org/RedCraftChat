@@ -1,9 +1,11 @@
 package org.redcraft.redcraftchat.database;
 
+import java.util.List;
 import java.util.UUID;
 
 import com.dieselpoint.norm.Database;
 
+import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.caching.CacheManager;
 import org.redcraft.redcraftchat.models.caching.CacheCategory;
@@ -88,8 +90,7 @@ public class PlayerPreferencesManager {
     }
 
     public static boolean playerSpeaksLanguage(ProxiedPlayer player, String languageIsoCode) {
-        PlayerPreferences playerPreferences = getPlayerPreferences(player);
-        for (PlayerLanguage language : playerPreferences.languages()) {
+        for (PlayerLanguage language : getPlayerLanguages(player)) {
             if (language.languageIso.equalsIgnoreCase(languageIsoCode)) {
                 return true;
             }
@@ -99,14 +100,17 @@ public class PlayerPreferencesManager {
     }
 
     public static String getMainPlayerLanguage(ProxiedPlayer player) {
-        PlayerPreferences playerPreferences = getPlayerPreferences(player);
-        for (PlayerLanguage language : playerPreferences.languages()) {
+        for (PlayerLanguage language : getPlayerLanguages(player)) {
             if (language.isMainLanguage) {
                 return language.languageIso;
             }
         }
 
         return extractPlayerLanguage(player);
+    }
+
+    public static List<PlayerLanguage> getPlayerLanguages(ProxiedPlayer player) {
+        return DatabaseManager.getDatabase().where("player_uuid=?", player.getUniqueId().toString()).results(PlayerLanguage.class);
     }
 
     public static String extractPlayerLanguage(ProxiedPlayer player) {
@@ -117,6 +121,6 @@ public class PlayerPreferencesManager {
         }
 
         // Fallback
-        return "EN";
+        return Config.translationSupportedLanguages.get(0);
     }
 }

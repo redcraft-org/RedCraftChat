@@ -4,10 +4,9 @@ General:
   ☐ Integrity checker scheduler
     ✔ Channel sync
     ☐ Mute sync
-    ☐ CommandSpy perms check
+    ✔ CommandSpy perms check
     ☐ Check that people have the right username on Discord
   ✔ Language detection?
-  ☐ Spell checker?
   ✔ URL shortner support
 
 Discord:
@@ -38,4 +37,5 @@ In-game:
   ☐ Private message
   ☐ Mail command
   ☐ /me command
+  ✔ Fix bed/advancements message bug
   ✔ MC to Discord

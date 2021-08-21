@@ -37,6 +37,14 @@ public class DeeplClient {
         DeeplSupportedLanguage sourceLang = DeeplClient.getLanguage(sourceLanguageId);
         DeeplSupportedLanguage targetLang = DeeplClient.getLanguage(targetLanguageId);
 
+        if (sourceLang == null) {
+            throw new RuntimeException("The source language " + sourceLanguageId + " is not supported by Deepl");
+        }
+
+        if (targetLanguageId == null) {
+            throw new RuntimeException("The source language " + targetLanguageId + " is not supported by Deepl");
+        }
+
         URIBuilder ub = new URIBuilder(Config.deeplEndpoint);
         ub.addParameter("auth_key", Config.deeplToken);
         ub.addParameter("text", text);
@@ -90,6 +98,7 @@ public class DeeplClient {
         if (!supportedLanguagesInitialized) {
             supportedLanguagesInitialized = true;
 
+            // TODO put this in database
             supportedLanguages.put("EN", new DeeplSupportedLanguage("EN", false));
             supportedLanguages.put("FR", new DeeplSupportedLanguage("FR", true));
             supportedLanguages.put("DE", new DeeplSupportedLanguage("DE", true));
