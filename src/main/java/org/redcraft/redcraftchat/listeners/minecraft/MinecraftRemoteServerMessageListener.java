@@ -69,8 +69,6 @@ public class MinecraftRemoteServerMessageListener implements Listener {
         }
     }
 
-    private static PlayerPreferencesManager playerPreferencesManager = new PlayerPreferencesManager();
-
     @EventHandler(priority = EventPriority.LOWEST)
     public void onServerConnected(ServerConnectedEvent event) {
         Server serverConnection = event.getServer();
@@ -87,7 +85,7 @@ public class MinecraftRemoteServerMessageListener implements Listener {
             String translatedMessage = message.toLegacyText();
             try {
                 String sourceLanguage = DetectionManager.getLanguage(translatedMessage);
-                String targetLanguage = playerPreferencesManager.getMainPlayerLanguage(player);
+                String targetLanguage = PlayerPreferencesManager.getMainPlayerLanguage(player);
                 if (sourceLanguage != null && !sourceLanguage.equalsIgnoreCase(targetLanguage)) {
                     translatedMessage = TranslationManager.translate(translatedMessage, sourceLanguage, targetLanguage);
                 }

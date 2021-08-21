@@ -17,6 +17,9 @@ import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 @Table(name = "rcc_player_preferences")
 public class PlayerPreferences extends DatabaseModel {
+    @Transient
+    public String sqlCreationQuery = "create table `rcc_player_preferences` (`id` bigint(20) NOT NULL AUTO_INCREMENT,`player_uuid` varchar(255) DEFAULT NULL,`discord_id` varchar(255) DEFAULT NULL,`last_known_name` varchar(255) DEFAULT NULL,`previous_known_name` varchar(255) DEFAULT NULL,`command_spy_enabled` tinyint(1) NOT NULL DEFAULT 0, PRIMARY KEY (`id`), UNIQUE KEY `player_uuid` (`player_uuid`), UNIQUE KEY `discord_id` (`discord_id`));";
+
     @Id
     @GeneratedValue
     public long id;
@@ -33,8 +36,8 @@ public class PlayerPreferences extends DatabaseModel {
     @Column(name = "previous_known_name")
     public String previousKnownName;
 
-    @Column(name = "command_spy_enabled")
-    public Boolean commandSpyEnabled;
+    @Column(name = "command_spy_enabled", nullable = false)
+    public Boolean commandSpyEnabled = false;
 
     public PlayerPreferences() {
     }

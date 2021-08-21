@@ -1,5 +1,6 @@
 package org.redcraft.redcraftchat.database;
 
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -37,11 +38,22 @@ public class DatabaseManager {
         Iterator<Class<?>> it = classes.iterator();
         while (it.hasNext()) {
             Class<?> classToCreate = it.next();
+            String sqlCreationQuery = null;
             try {
-                database.createTable(classToCreate);
+                // Try to access custom table SQL creation if exists
+                Constructor<?> ctor = classToCreate.getConstructor();
+                Object object = ctor.newInstance(new Object[] {});
+                sqlCreationQuery = (String) classToCreate.getDeclaredField("sqlCreationQuery").get(object);
             } catch (Exception ex) {
-                // TODO handle exeptions
-                // PS: it's normal some are thrown if the table already exists
+                // Auto generate the query if missing
+                sqlCreationQuery = database.getSqlMaker().getCreateTableSql(classToCreate);
+            }
+            try {
+                // Patch to avoid exceptions
+                sqlCreationQuery = sqlCreationQuery.replace("create table", "create table if not exists");
+                database.sql(sqlCreationQuery).execute();
+            } catch (Exception ex) {
+                ex.printStackTrace();
             }
         }
     }

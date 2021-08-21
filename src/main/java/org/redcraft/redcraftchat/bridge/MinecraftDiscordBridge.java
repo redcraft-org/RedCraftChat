@@ -3,6 +3,8 @@ package org.redcraft.redcraftchat.bridge;
 import java.util.List;
 import java.util.Map;
 
+import com.vdurmont.emoji.EmojiParser;
+
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.database.PlayerPreferencesManager;
 import org.redcraft.redcraftchat.discord.ChannelManager;
@@ -48,8 +50,6 @@ public class MinecraftDiscordBridge {
         }
     }
 
-    private PlayerPreferencesManager playerPreferencesManager = new PlayerPreferencesManager();
-
     private static MinecraftDiscordBridge instance = null;
 
     public static MinecraftDiscordBridge getInstance() {
@@ -78,8 +78,8 @@ public class MinecraftDiscordBridge {
     public void sendMessageToPlayers(String server, String sender, String sourceLanguage, String originalMessage, Map<String, String> translatedLanguages) {
         for (ProxiedPlayer receiver : ProxyServer.getInstance().getPlayers()) {
             String targetLanguage = sourceLanguage;
-            if (!playerPreferencesManager.playerSpeaksLanguage(receiver, sourceLanguage)) {
-                targetLanguage = playerPreferencesManager.getMainPlayerLanguage(receiver).toLowerCase();
+            if (!PlayerPreferencesManager.playerSpeaksLanguage(receiver, sourceLanguage)) {
+                targetLanguage = PlayerPreferencesManager.getMainPlayerLanguage(receiver).toLowerCase();
             }
             String translatedMessage = translatedLanguages.get(targetLanguage);
             if (translatedMessage == null) {
@@ -94,13 +94,15 @@ public class MinecraftDiscordBridge {
         String serverPrefix = server + ChatColor.RESET;
         String senderPrefix = sender + ChatColor.RESET;
 
-        if (!playerPreferencesManager.playerSpeaksLanguage(receiver, sourceLanguage)) {
-            String targetLanguage = playerPreferencesManager.getMainPlayerLanguage(receiver);
+        if (!PlayerPreferencesManager.playerSpeaksLanguage(receiver, sourceLanguage)) {
+            String targetLanguage = PlayerPreferencesManager.getMainPlayerLanguage(receiver);
             languagePrefix = TranslationManager.getLanguagePrefix(sourceLanguage, targetLanguage);
         }
 
+        String parsedTranslatedMessage = EmojiParser.parseToAliases(translatedMessage);
+
         BaseComponent[] formattedMessage = new ComponentBuilder(
-                "[" + languagePrefix.toUpperCase() + "][" + serverPrefix + "][" + senderPrefix + "] " + translatedMessage)
+                "[" + languagePrefix.toUpperCase() + "][" + serverPrefix + "][" + senderPrefix + "] " + parsedTranslatedMessage)
                         .create();
 
         receiver.sendMessage(formattedMessage);

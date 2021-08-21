@@ -136,7 +136,7 @@ public class DiscordClient {
         builder.setUsername("[" + player.getServer().getInfo().getName() + "] " + username + suffix);
         builder.setAvatarUrl("https://testing.redcraft.org/api/v1/skin/head/" + player.getUniqueId().toString() + "?size=128");
 
-        builder.setContent(message);
+        builder.setContent(ChatColor.stripColor(message));
 
         AllowedMentions mentions = new AllowedMentions();
         mentions.withParseEveryone(false);

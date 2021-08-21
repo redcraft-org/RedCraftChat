@@ -13,6 +13,7 @@ import com.google.gson.GsonBuilder;
 
 import org.apache.http.client.utils.URIBuilder;
 import org.redcraft.redcraftchat.Config;
+import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.caching.CacheManager;
 import org.redcraft.redcraftchat.models.caching.CacheCategory;
 import org.redcraft.redcraftchat.models.deepl.DeeplResponse;
@@ -52,6 +53,9 @@ public class DeeplClient {
         HttpURLConnection httpURLConnection = (HttpURLConnection) endpointUrl.openConnection();
         httpURLConnection.setRequestMethod("GET");
         httpURLConnection.setDoOutput(true);
+
+        // TODO remove debug
+        RedCraftChat.getInstance().getLogger().info("Used " + text.length() + " Deepl chars to translate to " + targetLanguageId);
 
         BufferedReader in = new BufferedReader(new InputStreamReader(httpURLConnection.getInputStream()));
         String inputLine;

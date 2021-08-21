@@ -16,8 +16,6 @@ import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 public class TranslationManager {
-    private static PlayerPreferencesManager playerPreferencesManager = new PlayerPreferencesManager();
-
     public static String translate(String text, String sourceLanguage, String targetLanguage) throws Exception {
         if (!Config.translationEnabled) {
             throw new Exception("TranslationManager was called but translation is disabled in the configuration");
@@ -59,7 +57,7 @@ public class TranslationManager {
         String sourceLanguage = DetectionManager.getLanguage(message);
 
         if (sourceLanguage == null) {
-            sourceLanguage = playerPreferencesManager.getMainPlayerLanguage(sender);
+            sourceLanguage = PlayerPreferencesManager.getMainPlayerLanguage(sender);
         }
 
         return sourceLanguage;
@@ -69,8 +67,8 @@ public class TranslationManager {
         List<String> targetLanguages = new ArrayList<String>(Config.translationSupportedLanguages);
 
         for (ProxiedPlayer receiver : ProxyServer.getInstance().getPlayers()) {
-            if (!playerPreferencesManager.playerSpeaksLanguage(receiver, sourceLanguage)) {
-                String playerLanguage = playerPreferencesManager.getMainPlayerLanguage(receiver).toLowerCase();
+            if (!PlayerPreferencesManager.playerSpeaksLanguage(receiver, sourceLanguage)) {
+                String playerLanguage = PlayerPreferencesManager.getMainPlayerLanguage(receiver).toLowerCase();
                 if (!targetLanguages.contains(playerLanguage)) {
                     targetLanguages.add(playerLanguage);
                 }

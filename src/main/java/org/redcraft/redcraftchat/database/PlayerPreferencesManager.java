@@ -14,7 +14,7 @@ import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 public class PlayerPreferencesManager {
 
-    public PlayerPreferences getPlayerPreferences(ProxiedPlayer player) {
+    public static PlayerPreferences getPlayerPreferences(ProxiedPlayer player) {
         UUID playerUniqueId = player.getUniqueId();
         Database db = DatabaseManager.getDatabase();
 
@@ -31,7 +31,7 @@ public class PlayerPreferencesManager {
         if (playerPreferences == null) {
             playerPreferences = createPlayerPreferences(player);
             updated = true;
-        } else if (playerPreferences.lastKnownName != player.getName()) {
+        } else if (!playerPreferences.lastKnownName.equals(player.getName())) {
             // Detect username change
             playerPreferences.previousKnownName = playerPreferences.lastKnownName;
             playerPreferences.lastKnownName = player.getName();
@@ -39,7 +39,7 @@ public class PlayerPreferencesManager {
         }
 
         if (updated) {
-            this.updatePlayerPreferences(playerPreferences);
+            updatePlayerPreferences(playerPreferences);
         }
 
         CacheManager.put(CacheCategory.PLAYER_PREFERENCES, playerUniqueId.toString(), playerPreferences);
@@ -47,7 +47,7 @@ public class PlayerPreferencesManager {
         return playerPreferences;
     }
 
-    public PlayerPreferences createPlayerPreferences(ProxiedPlayer player) {
+    public static PlayerPreferences createPlayerPreferences(ProxiedPlayer player) {
         PlayerPreferences playerPreferences = new PlayerPreferences(player.getUniqueId());
 
         String detectedPlayerLanguage = extractPlayerLanguage(player);
@@ -62,7 +62,7 @@ public class PlayerPreferencesManager {
         return playerPreferences;
     }
 
-    public void updatePlayerPreferences(PlayerPreferences preferences) {
+    public static void updatePlayerPreferences(PlayerPreferences preferences) {
         String playerUniqueId = preferences.playerUniqueId;
 
         // upsert is not supported with MySQL
@@ -77,8 +77,8 @@ public class PlayerPreferencesManager {
         CacheManager.put(CacheCategory.PLAYER_PREFERENCES, playerUniqueId, preferences);
     }
 
-    public boolean playerSpeaksLanguage(ProxiedPlayer player, String languageIsoCode) {
-        PlayerPreferences playerPreferences = this.getPlayerPreferences(player);
+    public static boolean playerSpeaksLanguage(ProxiedPlayer player, String languageIsoCode) {
+        PlayerPreferences playerPreferences = getPlayerPreferences(player);
         for (PlayerLanguage language : playerPreferences.languages()) {
             if (language.languageIso.equalsIgnoreCase(languageIsoCode)) {
                 return true;
@@ -88,8 +88,8 @@ public class PlayerPreferencesManager {
         return false;
     }
 
-    public String getMainPlayerLanguage(ProxiedPlayer player) {
-        PlayerPreferences playerPreferences = this.getPlayerPreferences(player);
+    public static String getMainPlayerLanguage(ProxiedPlayer player) {
+        PlayerPreferences playerPreferences = getPlayerPreferences(player);
         for (PlayerLanguage language : playerPreferences.languages()) {
             if (language.isMainLanguage) {
                 return language.languageIso;
@@ -100,11 +100,11 @@ public class PlayerPreferencesManager {
     }
 
     public static String extractPlayerLanguage(ProxiedPlayer player) {
-        if (player != null) {
+        try {
             return player.getLocale().getLanguage();
+        } catch (NullPointerException e) {
+            // TODO GeoIP test (User has a very old version of Minecraft or Minechat)
         }
-
-        // TODO GeoIP test
 
         // Fallback
         return "EN";

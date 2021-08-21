@@ -4,8 +4,13 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.redcraft.redcraftchat.bridge.MinecraftDiscordBridge;
+import org.redcraft.redcraftchat.database.PlayerPreferencesManager;
+import org.redcraft.redcraftchat.models.database.PlayerPreferences;
 
 import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.ChatEvent;
 import net.md_5.bungee.api.plugin.Listener;
@@ -23,12 +28,24 @@ public class MinecraftChatListener implements Listener {
 
     @EventHandler(priority = EventPriority.NORMAL)
     public void onChatEvent(ChatEvent event) {
-        // TODO check commands and chat
-        if (event.isProxyCommand() || event.isCommand() || !(event.getSender() instanceof ProxiedPlayer)) {
+        if (!(event.getSender() instanceof ProxiedPlayer)) {
             return;
         }
 
         ProxiedPlayer player = (ProxiedPlayer) event.getSender();
+
+        if (event.isProxyCommand() || event.isCommand()) {
+            for (ProxiedPlayer potentialStaffMember : ProxyServer.getInstance().getPlayers()) {
+                if (!player.equals(potentialStaffMember) && potentialStaffMember.hasPermission("redcraftchat.moderation.commandspy")) {
+                    PlayerPreferences playerPreferences = PlayerPreferencesManager.getPlayerPreferences(potentialStaffMember);
+                    if (playerPreferences.commandSpyEnabled) {
+                        BaseComponent[] formattedMessage = new ComponentBuilder("[CSPY][" + player.getDisplayName() + "] " + event.getMessage()).color(ChatColor.AQUA).create();
+                        potentialStaffMember.sendMessage(formattedMessage);
+                    }
+                }
+            }
+            return;
+        }
 
         String message = ChatColor.translateAlternateColorCodes('&', event.getMessage());
 

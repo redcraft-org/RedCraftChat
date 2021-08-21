@@ -8,6 +8,8 @@ permissions:
      description: Gives access to all RedCraftChat permissions
      children:
        redcraftchat.formatting.*: true
+       redcraftchat.moderation.*: true
+
    redcraftchat.formatting.*:
      description: Allows all kind of formatting
      children:
@@ -20,3 +22,6 @@ permissions:
      description: Allows styling in chat
    redcraftchat.formatting.magic:
      description: Allows magic (&k) in chat
+
+   redcraftchat.moderation.commandspy:
+     description: Allows to use /cspy
