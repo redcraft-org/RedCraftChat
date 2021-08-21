@@ -77,6 +77,16 @@ public class PlayerPreferencesManager {
         CacheManager.put(CacheCategory.PLAYER_PREFERENCES, playerUniqueId, preferences);
     }
 
+    public static boolean toggleCommandSpy(ProxiedPlayer player) {
+        PlayerPreferences preferences = getPlayerPreferences(player);
+
+        preferences.commandSpyEnabled = !preferences.commandSpyEnabled;
+
+        updatePlayerPreferences(preferences);
+
+        return preferences.commandSpyEnabled;
+    }
+
     public static boolean playerSpeaksLanguage(ProxiedPlayer player, String languageIsoCode) {
         PlayerPreferences playerPreferences = getPlayerPreferences(player);
         for (PlayerLanguage language : playerPreferences.languages()) {

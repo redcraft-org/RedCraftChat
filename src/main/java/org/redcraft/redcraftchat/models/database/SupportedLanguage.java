@@ -10,9 +10,9 @@ public class SupportedLanguage extends DatabaseModel {
     @Column(name = "language_iso", unique = true)
     public String languageIso;
 
-    @Column(name = "english_name")
+    @Column(name = "english_name", unique = true)
     public String englishName;
 
-    @Column(name = "original_name")
+    @Column(name = "original_name", unique = true)
     public String originalName;
 }

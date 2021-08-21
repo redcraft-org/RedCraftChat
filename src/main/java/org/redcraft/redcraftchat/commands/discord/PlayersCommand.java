@@ -1,4 +1,4 @@
-package org.redcraft.redcraftchat.listeners.discord;
+package org.redcraft.redcraftchat.commands.discord;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,7 +13,7 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
-public class DiscordPlayersCommandListener extends ListenerAdapter {
+public class PlayersCommand extends ListenerAdapter {
 
     @Override
     public void onSlashCommand(SlashCommandEvent event) {

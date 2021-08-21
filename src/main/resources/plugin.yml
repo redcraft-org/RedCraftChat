@@ -23,5 +23,12 @@ permissions:
    redcraftchat.formatting.magic:
      description: Allows magic (&k) in chat
 
+   redcraftchat.moderation.*:
+     description: Allows access to all moderation tools
+     children:
+       redcraftchat.moderation.commandspy: true
+       redcraftchat.moderation.commandspy.others: true
    redcraftchat.moderation.commandspy:
      description: Allows to use /cspy
+   redcraftchat.moderation.commandspy.others:
+     description: Allows to toggle command spy for others
