@@ -21,7 +21,7 @@ Discord:
   ☐ Message reactions
   ☐ Message replies threads
   ✔ Translated emojis bug
-  ☐ Multi unicode char Emoji bugs
+  ✔ Multi unicode char Emoji bugs (Fitzpatrick)
   ☐ Account sync
     ☐ Create temporary hidden channel
     ☐ Add nickname change detection
