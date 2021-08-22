@@ -9,6 +9,9 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.vdurmont.emoji.EmojiParser;
+import com.vdurmont.emoji.EmojiParser.FitzpatrickAction;
+
 import org.apache.commons.codec.digest.DigestUtils;
 import org.redcraft.redcraftchat.models.translate.TokenizedMessage;
 
@@ -43,6 +46,11 @@ public class TokenizerManager {
         HashMap<String, String> tokenizedElements = new HashMap<String, String>();
 
         ArrayList<Pattern> patterns = new ArrayList<Pattern>();
+
+        // Tokenize emojis
+        tokenizedMessage = EmojiParser.parseToAliases(tokenizedMessage, FitzpatrickAction.PARSE);
+        Pattern emojiPattern = Pattern.compile(":((\\w|)*):");
+        patterns.add(emojiPattern);
 
         // Tokenize code blocks
         Pattern codeBlockPattern = Pattern.compile("```(.*)```", Pattern.MULTILINE);
@@ -113,6 +121,8 @@ public class TokenizerManager {
             message = message.replaceAll(tokenizedElementsEntry.getKey(), tokenizedElementsEntry.getValue());
             tokenizedElementsIterator.remove(); // avoids a ConcurrentModificationException
         }
+
+        message = EmojiParser.parseToUnicode(message);
 
         return message;
     }
