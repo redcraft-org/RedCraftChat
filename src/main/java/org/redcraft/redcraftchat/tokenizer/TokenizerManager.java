@@ -47,11 +47,6 @@ public class TokenizerManager {
 
         ArrayList<Pattern> patterns = new ArrayList<Pattern>();
 
-        // Tokenize emojis
-        tokenizedMessage = EmojiParser.parseToAliases(tokenizedMessage, FitzpatrickAction.PARSE);
-        Pattern emojiPattern = Pattern.compile(":((\\w|)*):");
-        patterns.add(emojiPattern);
-
         // Tokenize code blocks
         Pattern codeBlockPattern = Pattern.compile("```(.*)```", Pattern.MULTILINE);
         patterns.add(codeBlockPattern);
@@ -71,6 +66,11 @@ public class TokenizerManager {
         // Tokenize slash commands
         Pattern slashCommandPattern = Pattern.compile("/([/a-z]+)\\b");
         patterns.add(slashCommandPattern);
+
+        // Tokenize emojis
+        tokenizedMessage = EmojiParser.parseToAliases(tokenizedMessage, FitzpatrickAction.PARSE);
+        Pattern emojiPattern = Pattern.compile(":((\\w|)*):");
+        patterns.add(emojiPattern);
 
         // Tokenize line returns
         Pattern lineReturnPattern = Pattern.compile("\n", Pattern.MULTILINE);
@@ -93,7 +93,7 @@ public class TokenizerManager {
                 String token = DigestUtils.sha1Hex(match).substring(0, 7);
 
                 tokenizedElements.put(token, match);
-                tokenizedMessage = matcher.replaceAll(token);
+                tokenizedMessage = tokenizedMessage.replace(match, token);
             }
         }
 

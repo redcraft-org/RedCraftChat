@@ -1,41 +1,43 @@
 
 General:
-  ✔ Database models and migrations
   ☐ Integrity checker scheduler
-    ✔ Channel sync
     ☐ Mute sync
-    ✔ CommandSpy perms check
     ☐ Check that people have the right username on Discord
-  ✔ Language detection?
-  ✔ URL shortner support
 
 Discord:
   ☐ Language selector
-  ✔ Live translation Discord to Discord
-  ✔ Player list command
   ☐ LuckPerms support for ranks
-  ✔ Mentions bugs
-  ✔ Message edit scaffholding
-    ✔ Message edit https://support.discord.com/hc/en-us/community/posts/360034557771/comments/360013401954
-  ✔ Deleted messages
   ☐ Message reactions
   ☐ Message replies threads
-  ✔ Translated emojis bug
-  ✔ Multi unicode char Emoji bugs (Fitzpatrick)
   ☐ Account sync
     ☐ Create temporary hidden channel
     ☐ Add nickname change detection
   ☐ Forget sync command
-  ✔ Discord to MC
 
 In-game:
   ☐ Language selector
-  ✔ Live translation from upstream servers
   ☐ Litebans support for muted players
-  ✔ Commandspy
   ☐ Join message
   ☐ Private message
   ☐ Mail command
   ☐ /me command
-  ✔ Fix bed/advancements message bug
-  ✔ MC to Discord
+
+Archive:
+  ✔ Database models and migrations @project(General)
+  ✔ Channel sync @project(General)
+  ✔ CommandSpy perms check @project(General)
+  ✔ Language detection? @project(General)
+  ✔ URL shortner support @project(General)
+  ✔ Live translation Discord to Discord @project(Discord)
+  ✔ Player list command @project(Discord)
+  ✔ Mentions bugs @project(Discord)
+  ✔ Message edit scaffholding @project(Discord)
+  ✔ Message edit https://support.discord.com/hc/en-us/community/posts/360034557771/comments/360013401954 @project(Discord)
+  ✔ Deleted messages @project(Discord)
+  ✔ Translated emojis bug @project(Discord)
+  ✔ Multi unicode char Emoji bugs (Fitzpatrick) @project(Discord)
+  ✔ Discord to MC @project(Discord)
+  ✔ Live translation from upstream servers @project(In-game)
+  ✔ Commandspy @project(In-game)
+  ✔ Fix bed/advancements message bug @project(In-game)
+  ✔ MC to Discord @project(In-game)

@@ -4,7 +4,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class UrlDetection {
-    static public String replaceUrls(String text, UrlTransformer urlTransformer) {
+    public static String replaceUrls(String text, UrlTransformer urlTransformer) {
         Pattern pattern = getUrlPattern();
         Matcher matcher = pattern.matcher(text);
 

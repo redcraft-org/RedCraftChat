@@ -8,9 +8,11 @@ import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.database.PlayerPreferencesManager;
 import org.redcraft.redcraftchat.detection.DetectionManager;
 import org.redcraft.redcraftchat.models.deepl.DeeplResponse;
+import org.redcraft.redcraftchat.models.modernmt.ModernmtResponse;
 import org.redcraft.redcraftchat.models.translate.TokenizedMessage;
 import org.redcraft.redcraftchat.tokenizer.TokenizerManager;
 import org.redcraft.redcraftchat.translate.services.DeeplClient;
+import org.redcraft.redcraftchat.translate.services.ModernmtClient;
 
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
@@ -21,16 +23,22 @@ public class TranslationManager {
             throw new Exception("TranslationManager was called but translation is disabled in the configuration");
         }
 
+        TokenizedMessage tokenizedMessage = TokenizerManager.tokenizeElements(text, true);
+
         switch (Config.translationService) {
             case "deepl":
-                TokenizedMessage tokenizedMessage = TokenizerManager.tokenizeElements(text, true);
                 DeeplResponse dr = DeeplClient.translate(tokenizedMessage.tokenizedMessage, sourceLanguage.toUpperCase(), targetLanguage.toUpperCase());
-                String translated = DeeplClient.parseDeeplResponse(dr);
-                tokenizedMessage.tokenizedMessage = translated;
-                return TokenizerManager.untokenizeElements(tokenizedMessage);
+                tokenizedMessage.tokenizedMessage = DeeplClient.parseDeeplResponse(dr);
+                break;
+            case "modernmt":
+                ModernmtResponse mr = ModernmtClient.translate(tokenizedMessage.tokenizedMessage, sourceLanguage.toLowerCase(), targetLanguage.toLowerCase());
+                tokenizedMessage.tokenizedMessage = mr.data.translation;
+                break;
             default:
                 throw new Exception(String.format("Unknown translation service \"%s\"", Config.translationService));
         }
+
+        return TokenizerManager.untokenizeElements(tokenizedMessage);
     }
 
     // TODO parallelize
