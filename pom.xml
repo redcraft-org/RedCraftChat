@@ -23,6 +23,10 @@
 			<name>m2-dv8tion</name>
 			<url>https://m2.dv8tion.net/releases</url>
 		</repository>
+		<repository>
+			<id>jitpack.io</id>
+			<url>https://jitpack.io</url>
+		</repository>
 	</repositories>
 
 	<pluginRepositories>
@@ -84,6 +88,18 @@
 			<artifactId>bungeecord-api</artifactId>
 			<version>1.17-R0.1-SNAPSHOT</version>
 			<type>javadoc</type>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.gitlab.ruany</groupId>
+			<artifactId>LiteBansAPI</artifactId>
+			<version>0.3.4</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>net.luckperms</groupId>
+			<artifactId>api</artifactId>
+			<version>5.3</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
