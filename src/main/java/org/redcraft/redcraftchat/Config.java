@@ -25,7 +25,8 @@ public class Config {
 	public static String discordActivityValue = "RedCraft.org";
 
 	public static boolean translationEnabled = false;
-	public static String translationService = "deepl";
+	public static String chatTranslationService = "deepl";
+	public static String upstreamTranslationService = "modernmt";
 	public static List<String> translationSupportedLanguages = new ArrayList<String>();
 	public static String translationDiscordCategoryFormat = "[%lang%] %topic%";
 
@@ -58,7 +59,8 @@ public class Config {
 		discordActivityValue = config.getString("discord-activity-value");
 
 		translationEnabled = config.getBoolean("translation-enabled");
-		translationService = config.getString("translation-service");
+		chatTranslationService = config.getString("chat-translation-service");
+		upstreamTranslationService = config.getString("upstream-translation-service");
 		translationSupportedLanguages = config.getStringList("translation-supported-languages");
 		translationDiscordCategoryFormat = config.getString("translation-discord-category-format");
 

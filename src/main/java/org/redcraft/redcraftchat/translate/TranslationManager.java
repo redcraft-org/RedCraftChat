@@ -18,14 +18,21 @@ import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 public class TranslationManager {
-    public static String translate(String text, String sourceLanguage, String targetLanguage) throws Exception {
+
+    String translationService;
+
+    public TranslationManager(String translationService) {
+        this.translationService = translationService;
+    }
+
+    public String translate(String text, String sourceLanguage, String targetLanguage) throws Exception {
         if (!Config.translationEnabled) {
             throw new Exception("TranslationManager was called but translation is disabled in the configuration");
         }
 
         TokenizedMessage tokenizedMessage = TokenizerManager.tokenizeElements(text, true);
 
-        switch (Config.translationService) {
+        switch (this.translationService) {
             case "deepl":
                 DeeplResponse dr = DeeplClient.translate(tokenizedMessage.tokenizedMessage, sourceLanguage.toUpperCase(), targetLanguage.toUpperCase());
                 tokenizedMessage.tokenizedMessage = DeeplClient.parseDeeplResponse(dr);
@@ -35,14 +42,14 @@ public class TranslationManager {
                 tokenizedMessage.tokenizedMessage = mr.data.translation;
                 break;
             default:
-                throw new Exception(String.format("Unknown translation service \"%s\"", Config.translationService));
+                throw new Exception(String.format("Unknown translation service \"%s\"", this.translationService));
         }
 
         return TokenizerManager.untokenizeElements(tokenizedMessage);
     }
 
     // TODO parallelize
-    public static Map<String, String> translateBulk(String text, String sourceLanguage, List<String> targetLanguages) {
+    public Map<String, String> translateBulk(String text, String sourceLanguage, List<String> targetLanguages) {
         Map<String, String> translatedLanguages = new HashMap<String, String>();
 
         for (String targetLanguage : targetLanguages) {
@@ -51,7 +58,7 @@ public class TranslationManager {
                 continue;
             }
             try {
-                translatedLanguages.put(targetLanguage, TranslationManager.translate(text, sourceLanguage, targetLanguage));
+                translatedLanguages.put(targetLanguage, this.translate(text, sourceLanguage, targetLanguage));
             } catch (Exception e) {
                 translatedLanguages.put(targetLanguage, text);
                 e.printStackTrace();

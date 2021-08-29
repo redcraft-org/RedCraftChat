@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Stack;
 
+import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.database.PlayerPreferencesManager;
 import org.redcraft.redcraftchat.detection.DetectionManager;
@@ -32,6 +33,8 @@ import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.packet.Chat;
 
 public class MinecraftRemoteServerMessageListener implements Listener {
+
+    static TranslationManager translationManager = new TranslationManager(Config.upstreamTranslationService);
 
     private static Stack<Long> pendingChatPackets = new Stack<Long>();
 
@@ -105,7 +108,7 @@ public class MinecraftRemoteServerMessageListener implements Listener {
                 String sourceLanguage = DetectionManager.getLanguage(translatedMessage);
                 String targetLanguage = PlayerPreferencesManager.getMainPlayerLanguage(player);
                 if (sourceLanguage != null && !sourceLanguage.equalsIgnoreCase(targetLanguage)) {
-                    translatedMessage = TranslationManager.translate(translatedMessage, sourceLanguage, targetLanguage);
+                    translatedMessage = translationManager.translate(translatedMessage, sourceLanguage, targetLanguage);
                 }
             } catch (Exception e) {
                 e.printStackTrace();

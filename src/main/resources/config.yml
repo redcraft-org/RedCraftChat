@@ -16,9 +16,10 @@ discord-activity-value: 'RedCraft.org'
 
 # This is for the translation service
 translation-enabled: true
-translation-service: 'deepl'
 translation-supported-languages: ['en', 'fr']
 translation-discord-category-format: '[%lang%] %topic%'
+chat-translation-service: 'deepl'
+upstream-translation-service: 'modernmt' # This is to translate plugins from upstream servers
 
 # These are the settings for Deepl live translation
 deepl-token: ''

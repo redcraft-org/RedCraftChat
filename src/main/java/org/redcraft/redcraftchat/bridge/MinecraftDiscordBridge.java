@@ -5,6 +5,7 @@ import java.util.Map;
 
 import com.vdurmont.emoji.EmojiParser;
 
+import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.database.PlayerPreferencesManager;
 import org.redcraft.redcraftchat.discord.ChannelManager;
@@ -21,6 +22,8 @@ import net.md_5.bungee.api.connection.ProxiedPlayer;
 public class MinecraftDiscordBridge {
 
     public class AsyncMinecraftMessageTranslator implements Runnable {
+        TranslationManager translationManager = new TranslationManager(Config.chatTranslationService);
+
         ProxiedPlayer sender;
         String message;
 
@@ -38,7 +41,7 @@ public class MinecraftDiscordBridge {
             List<String> targetLanguages = TranslationManager.getTargetLanguages(sourceLanguage);
 
             // Translate
-            Map<String, String> translatedLanguages = TranslationManager.translateBulk(message, sourceLanguage, targetLanguages);
+            Map<String, String> translatedLanguages = translationManager.translateBulk(message, sourceLanguage, targetLanguages);
 
             String server = sender.getServer().getInfo().getName();
 

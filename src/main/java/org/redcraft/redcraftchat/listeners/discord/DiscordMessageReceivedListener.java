@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.bridge.MinecraftDiscordBridge;
 import org.redcraft.redcraftchat.caching.CacheManager;
@@ -22,6 +23,8 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 public class DiscordMessageReceivedListener extends ListenerAdapter {
+
+    TranslationManager translationManager = new TranslationManager(Config.chatTranslationService);
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
@@ -51,7 +54,7 @@ public class DiscordMessageReceivedListener extends ListenerAdapter {
 
         if (ChannelManager.getMinecraftBridgeChannels().contains(sourceChannel)) {
             List<String> targetLanguages = TranslationManager.getTargetLanguages(sourceChannel.languageId);
-            Map<String, String> translatedLanguages = TranslationManager.translateBulk(message.getContentDisplay(), sourceChannel.languageId, targetLanguages);
+            Map<String, String> translatedLanguages = translationManager.translateBulk(message.getContentDisplay(), sourceChannel.languageId, targetLanguages);
             MinecraftDiscordBridge.getInstance().sendMessageToPlayers("Discord", member.getEffectiveName(), sourceChannel.languageId, message.getContentDisplay(), translatedLanguages);
         }
 

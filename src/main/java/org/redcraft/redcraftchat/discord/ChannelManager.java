@@ -32,6 +32,8 @@ import net.dv8tion.jda.api.entities.TextChannel;
 
 public class ChannelManager {
 
+    static TranslationManager translationManager = new TranslationManager(Config.chatTranslationService);
+
     private static HashMap<TranslatedChannel, List<TranslatedChannel>> translatedChannelsMapping = new HashMap<TranslatedChannel, List<TranslatedChannel>>();
     private static ReadWriteLock translatedChannelsMappingLock = new ReentrantReadWriteLock();
 
@@ -151,7 +153,7 @@ public class ChannelManager {
     public static WebhookMessageMapping translateAndPublishMessage(TranslatedChannel sourceChannel, TranslatedChannel targetChannel, Member member, Message message, String previousMessageId) throws Exception {
         Guild guild = DiscordClient.getClient().getGuildById(sourceChannel.guildId);
 
-        String translatedMessage = TranslationManager.translate(message.getContentRaw(), sourceChannel.languageId, targetChannel.languageId);
+        String translatedMessage = translationManager.translate(message.getContentRaw(), sourceChannel.languageId, targetChannel.languageId);
         TextChannel responseChannel = guild.getTextChannelById(targetChannel.channelId);
 
         WebhookAsUser webhookToPost = new WebhookAsUser(responseChannel, member, translatedMessage, message.getAttachments());
