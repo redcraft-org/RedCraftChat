@@ -21,7 +21,8 @@ public class PlayersCommand extends ListenerAdapter {
         DiscordClient.getClient().updateCommands().addCommands(Commands.slash("players", "List online players")).queue();
     }
 
-    public void onSlashCommand(SlashCommandInteractionEvent event) {
+    @Override
+    public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
         if (!event.getName().equals("players")) {
             return;
         }
