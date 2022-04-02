@@ -7,6 +7,11 @@ import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.models.caching.CacheCategory;
 
 public class CacheManager {
+
+    private CacheManager() {
+        throw new IllegalStateException("This class should not be instantiated");
+    }
+
     public static Object get(String key, Class<?> classType) {
         String stringifiedObject;
 

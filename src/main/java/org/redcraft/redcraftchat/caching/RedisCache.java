@@ -8,8 +8,12 @@ import io.lettuce.core.RedisClient;
 import io.lettuce.core.api.StatefulRedisConnection;
 
 public class RedisCache {
-    public static RedisClient redisClient = null;
-    public static StatefulRedisConnection<String, String> redisConnection = null;
+    private static RedisClient redisClient = null;
+    private static StatefulRedisConnection<String, String> redisConnection = null;
+
+    private RedisCache() {
+        throw new IllegalStateException("This class should not be instantiated");
+    }
 
     public static boolean connect() {
         redisClient = RedisClient.create("redis://localhost:6379/0");

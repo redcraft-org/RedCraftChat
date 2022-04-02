@@ -32,14 +32,16 @@ public class DiscordClient {
     private static JDA jdaClient = null;
     private static boolean jdaCrashed = false;
 
+    private DiscordClient() {
+        throw new IllegalStateException("This class should not be instantiated");
+    }
+
     public static JDA getClient() {
         if (jdaCrashed || jdaClient != null) {
             return jdaClient;
         }
 
         JDABuilder builder = JDABuilder.createDefault(Config.discordToken);
-
-        // builder.disableCache(CacheFlag.MEMBER_OVERRIDES, CacheFlag.VOICE_STATE);
 
         if (Config.discordActivityEnabled) {
             ActivityType activityType = ActivityType.valueOf(Config.discordActivityType.toUpperCase());

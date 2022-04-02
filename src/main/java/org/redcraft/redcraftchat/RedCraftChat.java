@@ -26,7 +26,7 @@ public class RedCraftChat extends Plugin {
 
 	@Override
 	public void onEnable() {
-		instance = this;
+		setInstance(this);
 
 		// Setup
 		Config.readConfig(this);
@@ -68,7 +68,11 @@ public class RedCraftChat extends Plugin {
 		DiscordClient.getClient().shutdownNow();
 	}
 
-	static public RedCraftChat getInstance() {
+	public static void setInstance(RedCraftChat instance) {
+		RedCraftChat.instance = instance;
+	}
+
+	public static RedCraftChat getInstance() {
 		return instance;
 	}
 }

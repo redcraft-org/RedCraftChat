@@ -1,8 +1,9 @@
 name: RedCraftChat
 main: org.redcraft.redcraftchat.RedCraftChat
-version: 0.1.0-SNAPSHOT
+version: 0.1.1-SNAPSHOT
 author: RedCraft
 authors: [lululombard]
+api-version: 1.18
 permissions:
    redcraftchat.*:
      description: Gives access to all RedCraftChat permissions

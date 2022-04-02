@@ -11,6 +11,10 @@ public class Lingua {
 
     private static LanguageDetector detector = null;
 
+    private Lingua() {
+        throw new IllegalStateException("This class should not be instantiated");
+    }
+
     public static String getLanguage(String text) {
         if (detector == null) {
             ArrayList<Language> supportedLanguages = new ArrayList<Language>();

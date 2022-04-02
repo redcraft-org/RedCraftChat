@@ -1,10 +1,11 @@
 package org.redcraft.redcraftchat.listeners.minecraft;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Stack;
 
 import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
@@ -39,7 +40,7 @@ public class MinecraftRemoteServerMessageListener implements Listener {
 
     static TranslationManager translationManager = new TranslationManager(Config.upstreamTranslationService);
 
-    private static Stack<Long> pendingChatPackets = new Stack<Long>();
+    private static Deque<Long> pendingChatPackets = new ArrayDeque<>();
 
     public class AsyncChatParser implements Runnable {
         ServerConnectedEvent event;
@@ -64,14 +65,10 @@ public class MinecraftRemoteServerMessageListener implements Listener {
 
                 ChatMessageType messageType;
 
-                switch (chatPacket.getPosition()) {
-                    case 2:
-                        messageType = ChatMessageType.ACTION_BAR;
-                        break;
-
-                    default:
-                        messageType = ChatMessageType.CHAT;
-                        break;
+                if (chatPacket.getPosition() == 255) {
+                    messageType = ChatMessageType.ACTION_BAR;
+                } else {
+                    messageType = ChatMessageType.CHAT;
                 }
 
                 MinecraftRemoteServerMessageListener.handleChatPacket(chatPacketTime, event.getServer(), event.getPlayer(), messages, messageType);
@@ -128,6 +125,15 @@ public class MinecraftRemoteServerMessageListener implements Listener {
             }
         }
 
+        waitForPreviousMessages(chatPacketTimestamp);
+
+        pendingChatPackets.remove(chatPacketTimestamp);
+
+        // Send messages
+        player.sendMessage(position, translatedMessageComponents.toArray(BaseComponent[]::new));
+    }
+
+    private static void waitForPreviousMessages(long chatPacketTimestamp) throws InterruptedException {
         // TODO redo this to use less CPU cycles while waiting our turn
         boolean waitingForPreviousMessage = true;
         while (waitingForPreviousMessage) {
@@ -147,11 +153,6 @@ public class MinecraftRemoteServerMessageListener implements Listener {
                 // This shouldn't be required but it's not a massive issue
             }
         }
-
-        pendingChatPackets.remove(chatPacketTimestamp);
-
-        // Send messages
-        player.sendMessage(position, translatedMessageComponents.toArray(BaseComponent[]::new));
     }
 
     private ChannelDuplexHandler getPacketInterceptor(ServerConnectedEvent event) {

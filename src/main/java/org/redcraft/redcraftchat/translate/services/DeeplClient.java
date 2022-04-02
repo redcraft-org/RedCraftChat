@@ -1,8 +1,10 @@
 package org.redcraft.redcraftchat.translate.services;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,10 +24,14 @@ import org.redcraft.redcraftchat.models.deepl.DeeplSupportedLanguage;
 
 public class DeeplClient {
 
-    private static HashMap<String, DeeplSupportedLanguage> supportedLanguages = new HashMap<String, DeeplSupportedLanguage>();
+    private static HashMap<String, DeeplSupportedLanguage> supportedLanguages = new HashMap<>();
     private static boolean supportedLanguagesInitialized = false;
 
-    public static DeeplResponse translate(String text, String sourceLanguageId, String targetLanguageId) throws Exception {
+    private DeeplClient() {
+        throw new IllegalStateException("This class should not be instantiated");
+    }
+
+    public static DeeplResponse translate(String text, String sourceLanguageId, String targetLanguageId) throws IllegalStateException, URISyntaxException, IOException {
         String cacheKey = String.format("%s;%s;%s", sourceLanguageId, targetLanguageId, text);
 
         DeeplResponse cachedDeeplResponse = (DeeplResponse) CacheManager.get(CacheCategory.DEEPL_TRANSLATED_MESSAGE, cacheKey, DeeplResponse.class);
@@ -38,11 +44,11 @@ public class DeeplClient {
         DeeplSupportedLanguage targetLang = DeeplClient.getLanguage(targetLanguageId);
 
         if (sourceLang == null) {
-            throw new RuntimeException("The source language " + sourceLanguageId + " is not supported by Deepl");
+            throw new IllegalStateException("The source language " + sourceLanguageId + " is not supported by Deepl");
         }
 
-        if (targetLanguageId == null) {
-            throw new RuntimeException("The source language " + targetLanguageId + " is not supported by Deepl");
+        if (targetLang == null) {
+            throw new IllegalStateException("The source language " + targetLanguageId + " is not supported by Deepl");
         }
 
         URIBuilder ub = new URIBuilder(Config.deeplEndpoint);
@@ -67,7 +73,7 @@ public class DeeplClient {
 
         BufferedReader in = new BufferedReader(new InputStreamReader(httpURLConnection.getInputStream()));
         String inputLine;
-        StringBuffer rawResponse = new StringBuffer();
+        StringBuilder rawResponse = new StringBuilder();
 
         while ((inputLine = in.readLine()) != null) {
             rawResponse.append(inputLine);
@@ -94,7 +100,7 @@ public class DeeplClient {
         return String.join(" ", translations);
     }
 
-    public static DeeplSupportedLanguage getLanguage(String id) throws Exception {
+    public static DeeplSupportedLanguage getLanguage(String id) throws IllegalStateException {
         if (!supportedLanguagesInitialized) {
             supportedLanguagesInitialized = true;
 
@@ -115,7 +121,7 @@ public class DeeplClient {
         try {
             return supportedLanguages.get(id.toUpperCase());
         } catch (Exception ex) {
-            throw new Exception(String.format("Could not find language %s in the supported languages: %s", id), ex.fillInStackTrace());
+            throw new IllegalStateException("Could not find language %s in the supported languages: " + id, ex.fillInStackTrace());
         }
     }
 }

@@ -45,14 +45,14 @@ public class DiscordMessageReceivedListener extends ListenerAdapter {
             return;
         }
 
-        HashMap<TranslatedChannel, List<TranslatedChannel>> translatedChannelsMappings = ChannelManager.getTranslatedChannelsMapping();
+        Map<TranslatedChannel, List<TranslatedChannel>> translatedChannelsMappings = ChannelManager.getTranslatedChannelsMapping();
 
         Message message = event.getMessage();
         Member member = event.getMember();
 
         TranslatedChannel sourceChannel = this.getTranslatedChannelFromId(translatedChannelsMappings, event.getChannel().getId());
 
-        if (ChannelManager.getMinecraftBridgeChannels().contains(sourceChannel)) {
+        if (sourceChannel != null && ChannelManager.getMinecraftBridgeChannels().contains(sourceChannel)) {
             List<String> targetLanguages = TranslationManager.getTargetLanguages(sourceChannel.languageId);
             Map<String, String> translatedLanguages = translationManager.translateBulk(message.getContentDisplay(), sourceChannel.languageId, targetLanguages);
             MinecraftDiscordBridge.getInstance().sendMessageToPlayers("Discord", member.getEffectiveName(), sourceChannel.languageId, message.getContentDisplay(), translatedLanguages);
@@ -82,7 +82,7 @@ public class DiscordMessageReceivedListener extends ListenerAdapter {
         }
     }
 
-    private TranslatedChannel getTranslatedChannelFromId(HashMap<TranslatedChannel, List<TranslatedChannel>> translatedChannelsMappings, String channelId) {
+    private TranslatedChannel getTranslatedChannelFromId(Map<TranslatedChannel, List<TranslatedChannel>> translatedChannelsMappings, String channelId) {
         for (TranslatedChannel channel : translatedChannelsMappings.keySet()) {
             if (channel.channelId.equals(channelId)) {
                 return channel;

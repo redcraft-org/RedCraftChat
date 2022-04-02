@@ -34,27 +34,27 @@ public class ChannelManager {
 
     static TranslationManager translationManager = new TranslationManager(Config.chatTranslationService);
 
-    private static HashMap<TranslatedChannel, List<TranslatedChannel>> translatedChannelsMapping = new HashMap<TranslatedChannel, List<TranslatedChannel>>();
+    private static HashMap<TranslatedChannel, List<TranslatedChannel>> translatedChannelsMapping = new HashMap<>();
     private static ReadWriteLock translatedChannelsMappingLock = new ReentrantReadWriteLock();
 
-    private static List<TranslatedChannel> minecraftBridgeChannels = new ArrayList<TranslatedChannel>();
+    private static List<TranslatedChannel> minecraftBridgeChannels = new ArrayList<>();
     private static ReadWriteLock minecraftBridgeChannelsLock = new ReentrantReadWriteLock();
 
     public void syncChannelCategories() {
         JDA discordClient = DiscordClient.getClient();
 
-        HashMap<TranslatedChannel, List<TranslatedChannel>> translatedChannelsMapping = new HashMap<TranslatedChannel, List<TranslatedChannel>>();
+        HashMap<TranslatedChannel, List<TranslatedChannel>> newTranslatedChannelsMapping = new HashMap<>();
 
         for (Guild guild : discordClient.getGuilds()) {
             List<String> detectedTopics = getTopics(guild);
 
-            HashMap<String, List<String>> textChannels = new HashMap<String, List<String>>();
-            HashMap<String, List<String>> voiceChannels = new HashMap<String, List<String>>();
+            HashMap<String, List<String>> textChannels = new HashMap<>();
+            HashMap<String, List<String>> voiceChannels = new HashMap<>();
 
             // Loop a first time to Creating missing categories and gather channel names
             for (String topic : detectedTopics) {
-                textChannels.put(topic, new ArrayList<String>());
-                voiceChannels.put(topic, new ArrayList<String>());
+                textChannels.put(topic, new ArrayList<>());
+                voiceChannels.put(topic, new ArrayList<>());
 
                 List<String> topicTextChannel = textChannels.get(topic);
                 List<String> topicVoiceChannel = voiceChannels.get(topic);
@@ -63,7 +63,7 @@ public class ChannelManager {
                     String categoryName = getCategoryName(language, topic);
                     List<Category> matchingCategories = guild.getCategoriesByName(categoryName, false);
 
-                    if (matchingCategories.size() == 0) {
+                    if (matchingCategories.isEmpty()) {
                         String logMessage = String.format("Creating missing Discord category %s", categoryName);
                         RedCraftChat.getInstance().getLogger().info(logMessage);
                         guild.createCategory(categoryName).complete();
@@ -95,7 +95,7 @@ public class ChannelManager {
 
             // Loop a third time to update the channel mapping
             for (String topic : detectedTopics) {
-                HashMap<String, List<TranslatedChannel>> channelsList = new HashMap<String, List<TranslatedChannel>>();
+                HashMap<String, List<TranslatedChannel>> channelsList = new HashMap<>();
 
                 for (String language : Config.translationSupportedLanguages) {
                     String categoryName = getCategoryName(language, topic);
@@ -106,7 +106,7 @@ public class ChannelManager {
                             if (channel.getType().equals(ChannelType.TEXT)) {
                                 String channelName = channel.getName();
                                 if (!channelsList.containsKey(channelName)) {
-                                    channelsList.put(channelName, new ArrayList<TranslatedChannel>());
+                                    channelsList.put(channelName, new ArrayList<>());
                                 }
 
                                 TranslatedChannel translatedChannel = new TranslatedChannel(
@@ -133,8 +133,8 @@ public class ChannelManager {
                     Map.Entry<String, List<TranslatedChannel>> channelsListEntry = channelsListIterator.next();
                     for (TranslatedChannel translatedSourceChannel: channelsListEntry.getValue()) {
                         String translatedSourceChannelId = translatedSourceChannel.channelId;
-                        translatedChannelsMapping.put(translatedSourceChannel, new ArrayList<TranslatedChannel>());
-                        List<TranslatedChannel> channelMapping = translatedChannelsMapping.get(translatedSourceChannel);
+                        newTranslatedChannelsMapping.put(translatedSourceChannel, new ArrayList<>());
+                        List<TranslatedChannel> channelMapping = newTranslatedChannelsMapping.get(translatedSourceChannel);
 
                         for (TranslatedChannel translatedTargetChannel: channelsListEntry.getValue()) {
                             if (!translatedSourceChannelId.equals(translatedTargetChannel.channelId)) {
@@ -147,7 +147,7 @@ public class ChannelManager {
             }
         }
 
-        saveTranslatedChannelsMapping(translatedChannelsMapping);
+        saveTranslatedChannelsMapping(newTranslatedChannelsMapping);
     }
 
     public static WebhookMessageMapping translateAndPublishMessage(TranslatedChannel sourceChannel, TranslatedChannel targetChannel, Member member, Message message, String previousMessageId) throws Exception {
@@ -171,7 +171,7 @@ public class ChannelManager {
         return webhookMessageMapping;
     }
 
-    public static HashMap<TranslatedChannel, List<TranslatedChannel>> getTranslatedChannelsMapping() {
+    public static Map<TranslatedChannel, List<TranslatedChannel>> getTranslatedChannelsMapping() {
         translatedChannelsMappingLock.readLock().lock();
         try {
             return translatedChannelsMapping;
@@ -190,7 +190,7 @@ public class ChannelManager {
     }
 
     public List<String> getTopics(Guild guild) {
-        List<String> detectedTopics = new ArrayList<String>();
+        List<String> detectedTopics = new ArrayList<>();
 
         for (Category category : guild.getCategories()) {
             for (String supportedLanguage : Config.translationSupportedLanguages) {

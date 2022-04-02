@@ -2,6 +2,7 @@ package org.redcraft.redcraftchat.urlshortener.services;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -16,7 +17,11 @@ import org.redcraft.redcraftchat.models.redcraft_website.RedCraftUrlShortenerRes
 
 public class RedCraftUrlShortenerClient {
 
-    public static String shorten(String url) throws Exception {
+    private RedCraftUrlShortenerClient() {
+        throw new IllegalStateException("This class should not be instantiated");
+    }
+
+    public static String shorten(String url) throws IllegalStateException, IOException {
         RedCraftUrlShortenerRequest request = new RedCraftUrlShortenerRequest(url, Config.urlShorteningToken);
         URL endpointUrl = new URL(Config.urlShorteningEndpoint);
 
@@ -32,7 +37,7 @@ public class RedCraftUrlShortenerClient {
 
         BufferedReader in = new BufferedReader(new InputStreamReader(httpURLConnection.getInputStream()));
         String inputLine;
-        StringBuffer rawResponse = new StringBuffer();
+        StringBuilder rawResponse = new StringBuilder();
 
         while ((inputLine = in.readLine()) != null) {
             rawResponse.append(inputLine);
@@ -44,7 +49,7 @@ public class RedCraftUrlShortenerClient {
         RedCraftUrlShortenerResponse response = gson.fromJson(rawResponse.toString(), RedCraftUrlShortenerResponse.class);
 
         if (!response.response) {
-            throw new Exception(String.format("Invalid response for URL shortener: %s", rawResponse));
+            throw new IllegalStateException(String.format("Invalid response for URL shortener: %s", rawResponse));
         }
 
         return response.shortened;

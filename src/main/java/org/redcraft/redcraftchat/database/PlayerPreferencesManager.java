@@ -16,6 +16,10 @@ import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 public class PlayerPreferencesManager {
 
+    private PlayerPreferencesManager() {
+        throw new IllegalStateException("This class should not be instantiated");
+    }
+
     public static PlayerPreferences getPlayerPreferences(ProxiedPlayer player) {
         UUID playerUniqueId = player.getUniqueId();
         Database db = DatabaseManager.getDatabase();
@@ -57,9 +61,7 @@ public class PlayerPreferencesManager {
         String debugMessage = String.format("Detected language %s for player %s", detectedPlayerLanguage, player.getName());
         RedCraftChat.getInstance().getLogger().info(debugMessage);
 
-        if (player != null) {
-            playerPreferences.lastKnownName = player.getName();
-        }
+        playerPreferences.lastKnownName = player.getName();
 
         return playerPreferences;
     }
@@ -69,7 +71,7 @@ public class PlayerPreferencesManager {
 
         // upsert is not supported with MySQL
         Database db = DatabaseManager.getDatabase();
-        boolean playerAlreadyExists = db.where("player_uuid=?", playerUniqueId).results(PlayerPreferences.class).size() > 0;
+        boolean playerAlreadyExists = !db.where("player_uuid=?", playerUniqueId).results(PlayerPreferences.class).isEmpty();
         if (playerAlreadyExists) {
             db.update(preferences);
         } else {
@@ -123,4 +125,5 @@ public class PlayerPreferencesManager {
         // Fallback
         return Config.translationSupportedLanguages.get(0);
     }
+
 }

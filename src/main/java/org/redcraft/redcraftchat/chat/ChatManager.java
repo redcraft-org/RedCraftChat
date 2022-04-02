@@ -6,6 +6,11 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 
 public class ChatManager {
+
+    private ChatManager() {
+        throw new IllegalStateException("This class should not be instantiated");
+    }
+
     public static void handleMinecraftServerMessage() {
         // TODO handle messages
     }

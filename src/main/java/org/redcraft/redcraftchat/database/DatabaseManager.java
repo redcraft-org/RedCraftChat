@@ -17,6 +17,10 @@ import org.redcraft.redcraftchat.models.database.SupportedLanguage;
 public class DatabaseManager {
     private static Database database;
 
+    private DatabaseManager() {
+        throw new IllegalStateException("This class should not be instantiated");
+    }
+
     public static void connect() {
         database = new Database();
         database.setJdbcUrl(Config.databaseUri);

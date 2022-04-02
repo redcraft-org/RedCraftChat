@@ -1,8 +1,10 @@
 package org.redcraft.redcraftchat.translate.services;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.URISyntaxException;
 import java.net.URL;
 
 import com.google.gson.FieldNamingPolicy;
@@ -17,7 +19,11 @@ import org.redcraft.redcraftchat.models.modernmt.ModernmtResponse;
 
 public class ModernmtClient {
 
-    public static ModernmtResponse translate(String text, String sourceLanguageId, String targetLanguageId) throws Exception {
+    private ModernmtClient() {
+        throw new IllegalStateException("This class should not be instantiated");
+    }
+
+    public static ModernmtResponse translate(String text, String sourceLanguageId, String targetLanguageId) throws IllegalStateException, URISyntaxException, IOException {
         String cacheKey = String.format("%s;%s;%s", sourceLanguageId, targetLanguageId, text);
 
         ModernmtResponse cachedModernmtResponse = (ModernmtResponse) CacheManager.get(CacheCategory.MODERNMT_TRANSLATED_MESSAGE, cacheKey, ModernmtResponse.class);
@@ -27,7 +33,7 @@ public class ModernmtClient {
         }
 
         if (targetLanguageId == null) {
-            throw new RuntimeException("The source language " + targetLanguageId + " is not supported by Modernmt");
+            throw new IllegalStateException("The source language " + targetLanguageId + " is not supported by Modernmt");
         }
 
         URIBuilder ub = new URIBuilder("https://webapi.modernmt.com/translate");
@@ -46,7 +52,7 @@ public class ModernmtClient {
 
         BufferedReader in = new BufferedReader(new InputStreamReader(httpURLConnection.getInputStream()));
         String inputLine;
-        StringBuffer rawResponse = new StringBuffer();
+        StringBuilder rawResponse = new StringBuilder();
 
         while ((inputLine = in.readLine()) != null) {
             rawResponse.append(inputLine);

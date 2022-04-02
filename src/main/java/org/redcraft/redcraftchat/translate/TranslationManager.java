@@ -1,4 +1,6 @@
 package org.redcraft.redcraftchat.translate;
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -25,24 +27,24 @@ public class TranslationManager {
         this.translationService = translationService;
     }
 
-    public String translate(String text, String sourceLanguage, String targetLanguage) throws Exception {
+    public String translate(String text, String sourceLanguage, String targetLanguage) throws IllegalStateException, URISyntaxException, IOException {
         if (!Config.translationEnabled) {
-            throw new Exception("TranslationManager was called but translation is disabled in the configuration");
+            throw new IllegalStateException("TranslationManager was called but translation is disabled in the configuration");
         }
 
         TokenizedMessage tokenizedMessage = TokenizerManager.tokenizeElements(text, true);
 
         switch (this.translationService) {
             case "deepl":
-                DeeplResponse dr = DeeplClient.translate(tokenizedMessage.tokenizedMessage, sourceLanguage.toUpperCase(), targetLanguage.toUpperCase());
-                tokenizedMessage.tokenizedMessage = DeeplClient.parseDeeplResponse(dr);
+                DeeplResponse dr = DeeplClient.translate(tokenizedMessage.getOriginalTokenizedMessage(), sourceLanguage.toUpperCase(), targetLanguage.toUpperCase());
+                tokenizedMessage.setOriginalTokenizedMessage(DeeplClient.parseDeeplResponse(dr));
                 break;
             case "modernmt":
-                ModernmtResponse mr = ModernmtClient.translate(tokenizedMessage.tokenizedMessage, sourceLanguage.toLowerCase(), targetLanguage.toLowerCase());
-                tokenizedMessage.tokenizedMessage = mr.data.translation.replaceAll("§( )+", "§"); // Fix for MC message
+                ModernmtResponse mr = ModernmtClient.translate(tokenizedMessage.getOriginalTokenizedMessage(), sourceLanguage.toLowerCase(), targetLanguage.toLowerCase());
+                tokenizedMessage.setOriginalTokenizedMessage(mr.data.translation.replaceAll("§( )+", "§")); // Fix for MC message
                 break;
             default:
-                throw new Exception(String.format("Unknown translation service \"%s\"", this.translationService));
+                throw new IllegalStateException(String.format("Unknown translation service \"%s\"", this.translationService));
         }
 
         return TokenizerManager.untokenizeElements(tokenizedMessage);

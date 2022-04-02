@@ -3,7 +3,11 @@ package org.redcraft.redcraftchat.caching;
 import java.util.HashMap;
 
 public class MemoryCache {
-    private static HashMap<String, String> cache = new HashMap<String, String>();
+    private static HashMap<String, String> cache = new HashMap<>();
+
+    private MemoryCache() {
+        throw new IllegalStateException("This class should not be instantiated");
+    }
 
     public static boolean putRaw(String key, String serializedObject) {
         cache.put(key, serializedObject);
@@ -28,7 +32,7 @@ public class MemoryCache {
     }
 
     public static boolean flush() {
-        cache = new HashMap<String, String>();
+        cache = new HashMap<>();
         return true;
     }
 

@@ -19,7 +19,11 @@ import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 public class TokenizerManager {
-    static final Map<String, String> minecraftColorsMappings = new TreeMap<String, String>();
+    static final Map<String, String> minecraftColorsMappings = new TreeMap<>();
+
+    private TokenizerManager() {
+        throw new IllegalStateException("This class should not be instantiated");
+    }
 
     static {
         // Color codes
@@ -43,9 +47,9 @@ public class TokenizerManager {
         // Tokenization is used so important elements of messages don't get translated
         // ! Order is important
         String tokenizedMessage = originalMessage;
-        HashMap<String, String> tokenizedElements = new HashMap<String, String>();
+        HashMap<String, String> tokenizedElements = new HashMap<>();
 
-        ArrayList<Pattern> patterns = new ArrayList<Pattern>();
+        ArrayList<Pattern> patterns = new ArrayList<>();
 
         // Tokenize code blocks
         Pattern codeBlockPattern = Pattern.compile("```(.*)```", Pattern.MULTILINE);
@@ -109,13 +113,13 @@ public class TokenizerManager {
     }
 
     public static String untokenizeElements(TokenizedMessage tokenizedMessage) {
-        String message = tokenizedMessage.tokenizedMessage;
+        String message = tokenizedMessage.getOriginalTokenizedMessage();
 
         for (Entry<String, String> mapping : minecraftColorsMappings.entrySet()) {
             message = message.replaceAll(mapping.getValue(), mapping.getKey());
         }
 
-        Iterator<Map.Entry<String, String>> tokenizedElementsIterator = tokenizedMessage.tokenizedElements.entrySet().iterator();
+        Iterator<Map.Entry<String, String>> tokenizedElementsIterator = tokenizedMessage.getTokenizedElements().entrySet().iterator();
         while (tokenizedElementsIterator.hasNext()) {
             Entry<String, String> tokenizedElementsEntry = tokenizedElementsIterator.next();
             message = message.replaceAll(tokenizedElementsEntry.getKey(), tokenizedElementsEntry.getValue());

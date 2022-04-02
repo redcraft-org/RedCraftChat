@@ -48,8 +48,16 @@ public class Config {
 	public static String redisUri = "";
 	public static String redisKeyPrefix = "rcc";
 
+	private Config() {
+        throw new IllegalStateException("This class should not be instantiated");
+    }
+
 	public static void readConfig(Plugin plugin) {
 		Configuration config = getConfig(plugin);
+
+		if (config == null) {
+			throw new IllegalStateException("Config is null!");
+		}
 
 		discordEnabled = config.getBoolean("discord-enabled");
 		discordToken = config.getString("discord-token");

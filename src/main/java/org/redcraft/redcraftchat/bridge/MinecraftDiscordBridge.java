@@ -72,7 +72,7 @@ public class MinecraftDiscordBridge {
                 translatedMessage = originalMessage;
             }
 
-            String suffix = " [" + TranslationManager.getLanguagePrefix(sourceLanguage, channel.languageId) + "]";
+            String suffix = " [" + TranslationManager.getLanguagePrefix(sourceLanguage, channel.languageId) + "][" + server + "]";
 
             DiscordClient.postAsPlayer(channel.channelId, sender, translatedMessage, suffix);
         }
