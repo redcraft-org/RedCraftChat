@@ -1,7 +1,9 @@
 package org.redcraft.redcraftchat.listeners.minecraft;
 
+import java.io.IOException;
+
 import org.redcraft.redcraftchat.RedCraftChat;
-import org.redcraft.redcraftchat.database.PlayerPreferencesManager;
+import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 
 import net.md_5.bungee.api.event.PostLoginEvent;
 import net.md_5.bungee.api.plugin.Listener;
@@ -20,7 +22,12 @@ public class MinecraftPlayerPreferencesListener implements Listener {
         @Override
         public void run() {
             // This will create player preferences if it does not exist already
-            PlayerPreferencesManager.getPlayerPreferences(event.getPlayer());
+            try {
+                PlayerPreferencesManager.getPlayerPreferences(event.getPlayer());
+            } catch (IOException | InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
     }
 

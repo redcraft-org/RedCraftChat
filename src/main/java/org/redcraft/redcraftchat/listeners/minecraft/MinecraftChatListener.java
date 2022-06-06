@@ -1,10 +1,11 @@
 package org.redcraft.redcraftchat.listeners.minecraft;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
 import org.redcraft.redcraftchat.bridge.MinecraftDiscordBridge;
-import org.redcraft.redcraftchat.database.PlayerPreferencesManager;
+import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 import org.redcraft.redcraftchat.models.database.PlayerPreferences;
 
 import net.md_5.bungee.api.ChatColor;
@@ -37,10 +38,15 @@ public class MinecraftChatListener implements Listener {
         if (event.isProxyCommand() || event.isCommand()) {
             for (ProxiedPlayer potentialStaffMember : ProxyServer.getInstance().getPlayers()) {
                 if (!player.equals(potentialStaffMember) && potentialStaffMember.hasPermission("redcraftchat.moderation.commandspy")) {
-                    PlayerPreferences playerPreferences = PlayerPreferencesManager.getPlayerPreferences(potentialStaffMember);
-                    if (playerPreferences.commandSpyEnabled) {
-                        BaseComponent[] formattedMessage = new ComponentBuilder("[CSPY][" + player.getDisplayName() + "] " + event.getMessage()).color(ChatColor.AQUA).create();
-                        potentialStaffMember.sendMessage(formattedMessage);
+                    PlayerPreferences playerPreferences;
+                    try {
+                        playerPreferences = PlayerPreferencesManager.getPlayerPreferences(potentialStaffMember);
+                        if (playerPreferences.commandSpyEnabled) {
+                            BaseComponent[] formattedMessage = new ComponentBuilder("[CSPY][" + player.getDisplayName() + "] " + event.getMessage()).color(ChatColor.AQUA).create();
+                            potentialStaffMember.sendMessage(formattedMessage);
+                        }
+                    } catch (IOException | InterruptedException e) {
+                        e.printStackTrace();
                     }
                 }
             }

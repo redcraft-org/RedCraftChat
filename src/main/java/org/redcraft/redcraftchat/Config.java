@@ -40,6 +40,7 @@ public class Config {
 	public static String urlShorteningEndpoint = "https://redcraft.org/api/v1/url";
 	public static String urlShorteningToken = "";
 
+	public static String playerSource = "database";
 	public static String databaseUri = "jdbc:sqlite:%plugin_config_path%/plugins/RedCraftChat/database.db";
 	public static String databaseUsername = "";
 	public static String databasePassword = "";
@@ -77,6 +78,7 @@ public class Config {
 		deeplFormality = config.getString("deepl-formality");
 		deeplPreserveFormatting = config.getBoolean("deepl-preserve-formatting");
 
+		playerSource = config.getString("player-source");
 		databaseUri = config.getString("database-uri");
 		databaseUsername = config.getString("database-username");
 		databasePassword = config.getString("database-password");

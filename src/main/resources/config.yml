@@ -34,6 +34,7 @@ url-shortening-endpoint: 'https://redcraft.org/api/v1/url'
 url-shortening-api-token: ''
 
 # Database related settings
+player-source: database
 database-uri: 'jdbc:mysql://localhost:3306/redcraft_chat?useSSL=false&autoReconnect=true'
 database-username: 'root'
 database-password: 'password'

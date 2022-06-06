@@ -7,7 +7,7 @@ import com.vdurmont.emoji.EmojiParser;
 
 import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
-import org.redcraft.redcraftchat.database.PlayerPreferencesManager;
+import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 import org.redcraft.redcraftchat.discord.ChannelManager;
 import org.redcraft.redcraftchat.discord.DiscordClient;
 import org.redcraft.redcraftchat.models.discord.TranslatedChannel;

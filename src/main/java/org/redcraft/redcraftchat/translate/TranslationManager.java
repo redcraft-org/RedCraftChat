@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.redcraft.redcraftchat.Config;
-import org.redcraft.redcraftchat.database.PlayerPreferencesManager;
+import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 import org.redcraft.redcraftchat.detection.DetectionManager;
 import org.redcraft.redcraftchat.models.deepl.DeeplResponse;
 import org.redcraft.redcraftchat.models.modernmt.ModernmtResponse;

@@ -9,7 +9,7 @@ import java.util.List;
 
 import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
-import org.redcraft.redcraftchat.database.PlayerPreferencesManager;
+import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 import org.redcraft.redcraftchat.detection.DetectionManager;
 import org.redcraft.redcraftchat.helpers.PrivateFieldExtractor;
 import org.redcraft.redcraftchat.translate.TranslationManager;

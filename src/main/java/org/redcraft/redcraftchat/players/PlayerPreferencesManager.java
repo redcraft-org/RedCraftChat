@@ -1,9 +1,8 @@
-package org.redcraft.redcraftchat.database;
+package org.redcraft.redcraftchat.players;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
-
-import com.dieselpoint.norm.Database;
 
 import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
@@ -11,18 +10,39 @@ import org.redcraft.redcraftchat.caching.CacheManager;
 import org.redcraft.redcraftchat.models.caching.CacheCategory;
 import org.redcraft.redcraftchat.models.database.PlayerLanguage;
 import org.redcraft.redcraftchat.models.database.PlayerPreferences;
+import org.redcraft.redcraftchat.players.sources.ApiPlayerSource;
+import org.redcraft.redcraftchat.players.sources.DatabasePlayerSource;
 
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 public class PlayerPreferencesManager {
 
-    private PlayerPreferencesManager() {
+    static DatabasePlayerSource playerSource = null;
+
+    public PlayerPreferencesManager() {
         throw new IllegalStateException("This class should not be instantiated");
     }
 
-    public static PlayerPreferences getPlayerPreferences(ProxiedPlayer player) {
+    public static DatabasePlayerSource getPlayerSource() {
+        if (playerSource == null) {
+            switch (Config.playerSource) {
+                case "database":
+                    playerSource = new DatabasePlayerSource();
+                    break;
+
+                case "api":
+                    playerSource = new ApiPlayerSource();
+                    break;
+
+                default:
+                    throw new IllegalStateException("Unknown database player source: " + Config.playerSource);
+            }
+        }
+        return playerSource;
+    }
+
+    public static PlayerPreferences getPlayerPreferences(ProxiedPlayer player) throws IOException, InterruptedException {
         UUID playerUniqueId = player.getUniqueId();
-        Database db = DatabaseManager.getDatabase();
 
         PlayerPreferences cachedPlayerPreferences = (PlayerPreferences) CacheManager
                 .get(CacheCategory.PLAYER_PREFERENCES, playerUniqueId.toString(), PlayerPreferences.class);
@@ -30,7 +50,7 @@ public class PlayerPreferencesManager {
             return cachedPlayerPreferences;
         }
 
-        PlayerPreferences playerPreferences = db.where("player_uuid=?", playerUniqueId.toString()).first(PlayerPreferences.class);
+        PlayerPreferences playerPreferences = getPlayerSource().getPlayerPreferences(player); // TODO
 
         boolean updated = false;
 
@@ -67,21 +87,16 @@ public class PlayerPreferencesManager {
     }
 
     public static void updatePlayerPreferences(PlayerPreferences preferences) {
-        String playerUniqueId = preferences.playerUniqueId;
+        getPlayerSource().updatePlayerPreferences(preferences);
 
-        // upsert is not supported with MySQL
-        Database db = DatabaseManager.getDatabase();
-        boolean playerAlreadyExists = !db.where("player_uuid=?", playerUniqueId).results(PlayerPreferences.class).isEmpty();
-        if (playerAlreadyExists) {
-            db.update(preferences);
-        } else {
-            db.insert(preferences);
-        }
-
-        CacheManager.put(CacheCategory.PLAYER_PREFERENCES, playerUniqueId, preferences);
+        CacheManager.put(CacheCategory.PLAYER_PREFERENCES, preferences.playerUniqueId, preferences);
     }
 
-    public static boolean toggleCommandSpy(ProxiedPlayer player) {
+    public static List<PlayerLanguage> getPlayerLanguages(ProxiedPlayer player) {
+        return getPlayerSource().getPlayerLanguages(player);
+    }
+
+    public static boolean toggleCommandSpy(ProxiedPlayer player) throws IOException, InterruptedException {
         PlayerPreferences preferences = getPlayerPreferences(player);
 
         preferences.commandSpyEnabled = !preferences.commandSpyEnabled;
@@ -109,10 +124,6 @@ public class PlayerPreferencesManager {
         }
 
         return extractPlayerLanguage(player);
-    }
-
-    public static List<PlayerLanguage> getPlayerLanguages(ProxiedPlayer player) {
-        return DatabaseManager.getDatabase().where("player_uuid=?", player.getUniqueId().toString()).results(PlayerLanguage.class);
     }
 
     public static String extractPlayerLanguage(ProxiedPlayer player) {
