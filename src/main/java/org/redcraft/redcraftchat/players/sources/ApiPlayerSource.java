@@ -9,6 +9,7 @@ import java.net.http.HttpResponse;
 import com.dieselpoint.norm.Database;
 import com.google.gson.Gson;
 
+import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.caching.CacheManager;
 import org.redcraft.redcraftchat.database.DatabaseManager;
 import org.redcraft.redcraftchat.models.caching.CacheCategory;
@@ -22,7 +23,7 @@ public class ApiPlayerSource extends DatabasePlayerSource {
 
     public PlayerPreferences getPlayerPreferences(ProxiedPlayer player) throws IOException, InterruptedException {
         var request = HttpRequest.newBuilder(
-                URI.create("https://testing.redcraft.org/api/v1/player/" + player.getUniqueId().toString()))
+                URI.create(Config.playerSourceApiUrl + player.getUniqueId().toString()))
                 .header("accept", "application/json")
                 .build();
 
