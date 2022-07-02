@@ -1,15 +1,13 @@
 package org.redcraft.redcraftchat.players;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.UUID;
 
 import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.caching.CacheManager;
 import org.redcraft.redcraftchat.models.caching.CacheCategory;
-import org.redcraft.redcraftchat.models.database.PlayerLanguage;
-import org.redcraft.redcraftchat.models.database.PlayerPreferences;
+import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import org.redcraft.redcraftchat.players.sources.ApiPlayerSource;
 import org.redcraft.redcraftchat.players.sources.DatabasePlayerSource;
 
@@ -54,13 +52,13 @@ public class PlayerPreferencesManager {
 
         boolean updated = false;
 
-        if (playerPreferences == null) {
+        if (playerPreferences == null || playerPreferences.minecraftUuid == null) {
             playerPreferences = createPlayerPreferences(player);
             updated = true;
-        } else if (!playerPreferences.lastKnownName.equals(player.getName())) {
+        } else if (!playerPreferences.lastKnownMinecraftName.equals(player.getName())) {
             // Detect username change
-            playerPreferences.previousKnownName = playerPreferences.lastKnownName;
-            playerPreferences.lastKnownName = player.getName();
+            playerPreferences.previousKnownMinecraftName = playerPreferences.lastKnownMinecraftName;
+            playerPreferences.lastKnownMinecraftName = player.getName();
             updated = true;
         }
 
@@ -81,19 +79,15 @@ public class PlayerPreferencesManager {
         String debugMessage = String.format("Detected language %s for player %s", detectedPlayerLanguage, player.getName());
         RedCraftChat.getInstance().getLogger().info(debugMessage);
 
-        playerPreferences.lastKnownName = player.getName();
+        playerPreferences.lastKnownMinecraftName = player.getName();
 
         return playerPreferences;
     }
 
-    public static void updatePlayerPreferences(PlayerPreferences preferences) {
+    public static void updatePlayerPreferences(PlayerPreferences preferences) throws IOException, InterruptedException {
         getPlayerSource().updatePlayerPreferences(preferences);
 
-        CacheManager.put(CacheCategory.PLAYER_PREFERENCES, preferences.playerUniqueId, preferences);
-    }
-
-    public static List<PlayerLanguage> getPlayerLanguages(ProxiedPlayer player) {
-        return getPlayerSource().getPlayerLanguages(player);
+        CacheManager.put(CacheCategory.PLAYER_PREFERENCES, preferences.minecraftUuid.toString(), preferences);
     }
 
     public static boolean toggleCommandSpy(ProxiedPlayer player) throws IOException, InterruptedException {
@@ -107,20 +101,32 @@ public class PlayerPreferencesManager {
     }
 
     public static boolean playerSpeaksLanguage(ProxiedPlayer player, String languageIsoCode) {
-        for (PlayerLanguage language : getPlayerLanguages(player)) {
-            if (language.languageIso.equalsIgnoreCase(languageIsoCode)) {
-                return true;
+        try {
+            PlayerPreferences preferences = getPlayerPreferences(player);
+
+            for (String language : preferences.languages) {
+                if (language.equalsIgnoreCase(languageIsoCode)) {
+                    return true;
+                }
             }
+        } catch (IOException | InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
 
         return false;
     }
 
     public static String getMainPlayerLanguage(ProxiedPlayer player) {
-        for (PlayerLanguage language : getPlayerLanguages(player)) {
-            if (language.isMainLanguage) {
-                return language.languageIso;
+        try {
+            PlayerPreferences preferences = getPlayerPreferences(player);
+
+            if (preferences.mainLanguage != null) {
+                return preferences.mainLanguage;
             }
+        } catch (IOException | InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
 
         return extractPlayerLanguage(player);

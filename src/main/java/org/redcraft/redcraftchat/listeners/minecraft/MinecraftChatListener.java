@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.redcraft.redcraftchat.bridge.MinecraftDiscordBridge;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
-import org.redcraft.redcraftchat.models.database.PlayerPreferences;
+import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ProxyServer;

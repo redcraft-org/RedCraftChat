@@ -1,18 +1,17 @@
 package org.redcraft.redcraftchat.players.sources;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.UUID;
 
 import com.dieselpoint.norm.Database;
 
 import org.redcraft.redcraftchat.database.DatabaseManager;
-import org.redcraft.redcraftchat.models.database.PlayerLanguage;
-import org.redcraft.redcraftchat.models.database.PlayerPreferences;
+import org.redcraft.redcraftchat.models.database.PlayerPreferencesDatabase;
+import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
-public class DatabasePlayerSource {
+public class DatabasePlayerSource implements PlayerSourceInterface {
 
     Database db = DatabaseManager.getDatabase();
 
@@ -22,15 +21,16 @@ public class DatabasePlayerSource {
     public PlayerPreferences getPlayerPreferences(ProxiedPlayer player) throws IOException, InterruptedException {
         UUID playerUniqueId = player.getUniqueId();
 
-        return db.where("player_uuid=?", playerUniqueId.toString())
-                .first(PlayerPreferences.class);
+        return this.transform(db.where("player_uuid=?", playerUniqueId.toString())
+                .first(PlayerPreferencesDatabase.class));
     }
 
-    public void updatePlayerPreferences(PlayerPreferences preferences) {
-        String playerUniqueId = preferences.playerUniqueId;
+    public void updatePlayerPreferences(PlayerPreferences preferences) throws IOException, InterruptedException {
+        String playerUniqueId = preferences.minecraftUuid.toString();
 
         // upsert is not supported with MySQL
         Database db = DatabaseManager.getDatabase();
+        // TODO transform the other way around
         boolean playerAlreadyExists = !db.where("player_uuid=?", playerUniqueId).results(PlayerPreferences.class)
                 .isEmpty();
         if (playerAlreadyExists) {
@@ -40,9 +40,12 @@ public class DatabasePlayerSource {
         }
     }
 
-    public List<PlayerLanguage> getPlayerLanguages(ProxiedPlayer player) {
-        return DatabaseManager.getDatabase().where("player_uuid=?", player.getUniqueId().toString())
-                .results(PlayerLanguage.class);
+    public PlayerPreferences transform(PlayerPreferencesDatabase preferences) {
+        PlayerPreferences playerPreferences = new PlayerPreferences();
+        playerPreferences.minecraftUuid = UUID.fromString(preferences.playerUniqueId);
+        playerPreferences.discordId = Long.parseLong(preferences.discordId);
+        playerPreferences.commandSpyEnabled = preferences.commandSpyEnabled;
+        // TODO missing stuff
+        return playerPreferences;
     }
-
 }

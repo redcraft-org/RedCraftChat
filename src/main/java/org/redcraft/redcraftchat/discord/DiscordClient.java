@@ -86,6 +86,7 @@ public class DiscordClient {
         return postAsUser(webhookAsUser.responseChannel, webhookAsUser.member, webhookAsUser.content, webhookAsUser.attachments, suffix, previousMessageId);
     }
 
+    @SuppressWarnings("deprecation")
     public static ReadonlyMessage postAsUser(TextChannel responseChannel, Member member, String content, List<Attachment> attachments, String suffix, String previousMessageId) {
         String webhookName = RedCraftChat.getInstance().getDescription().getName();
 
@@ -136,7 +137,19 @@ public class DiscordClient {
         String username = ChatColor.stripColor(player.getDisplayName());
 
         builder.setUsername("[" + player.getServer().getInfo().getName() + "] " + username + suffix);
-        builder.setAvatarUrl("https://testing.redcraft.org/api/v1/skin/head/" + player.getUniqueId().toString() + "?size=128");
+
+        String avatarUrl = Config.playerAvatarApiEndpoint;
+        switch (Config.playerAvatarFormat) {
+            case "uuid":
+                avatarUrl = avatarUrl.replaceAll("%player%", player.getUniqueId().toString());
+                break;
+            case "name":
+            default:
+                avatarUrl = avatarUrl.replaceAll("%player%", player.getName());
+                break;
+        }
+
+        builder.setAvatarUrl(avatarUrl);
 
         builder.setContent(ChatColor.stripColor(message));
 

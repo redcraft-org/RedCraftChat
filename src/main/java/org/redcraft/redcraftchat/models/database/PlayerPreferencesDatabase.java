@@ -9,7 +9,7 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 
 @Table(name = "rcc_player_preferences")
-public class PlayerPreferences extends DatabaseModel {
+public class PlayerPreferencesDatabase extends DatabaseModel {
     @Transient
     public String sqlCreationQuery = "create table `rcc_player_preferences` (`id` bigint(20) NOT NULL AUTO_INCREMENT, `player_uuid` varchar(255) NOT NULL, `discord_id` varchar(255) DEFAULT NULL, `last_known_name` varchar(255) DEFAULT NULL, `previous_known_name` varchar(255) DEFAULT NULL, `command_spy_enabled` tinyint(1) NOT NULL DEFAULT 0, PRIMARY KEY (`id`), UNIQUE KEY `player_uuid` (`player_uuid`), UNIQUE KEY `discord_id` (`discord_id`));";
 
@@ -32,10 +32,10 @@ public class PlayerPreferences extends DatabaseModel {
     @Column(name = "command_spy_enabled", nullable = false)
     public boolean commandSpyEnabled = false;
 
-    public PlayerPreferences() {
+    public PlayerPreferencesDatabase() {
     }
 
-    public PlayerPreferences(UUID playerUniqueId) {
+    public PlayerPreferencesDatabase(UUID playerUniqueId) {
         this.playerUniqueId = playerUniqueId.toString();
     }
 }

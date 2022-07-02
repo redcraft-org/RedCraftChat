@@ -33,9 +33,15 @@ url-shortening-service: 'redcraft_url_shortener'
 url-shortening-endpoint: 'https://redcraft.org/api/v1/url'
 url-shortening-api-token: ''
 
-# Database related settings
+# Avatar related settings
+player-avatar-api-endpoint: 'https://redcraft.org/api/v1/skin/head/%player%?size=128'
+player-avatar-format: 'uuid' # Can be "uuid" or "name"
+
+# Storage related settings
 player-source: 'database'
-player-source-api-url: 'http://localhost/api/v1/player/' # Required only if player-source is set to "api"
+# Required only if player-source is set to "api"
+player-source-api-url: 'http://localhost/api/v1/player/'
+# Required only if player-source is set to "database"
 database-uri: 'jdbc:mysql://localhost:3306/redcraft_chat?useSSL=false&autoReconnect=true'
 database-username: 'root'
 database-password: 'password'

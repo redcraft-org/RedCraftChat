@@ -1,10 +1,9 @@
 package org.redcraft.redcraftchat.commands.minecraft;
 
-import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
-
 import java.io.IOException;
 
 import org.redcraft.redcraftchat.helpers.BasicMessageFormatter;
+import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.CommandSender;
@@ -54,8 +53,8 @@ public class CommandSpyCommand extends Command {
             boolean commandSpyEnabled = PlayerPreferencesManager.toggleCommandSpy(player);
             BasicMessageFormatter.sendInternalMessage(sender, "Command spy " + (commandSpyEnabled ? "enabled" : "disabled"), ChatColor.GREEN);
         } catch (IOException | InterruptedException e) {
+            BasicMessageFormatter.sendInternalError(sender, "An error occured while trying to toggle command spy, check logs for more info");
             e.printStackTrace();
-            BasicMessageFormatter.sendInternalError(sender, "An error occurred while trying to toggle command spy");
         }
     }
 

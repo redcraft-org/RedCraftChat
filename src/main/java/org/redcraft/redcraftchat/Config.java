@@ -40,6 +40,9 @@ public class Config {
 	public static String urlShorteningEndpoint = "https://redcraft.org/api/v1/url";
 	public static String urlShorteningToken = "";
 
+	public static String playerAvatarApiEndpoint = "https://redcraft.org/api/v1/skin/head/%playername%?size=128";
+	public static String playerAvatarFormat = "";
+
 	public static String playerSource = "database";
 	public static String playerSourceApiUrl = "https://redcraft.org/api/v1/players";
 	public static String databaseUri = "jdbc:sqlite:%plugin_config_path%/plugins/RedCraftChat/database.db";
@@ -78,6 +81,14 @@ public class Config {
 		deeplEndpoint = config.getString("deepl-endpoint");
 		deeplFormality = config.getString("deepl-formality");
 		deeplPreserveFormatting = config.getBoolean("deepl-preserve-formatting");
+
+		urlShorteningEnabled = config.getBoolean("url-shortening-enabled");
+		urlShorteningService = config.getString("url-shortening-service");
+		urlShorteningEndpoint = config.getString("url-shortening-endpoint");
+		urlShorteningToken = config.getString("url-shortening-token");
+
+		playerAvatarApiEndpoint = config.getString("player-avatar-api-endpoint");
+		playerAvatarFormat = config.getString("player-avatar-format");
 
 		playerSource = config.getString("player-source");
 		playerSourceApiUrl = config.getString("player-source-api-url");
