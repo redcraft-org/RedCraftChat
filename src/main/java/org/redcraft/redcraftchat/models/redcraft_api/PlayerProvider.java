@@ -6,11 +6,12 @@ import com.google.gson.annotations.SerializedName;
 
 public class PlayerProvider extends SerializableModel {
 
-    @SerializedName(value = "provider_name", alternate = { "providerName" })
-    public String providerName;
+    // TODO swap provider_name and name once API is updated
+    @SerializedName(value = "provider_name", alternate = { "name" })
+    public String name;
 
-    @SerializedName(value = "provider_uuid", alternate = { "providerUuid" })
-    public String providerUuid;
+    @SerializedName(value = "uuid", alternate = { "provider_uuid" })
+    public String uuid;
 
     @SerializedName(value = "last_username", alternate = { "lastUsername" })
     public String lastUsername;
@@ -21,9 +22,9 @@ public class PlayerProvider extends SerializableModel {
     public PlayerProvider() {
     }
 
-    public PlayerProvider(String providerName, String uuid, String lastUsername, String previousUsername) {
-        this.providerName = providerName;
-        this.providerUuid = uuid;
+    public PlayerProvider(String name, String uuid, String lastUsername, String previousUsername) {
+        this.name = name;
+        this.uuid = uuid;
         this.lastUsername = lastUsername;
         this.previousUsername = previousUsername;
     }

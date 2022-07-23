@@ -21,8 +21,10 @@ public class ApiPlayerSource extends DatabasePlayerSource {
     static HttpClient httpClient = HttpClient.newHttpClient();
 
     public PlayerPreferences getPlayerPreferences(ProxiedPlayer player) throws IOException, InterruptedException {
+        String url = Config.playerSourceApiUrl + "/" + player.getUniqueId().toString() + "?isProvider=true";
+
         var request = HttpRequest.newBuilder(
-                URI.create(Config.playerSourceApiUrl + "/" + player.getUniqueId().toString() + "?isProvider=true"))
+                URI.create(url))
                 .header("accept", "application/json")
                 .build();
 
@@ -41,13 +43,13 @@ public class ApiPlayerSource extends DatabasePlayerSource {
     }
 
     public void createPlayerPreferences(ProxiedPlayer player) throws IOException, InterruptedException {
-        var playerPreferences = transform(new PlayerPreferences(player));
+        String body = new Gson().toJson(transform(new PlayerPreferences(player)));
 
         var request = HttpRequest.newBuilder(
                 URI.create(Config.playerSourceApiUrl))
                 .header("accept", "application/json")
                 .header("content-type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(new Gson().toJson(playerPreferences)))
+                .POST(HttpRequest.BodyPublishers.ofString(body))
                 .build();
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
@@ -58,11 +60,15 @@ public class ApiPlayerSource extends DatabasePlayerSource {
     }
 
     public void updatePlayerPreferences(PlayerPreferences preferences) throws IOException, InterruptedException {
+        String url = Config.playerSourceApiUrl + "/" + preferences.internalUuid;
+
+        String body = new Gson().toJson(transform(preferences));
+
         var request = HttpRequest.newBuilder(
-                URI.create(Config.playerSourceApiUrl + "/" + preferences.internalUuid))
+                URI.create(url))
                 .header("accept", "application/json")
                 .header("content-type", "application/json")
-                .PUT(HttpRequest.BodyPublishers.ofString(new Gson().toJson(transform(preferences))))
+                .PUT(HttpRequest.BodyPublishers.ofString(body))
                 .build();
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
@@ -78,15 +84,15 @@ public class ApiPlayerSource extends DatabasePlayerSource {
         playerPreferences.internalUuid = preferences.id;
 
         for (PlayerProvider provider : preferences.providers) {
-            switch (provider.providerName) {
+            switch (provider.name) {
                 case "minecraft":
-                    playerPreferences.minecraftUuid = UUID.fromString(provider.providerUuid);
+                    playerPreferences.minecraftUuid = UUID.fromString(provider.uuid);
                     playerPreferences.lastKnownMinecraftName = provider.lastUsername;
                     playerPreferences.previousKnownMinecraftName = provider.previousUsername;
                     break;
 
                 case "discord":
-                    playerPreferences.discordId = Long.parseLong(provider.providerUuid);
+                    playerPreferences.discordId = Long.parseLong(provider.uuid);
                     playerPreferences.lastKnownDiscordName = provider.lastUsername;
                     playerPreferences.previousKnownDiscordName = provider.previousUsername;
                     break;

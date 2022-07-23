@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.redcraft.redcraftchat.commands.discord.PlayersCommand;
 import org.redcraft.redcraftchat.commands.minecraft.CommandSpyCommand;
+import org.redcraft.redcraftchat.commands.minecraft.PlayerSettingsCommand;
 import org.redcraft.redcraftchat.database.DatabaseManager;
 import org.redcraft.redcraftchat.discord.DiscordClient;
 import org.redcraft.redcraftchat.listeners.discord.DiscordMessageDeletedListener;
@@ -58,6 +59,7 @@ public class RedCraftChat extends Plugin {
 
 		// Commands
 		pluginManager.registerCommand(this, new CommandSpyCommand());
+		pluginManager.registerCommand(this, new PlayerSettingsCommand());
 	}
 
 	@Override

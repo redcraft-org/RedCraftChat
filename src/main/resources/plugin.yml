@@ -3,33 +3,43 @@ main: org.redcraft.redcraftchat.RedCraftChat
 version: 0.1.1-SNAPSHOT
 author: RedCraft
 authors: [lululombard]
-api-version: 1.18
+api-version: 1.19
 permissions:
-   redcraftchat.*:
-     description: Gives access to all RedCraftChat permissions
-     children:
-       redcraftchat.formatting.*: true
-       redcraftchat.moderation.*: true
+  redcraftchat.*:
+    description: Gives access to all RedCraftChat permissions
+    children:
+      redcraftchat.formatting.*: true
+      redcraftchat.moderation.*: true
 
-   redcraftchat.formatting.*:
-     description: Allows all kind of formatting
-     children:
-       redcraftchat.formatting.colors: true
-       redcraftchat.formatting.styling: true
-       redcraftchat.formatting.magic: true
-   redcraftchat.formatting.colors:
-     description: Allows color in chat
-   redcraftchat.formatting.styling:
-     description: Allows styling in chat
-   redcraftchat.formatting.magic:
-     description: Allows magic (&k) in chat
+  redcraftchat.formatting.*:
+    description: Allows all kind of formatting
+    children:
+      redcraftchat.formatting.colors: true
+      redcraftchat.formatting.styling: true
+      redcraftchat.formatting.magic: true
+  redcraftchat.formatting.colors:
+    description: Allows color in chat
+  redcraftchat.formatting.styling:
+    description: Allows styling in chat
+  redcraftchat.formatting.magic:
+    description: Allows magic (&k) in chat
 
-   redcraftchat.moderation.*:
-     description: Allows access to all moderation tools
-     children:
-       redcraftchat.moderation.commandspy: true
-       redcraftchat.moderation.commandspy.others: true
-   redcraftchat.moderation.commandspy:
-     description: Allows to use /cspy
-   redcraftchat.moderation.commandspy.others:
-     description: Allows to toggle command spy for others
+  redcraftchat.command.*:
+    description: Allows access to all commands
+    children:
+      redcraftchat.command.player-settings: true
+  redcraftchat.command.player-settings:
+    description: Allows to use /player-settings to dump your own player settings
+  redcraftchat.command.player-settings.others:
+    description: Allows to use /player-settings to dump another player's settings
+
+  redcraftchat.moderation.*:
+    description: Allows access to all moderation tools
+    children:
+      redcraftchat.moderation.commandspy: true
+      redcraftchat.moderation.commandspy.others: true
+      redcraftchat.command.player-settings.others: true
+  redcraftchat.moderation.commandspy:
+    description: Allows to use /cspy
+  redcraftchat.moderation.commandspy.others:
+    description: Allows to toggle command spy for others
