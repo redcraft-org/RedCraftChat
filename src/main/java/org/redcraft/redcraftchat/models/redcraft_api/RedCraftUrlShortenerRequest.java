@@ -1,4 +1,4 @@
-package org.redcraft.redcraftchat.models.redcraft_website;
+package org.redcraft.redcraftchat.models.redcraft_api;
 
 import org.redcraft.redcraftchat.models.SerializableModel;
 

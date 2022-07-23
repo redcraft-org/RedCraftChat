@@ -48,14 +48,11 @@ public class PlayerPreferencesManager {
             return cachedPlayerPreferences;
         }
 
-        PlayerPreferences playerPreferences = getPlayerSource().getPlayerPreferences(player); // TODO
+        PlayerPreferences playerPreferences = getPlayerSource().getPlayerPreferences(player);
 
         boolean updated = false;
 
-        if (playerPreferences == null || playerPreferences.minecraftUuid == null) {
-            playerPreferences = createPlayerPreferences(player);
-            updated = true;
-        } else if (!playerPreferences.lastKnownMinecraftName.equals(player.getName())) {
+        if (!player.getName().equals(playerPreferences.lastKnownMinecraftName)) {
             // Detect username change
             playerPreferences.previousKnownMinecraftName = playerPreferences.lastKnownMinecraftName;
             playerPreferences.lastKnownMinecraftName = player.getName();
@@ -67,19 +64,6 @@ public class PlayerPreferencesManager {
         }
 
         CacheManager.put(CacheCategory.PLAYER_PREFERENCES, playerUniqueId.toString(), playerPreferences);
-
-        return playerPreferences;
-    }
-
-    public static PlayerPreferences createPlayerPreferences(ProxiedPlayer player) {
-        PlayerPreferences playerPreferences = new PlayerPreferences(player.getUniqueId());
-
-        String detectedPlayerLanguage = extractPlayerLanguage(player);
-
-        String debugMessage = String.format("Detected language %s for player %s", detectedPlayerLanguage, player.getName());
-        RedCraftChat.getInstance().getLogger().info(debugMessage);
-
-        playerPreferences.lastKnownMinecraftName = player.getName();
 
         return playerPreferences;
     }
@@ -105,7 +89,8 @@ public class PlayerPreferencesManager {
             PlayerPreferences preferences = getPlayerPreferences(player);
 
             for (String language : preferences.languages) {
-                if (language.equalsIgnoreCase(languageIsoCode)) {
+                // This is a fix to use the ISO 639-1 code instead of the full locale code
+                if (language.split("-")[0].equalsIgnoreCase(languageIsoCode)) {
                     return true;
                 }
             }
@@ -122,7 +107,8 @@ public class PlayerPreferencesManager {
             PlayerPreferences preferences = getPlayerPreferences(player);
 
             if (preferences.mainLanguage != null) {
-                return preferences.mainLanguage;
+                // This is a fix to use the ISO 639-1 code instead of the full locale code
+                return preferences.mainLanguage.split("-")[0];
             }
         } catch (IOException | InterruptedException e) {
             // TODO Auto-generated catch block
@@ -134,7 +120,9 @@ public class PlayerPreferencesManager {
 
     public static String extractPlayerLanguage(ProxiedPlayer player) {
         try {
-            return player.getLocale().getLanguage();
+            String detectedLanguage = player.getLocale().getLanguage() + "-" + player.getLocale().getCountry();
+            RedCraftChat.getInstance().getLogger().info("Detected language for " + player.getName() + ": " + detectedLanguage);
+            return detectedLanguage;
         } catch (NullPointerException e) {
             // TODO GeoIP test (User has a very old version of Minecraft or Minechat)
         }

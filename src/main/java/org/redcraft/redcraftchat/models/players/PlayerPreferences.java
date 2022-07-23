@@ -1,9 +1,16 @@
 package org.redcraft.redcraftchat.models.players;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
+
+import net.md_5.bungee.api.connection.ProxiedPlayer;
+
 public class PlayerPreferences {
+
+    public String internalUuid;
 
     public String mainLanguage;
 
@@ -22,9 +29,16 @@ public class PlayerPreferences {
     public boolean commandSpyEnabled;
 
     public PlayerPreferences() {
+        languages = new ArrayList<String>();
     }
 
-    public PlayerPreferences(UUID minecraftUuid) {
-        this.minecraftUuid = minecraftUuid;
+    public PlayerPreferences(ProxiedPlayer player) {
+        mainLanguage = PlayerPreferencesManager.extractPlayerLanguage(player);
+
+        languages = new ArrayList<String>();
+        languages.add(mainLanguage);
+
+        minecraftUuid = player.getUniqueId();
+        lastKnownMinecraftName = player.getName();
     }
 }

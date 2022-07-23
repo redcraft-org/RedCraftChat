@@ -12,8 +12,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import org.redcraft.redcraftchat.Config;
-import org.redcraft.redcraftchat.models.redcraft_website.RedCraftUrlShortenerRequest;
-import org.redcraft.redcraftchat.models.redcraft_website.RedCraftUrlShortenerResponse;
+import org.redcraft.redcraftchat.models.redcraft_api.RedCraftUrlShortenerRequest;
+import org.redcraft.redcraftchat.models.redcraft_api.RedCraftUrlShortenerResponse;
 
 public class RedCraftUrlShortenerClient {
 

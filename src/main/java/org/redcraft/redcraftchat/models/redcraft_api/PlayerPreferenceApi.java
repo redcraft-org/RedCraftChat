@@ -1,12 +1,15 @@
-package org.redcraft.redcraftchat.models.redcraft_website;
+package org.redcraft.redcraftchat.models.redcraft_api;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.redcraft.redcraftchat.models.SerializableModel;
 
 import com.google.gson.annotations.SerializedName;
 
-public class PlayerPreferences extends SerializableModel {
+public class PlayerPreferenceApi extends SerializableModel {
+
+    public String id;
 
     @SerializedName(value = "main_language", alternate = {"mainLanguage"})
     public String mainLanguage;
@@ -17,6 +20,8 @@ public class PlayerPreferences extends SerializableModel {
 
     public List<PlayerProvider> providers;
 
-    public PlayerPreferences() {
+    public PlayerPreferenceApi() {
+        languages = new ArrayList<String>();
+        providers = new ArrayList<PlayerProvider>();
     }
 }

@@ -44,7 +44,7 @@ public class Config {
 	public static String playerAvatarFormat = "";
 
 	public static String playerSource = "database";
-	public static String playerSourceApiUrl = "https://redcraft.org/api/v1/players";
+	public static String playerSourceApiUrl = "https://redcraft.org/api/v1/player";
 	public static String databaseUri = "jdbc:sqlite:%plugin_config_path%/plugins/RedCraftChat/database.db";
 	public static String databaseUsername = "";
 	public static String databasePassword = "";
