@@ -64,7 +64,7 @@ public class MinecraftRemoteServerMessageListener implements Listener {
 
                 ChatMessageType messageType;
 
-                if (chatPacket.getPosition() == 255) {
+                if (chatPacket.getPosition() == 2) {
                     messageType = ChatMessageType.ACTION_BAR;
                 } else {
                     messageType = ChatMessageType.CHAT;
