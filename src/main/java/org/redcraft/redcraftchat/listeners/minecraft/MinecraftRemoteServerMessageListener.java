@@ -17,7 +17,6 @@ import org.redcraft.redcraftchat.translate.TranslationManager;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPipeline;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
@@ -34,7 +33,7 @@ import net.md_5.bungee.chat.ComponentSerializer;
 import net.md_5.bungee.event.EventHandler;
 import net.md_5.bungee.event.EventPriority;
 import net.md_5.bungee.protocol.PacketWrapper;
-import net.md_5.bungee.protocol.packet.Chat;
+import net.md_5.bungee.protocol.packet.SystemChat;
 
 public class MinecraftRemoteServerMessageListener implements Listener {
 
@@ -44,10 +43,10 @@ public class MinecraftRemoteServerMessageListener implements Listener {
 
     public class AsyncChatParser implements Runnable {
         ServerConnectedEvent event;
-        Chat chatPacket;
+        SystemChat chatPacket;
         long chatPacketTime;
 
-        AsyncChatParser(ServerConnectedEvent event, Chat chatPacket) {
+        AsyncChatParser(ServerConnectedEvent event, SystemChat chatPacket) {
             this.event = event;
             this.chatPacket = chatPacket;
             this.chatPacketTime = System.nanoTime();
@@ -88,9 +87,9 @@ public class MinecraftRemoteServerMessageListener implements Listener {
         Object channelWrapper = PrivateFieldExtractor.extractPrivateApiField(serverConnection, "ch");
         Channel channel = (Channel) PrivateFieldExtractor.extractPrivateApiField(channelWrapper, "ch");
 
-        ChannelPipeline pipeline = channel.pipeline();
+        channel.pipeline().addBefore("inbound-boss", "redcraft-chat", getPacketInterceptor(event));
 
-        pipeline.addBefore("inbound-boss", "packet_interceptor", getPacketInterceptor(event));
+        RedCraftChat.getInstance().getLogger().info("Added packet interceptor to " + serverConnection.getInfo().getName());
     }
 
     public static void handleChatPacket(long chatPacketTimestamp, Server server, ProxiedPlayer player, BaseComponent[] messages, ChatMessageType position) throws InterruptedException {
@@ -104,8 +103,16 @@ public class MinecraftRemoteServerMessageListener implements Listener {
                 continue;
             }
             String translatedMessage = message.toLegacyText();
+
             try {
                 String sourceLanguage = DetectionManager.getLanguage(translatedMessage);
+
+                if (PlayerPreferencesManager.playerSpeaksLanguage(player, sourceLanguage)) {
+                    // Do not translate, player speaks the language of the message
+                    translatedMessageComponents.add(message);
+                    continue;
+                }
+
                 String targetLanguage = PlayerPreferencesManager.getMainPlayerLanguage(player);
                 if (sourceLanguage != null && !sourceLanguage.equalsIgnoreCase(targetLanguage)) {
                     translatedMessage = translationManager.translate(translatedMessage, sourceLanguage, targetLanguage);
@@ -161,9 +168,9 @@ public class MinecraftRemoteServerMessageListener implements Listener {
             public void channelRead(ChannelHandlerContext context, Object message) throws Exception {
                 PacketWrapper wrapper = (PacketWrapper) message;
 
-                if (wrapper.packet instanceof Chat) {
+                if (wrapper.packet instanceof SystemChat) {
                     RedCraftChat pluginInstance = RedCraftChat.getInstance();
-                    AsyncChatParser chatParser = new AsyncChatParser(event, (Chat) wrapper.packet);
+                    AsyncChatParser chatParser = new AsyncChatParser(event, (SystemChat) wrapper.packet);
 
                     pluginInstance.getProxy().getScheduler().runAsync(pluginInstance, chatParser);
 
