@@ -1,7 +1,5 @@
 package org.redcraft.redcraftchat.models.database;
 
-import java.util.UUID;
-
 import javax.persistence.Column;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -41,9 +39,5 @@ public class PlayerPreferencesDatabase extends DatabaseModel {
     public boolean commandSpyEnabled = false;
 
     public PlayerPreferencesDatabase() {
-    }
-
-    public PlayerPreferencesDatabase(UUID playerUniqueId) {
-        this.playerUniqueId = playerUniqueId.toString();
     }
 }
