@@ -65,6 +65,9 @@ public class ModernmtClient {
 
         ModernmtResponse modernmtResponse = gson.fromJson(rawResponse.toString(), ModernmtResponse.class);
 
+        // Remove nbsp from modernmt response
+        modernmtResponse.data.translation = modernmtResponse.data.translation.replace('\u00A0', ' ');
+
         CacheManager.put(CacheCategory.MODERNMT_TRANSLATED_MESSAGE, cacheKey, modernmtResponse);
 
         return modernmtResponse;

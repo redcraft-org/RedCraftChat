@@ -6,6 +6,7 @@ import java.util.List;
 import org.atteo.evo.inflector.English;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.discord.DiscordClient;
+import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
@@ -41,6 +42,8 @@ public class PlayersCommand extends ListenerAdapter {
             int playerCount = server.getPlayers().size();
 
             description += "\n*" + playerCount + " " + English.plural("player", playerCount) + " online*";
+
+            description = PlayerPreferencesManager.localizeMessageForPlayer(event.getUser(), description);
 
             MessageEmbed message = new EmbedBuilder()
                 .setTitle(server.getName())

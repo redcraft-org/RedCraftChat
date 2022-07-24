@@ -22,7 +22,7 @@ public class PlayerPreferences {
     public String lastKnownMinecraftName;
     public String previousKnownMinecraftName;
 
-    public long discordId;
+    public String discordId;
     public String lastKnownDiscordName;
     public String previousKnownDiscordName;
 

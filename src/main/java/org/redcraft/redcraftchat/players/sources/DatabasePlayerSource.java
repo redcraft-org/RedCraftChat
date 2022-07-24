@@ -11,6 +11,7 @@ import org.redcraft.redcraftchat.database.DatabaseManager;
 import org.redcraft.redcraftchat.models.database.PlayerPreferencesDatabase;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 
+import net.dv8tion.jda.api.entities.User;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 public class DatabasePlayerSource implements PlayerSourceInterface {
@@ -33,15 +34,39 @@ public class DatabasePlayerSource implements PlayerSourceInterface {
         return transform(result);
     }
 
+    public PlayerPreferences getPlayerPreferences(User user) throws IOException, InterruptedException {
+        PlayerPreferencesDatabase result = db.where("discord_id=?", user.getId()).first(PlayerPreferencesDatabase.class);
+
+        if (result == null) {
+            return null;
+        }
+
+        return transform(result);
+    }
+
     public void updatePlayerPreferences(PlayerPreferences preferences) throws IOException, InterruptedException {
-        String playerUniqueId = preferences.minecraftUuid.toString();
-
-        // upsert is not supported with MySQL
-        Database db = DatabaseManager.getDatabase();
-        boolean playerAlreadyExists = !db.where("minecraft_uuid=?", playerUniqueId).results(PlayerPreferencesDatabase.class).isEmpty();
-
         PlayerPreferencesDatabase transformedPreferences = transformToDatabase(preferences);
 
+        Database db = DatabaseManager.getDatabase();
+
+        String query, params;
+
+        if (transformedPreferences.id > 0) {
+            query = "id=?";
+            params = String.valueOf(transformedPreferences.id);
+        } else if (transformedPreferences.minecraftUuid != null) {
+            query = "minecraft_uuid=?";
+            params = transformedPreferences.minecraftUuid;
+        } else if (transformedPreferences.discordId != null) {
+            query = "discord_id=?";
+            params = transformedPreferences.discordId;
+        } else {
+            throw new IllegalStateException("No unique identifier found for player preferences");
+        }
+
+        boolean playerAlreadyExists = !db.where(query, params).results(PlayerPreferencesDatabase.class).isEmpty();
+
+        // upsert is not supported with MySQL
         if (playerAlreadyExists) {
             db.update(transformedPreferences);
         } else {
@@ -58,7 +83,7 @@ public class DatabasePlayerSource implements PlayerSourceInterface {
         playerPreferences.lastKnownMinecraftName = preferences.lastKnownMinecraftName;
         playerPreferences.previousKnownDiscordName = preferences.previousKnownDiscordName;
 
-        playerPreferences.discordId = Long.parseLong(preferences.discordId);
+        playerPreferences.discordId = preferences.discordId;
         playerPreferences.lastKnownDiscordName = preferences.lastKnownDiscordName;
         playerPreferences.previousKnownDiscordName = preferences.previousKnownDiscordName;
 
@@ -80,7 +105,7 @@ public class DatabasePlayerSource implements PlayerSourceInterface {
         playerPreferences.lastKnownMinecraftName = preferences.lastKnownMinecraftName;
         playerPreferences.previousKnownDiscordName = preferences.previousKnownDiscordName;
 
-        playerPreferences.discordId = String.valueOf(preferences.discordId);
+        playerPreferences.discordId = preferences.discordId;
         playerPreferences.lastKnownDiscordName = preferences.lastKnownDiscordName;
         playerPreferences.previousKnownDiscordName = preferences.previousKnownDiscordName;
 

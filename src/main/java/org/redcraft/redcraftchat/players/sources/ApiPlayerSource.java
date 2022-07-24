@@ -14,6 +14,7 @@ import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import org.redcraft.redcraftchat.models.redcraft_api.PlayerPreferenceApi;
 import org.redcraft.redcraftchat.models.redcraft_api.PlayerProvider;
 
+import net.dv8tion.jda.api.entities.User;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 public class ApiPlayerSource extends DatabasePlayerSource {
@@ -33,6 +34,27 @@ public class ApiPlayerSource extends DatabasePlayerSource {
         if (response.statusCode() == 404) {
             createPlayerPreferences(player);
             return getPlayerPreferences(player);
+        }
+
+        if (response.statusCode() != 200) {
+            throw new IOException("Failed to get player preferences: " + response.statusCode() + " - " + response.body());
+        }
+
+        return transform(new Gson().fromJson(response.body(), PlayerPreferenceApi.class));
+    }
+
+    public PlayerPreferences getPlayerPreferences(User user) throws IOException, InterruptedException {
+        String url = Config.playerSourceApiUrl + "/" + user.getId() + "?isProvider=true";
+
+        var request = HttpRequest.newBuilder(
+                URI.create(url))
+                .header("accept", "application/json")
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() == 404) {
+            return null;
         }
 
         if (response.statusCode() != 200) {
@@ -92,7 +114,7 @@ public class ApiPlayerSource extends DatabasePlayerSource {
                     break;
 
                 case "discord":
-                    playerPreferences.discordId = Long.parseLong(provider.uuid);
+                    playerPreferences.discordId = provider.uuid;
                     playerPreferences.lastKnownDiscordName = provider.lastUsername;
                     playerPreferences.previousKnownDiscordName = provider.previousUsername;
                     break;
@@ -119,8 +141,8 @@ public class ApiPlayerSource extends DatabasePlayerSource {
             playerPreferences.providers.add(new PlayerProvider("minecraft", preferences.minecraftUuid.toString(), preferences.lastKnownMinecraftName, preferences.previousKnownMinecraftName));
         }
 
-        if (preferences.discordId != 0) {
-            playerPreferences.providers.add(new PlayerProvider("discord", Long.toString(preferences.discordId), preferences.lastKnownDiscordName, preferences.previousKnownDiscordName));
+        if (preferences.discordId != null) {
+            playerPreferences.providers.add(new PlayerProvider("discord", preferences.discordId, preferences.lastKnownDiscordName, preferences.previousKnownDiscordName));
         }
 
         playerPreferences.languages = preferences.languages;
