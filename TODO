@@ -9,9 +9,8 @@ Discord:
   ☐ LuckPerms support for ranks
   ☐ Message reactions
   ☐ Message replies threads
-  ☐ Account sync
-    ☐ Create temporary hidden channel
-    ☐ Add nickname change detection
+  ✔ Account sync @done(22-07-24 20:48)
+  ☐ Add nickname change detection
   ☐ Forget sync command
 
 In-game:

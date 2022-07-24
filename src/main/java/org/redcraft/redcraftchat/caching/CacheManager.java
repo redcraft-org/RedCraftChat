@@ -75,6 +75,10 @@ public class CacheManager {
         return put(formatCategoryKey(category, key), element);
     }
 
+    public static Object delete(CacheCategory category, String key) {
+        return delete(formatCategoryKey(category, key));
+    }
+
     public static String formatCategoryKey(CacheCategory category, String key) {
         return String.format("%s;%s", category, key);
     }

@@ -93,10 +93,12 @@ public class PlayerPreferencesManager {
 
         User discordUser = DiscordClient.getClient().getUserById(discordId);
 
-        if (!discordUser.getName().equals(playerPreferences.lastKnownDiscordName)) {
+        String discordName = discordUser.getName() + "#" + discordUser.getDiscriminator();
+
+        if (!discordName.equals(playerPreferences.lastKnownDiscordName)) {
             // Detect username change
             playerPreferences.previousKnownDiscordName = playerPreferences.lastKnownDiscordName;
-            playerPreferences.lastKnownDiscordName = discordUser.getName() + "#" + discordUser.getDiscriminator();
+            playerPreferences.lastKnownDiscordName = discordName;
             updated = true;
         }
 
@@ -108,6 +110,9 @@ public class PlayerPreferencesManager {
         if (playerPreferences.minecraftUuid != null) {
             CacheManager.put(CacheCategory.PLAYER_PREFERENCES, playerPreferences.minecraftUuid.toString(), playerPreferences);
         }
+        if (playerPreferences.discordId != null) {
+            CacheManager.put(CacheCategory.PLAYER_PREFERENCES, playerPreferences.discordId, playerPreferences);
+        }
 
         return playerPreferences;
     }
@@ -115,7 +120,12 @@ public class PlayerPreferencesManager {
     public static void updatePlayerPreferences(PlayerPreferences preferences) throws IOException, InterruptedException {
         getPlayerSource().updatePlayerPreferences(preferences);
 
-        CacheManager.put(CacheCategory.PLAYER_PREFERENCES, preferences.minecraftUuid.toString(), preferences);
+        if (preferences.minecraftUuid != null) {
+            CacheManager.put(CacheCategory.PLAYER_PREFERENCES, preferences.minecraftUuid.toString(), preferences);
+        }
+        if (preferences.discordId != null) {
+            CacheManager.put(CacheCategory.PLAYER_PREFERENCES, preferences.discordId, preferences);
+        }
     }
 
     public static boolean playerSpeaksLanguage(PlayerPreferences preferences, String languageIsoCode) {

@@ -10,6 +10,7 @@ import java.util.UUID;
 import com.google.gson.Gson;
 
 import org.redcraft.redcraftchat.Config;
+import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import org.redcraft.redcraftchat.models.redcraft_api.PlayerPreferenceApi;
 import org.redcraft.redcraftchat.models.redcraft_api.PlayerProvider;
@@ -85,6 +86,8 @@ public class ApiPlayerSource extends DatabasePlayerSource {
         String url = Config.playerSourceApiUrl + "/" + preferences.internalUuid;
 
         String body = new Gson().toJson(transformToApi(preferences));
+
+        RedCraftChat.getInstance().getLogger().info("Updating player preferences: " + url + " " + body);
 
         var request = HttpRequest.newBuilder(
                 URI.create(url))

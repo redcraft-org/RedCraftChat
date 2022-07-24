@@ -28,10 +28,13 @@ permissions:
     description: Allows access to all commands
     children:
       redcraftchat.command.player-settings: true
+      redcraftchat.command.link-discord-account: true
   redcraftchat.command.player-settings:
     description: Allows to use /player-settings to dump your own player settings
   redcraftchat.command.player-settings.others:
     description: Allows to use /player-settings to dump another player's settings
+  redcraftchat.command.link-discord-account:
+    description: Allows to use /discord-link to link your Discord account
 
   redcraftchat.moderation.*:
     description: Allows access to all moderation tools

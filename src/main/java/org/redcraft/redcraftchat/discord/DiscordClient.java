@@ -161,7 +161,6 @@ public class DiscordClient {
     }
 
     public static WebhookMessageMappingList getWebhookMessagesFromOriginalMessage(String messageId) {
-        Object cachedObject = CacheManager.get(CacheCategory.WEBHOOK_MESSAGE_MAPPING, messageId, WebhookMessageMappingList.class);
-        return (WebhookMessageMappingList) cachedObject;
+        return (WebhookMessageMappingList) CacheManager.get(CacheCategory.WEBHOOK_MESSAGE_MAPPING, messageId, WebhookMessageMappingList.class);
     }
 }

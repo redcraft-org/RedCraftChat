@@ -3,6 +3,9 @@ package org.redcraft.redcraftchat.helpers;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.User;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.chat.BaseComponent;
@@ -29,5 +32,17 @@ public class BasicMessageFormatter {
 
     public static ComponentBuilder prepareInternalMessage() {
         return new ComponentBuilder("[" + RedCraftChat.getInstance().getDescription().getName() + "] ").color(ChatColor.GOLD);
+    }
+
+    public static MessageEmbed generateDiscordMessage(User target, String title, String message, int color) {
+        EmbedBuilder builder = new EmbedBuilder();
+        builder.setTitle(PlayerPreferencesManager.localizeMessageForPlayer(target, title));
+        builder.setDescription(PlayerPreferencesManager.localizeMessageForPlayer(target, message));
+        builder.setColor(color);
+        return builder.build();
+    }
+
+    public static MessageEmbed generateDiscordError(User target, String message) {
+        return generateDiscordMessage(target, "Error", message, 0xFF0000);
     }
 }
