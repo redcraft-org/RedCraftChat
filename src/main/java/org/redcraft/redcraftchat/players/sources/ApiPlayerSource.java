@@ -43,7 +43,7 @@ public class ApiPlayerSource extends DatabasePlayerSource {
     }
 
     public void createPlayerPreferences(ProxiedPlayer player) throws IOException, InterruptedException {
-        String body = new Gson().toJson(transform(new PlayerPreferences(player)));
+        String body = new Gson().toJson(transformToApi(new PlayerPreferences(player)));
 
         var request = HttpRequest.newBuilder(
                 URI.create(Config.playerSourceApiUrl))
@@ -62,7 +62,7 @@ public class ApiPlayerSource extends DatabasePlayerSource {
     public void updatePlayerPreferences(PlayerPreferences preferences) throws IOException, InterruptedException {
         String url = Config.playerSourceApiUrl + "/" + preferences.internalUuid;
 
-        String body = new Gson().toJson(transform(preferences));
+        String body = new Gson().toJson(transformToApi(preferences));
 
         var request = HttpRequest.newBuilder(
                 URI.create(url))
@@ -110,7 +110,7 @@ public class ApiPlayerSource extends DatabasePlayerSource {
         return playerPreferences;
     }
 
-    public PlayerPreferenceApi transform(PlayerPreferences preferences) {
+    public PlayerPreferenceApi transformToApi(PlayerPreferences preferences) {
         PlayerPreferenceApi playerPreferences = new PlayerPreferenceApi();
 
         playerPreferences.id = preferences.internalUuid;

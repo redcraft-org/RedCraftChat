@@ -9,10 +9,8 @@ import com.dieselpoint.norm.Database;
 
 import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
-import org.redcraft.redcraftchat.models.database.PlayerLanguage;
 import org.redcraft.redcraftchat.models.database.PlayerMail;
 import org.redcraft.redcraftchat.models.database.PlayerPreferencesDatabase;
-import org.redcraft.redcraftchat.models.database.SupportedLanguage;
 
 public class DatabaseManager {
     private static Database database;
@@ -29,10 +27,8 @@ public class DatabaseManager {
         database.setPassword(Config.databasePassword);
 
         List<Class<?>> classes = new ArrayList<Class<?>>();
-        classes.add(PlayerLanguage.class);
         classes.add(PlayerPreferencesDatabase.class);
         classes.add(PlayerMail.class);
-        classes.add(SupportedLanguage.class);
         createStructure(classes);
 
         RedCraftChat.getInstance().getLogger().info("Connected to database!");
