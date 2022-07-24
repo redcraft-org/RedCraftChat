@@ -29,7 +29,7 @@ public class MinecraftChatListener implements Listener {
 
     @EventHandler(priority = EventPriority.NORMAL)
     public void onChatEvent(ChatEvent event) {
-        if (!(event.getSender() instanceof ProxiedPlayer)) {
+        if (!(event.getSender() instanceof ProxiedPlayer) || event.isCancelled()) {
             return;
         }
 
