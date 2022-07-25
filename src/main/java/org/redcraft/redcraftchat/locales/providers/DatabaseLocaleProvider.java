@@ -9,7 +9,7 @@ import org.redcraft.redcraftchat.models.locales.SupportedLocale;
 
 import com.dieselpoint.norm.Database;
 
-public class DatabaseLocaleProvider implements LocaleProviderInterface {
+public class DatabaseLocaleProvider extends StaticLocaleProvider {
 
     Database db = DatabaseManager.getDatabase();
 

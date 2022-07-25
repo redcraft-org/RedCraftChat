@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import com.github.pemistahl.lingua.api.*;
 import com.github.pemistahl.lingua.api.Language;
 
-import org.redcraft.redcraftchat.Config;
+import org.redcraft.redcraftchat.locales.LocaleManager;
 
 public class Lingua {
 
@@ -19,7 +19,7 @@ public class Lingua {
         if (detector == null) {
             ArrayList<Language> supportedLanguages = new ArrayList<Language>();
 
-            for (String supportedLanguage : Config.translationDiscordSupportedLanguages) {
+            for (String supportedLanguage : LocaleManager.getSupportedLanguages()) {
                 IsoCode639_1 supportedLanguageIsoCode = IsoCode639_1.valueOf(supportedLanguage.toUpperCase());
                 supportedLanguages.add(Language.getByIsoCode639_1(supportedLanguageIsoCode));
             }

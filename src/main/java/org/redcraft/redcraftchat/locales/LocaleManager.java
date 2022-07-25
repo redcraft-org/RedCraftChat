@@ -1,6 +1,7 @@
 package org.redcraft.redcraftchat.locales;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.redcraft.redcraftchat.Config;
@@ -8,16 +9,21 @@ import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.caching.CacheManager;
 import org.redcraft.redcraftchat.locales.providers.DatabaseLocaleProvider;
 import org.redcraft.redcraftchat.locales.providers.RedCraftApiLocaleProvider;
+import org.redcraft.redcraftchat.locales.providers.StaticLocaleProvider;
 import org.redcraft.redcraftchat.models.caching.CacheCategory;
 import org.redcraft.redcraftchat.models.locales.SupportedLocale;
 
 public class LocaleManager {
 
-    private static DatabaseLocaleProvider localeProvider;
+    private static StaticLocaleProvider localeProvider;
 
-    public static DatabaseLocaleProvider getLocaleProvider() {
+    public static StaticLocaleProvider getLocaleProvider() {
         if (localeProvider == null) {
             switch (Config.supportedLocalesProvider) {
+                case "static":
+                    localeProvider = new StaticLocaleProvider();
+                    break;
+
                 case "database":
                     localeProvider = new DatabaseLocaleProvider();
                     break;
@@ -50,6 +56,19 @@ public class LocaleManager {
         }
 
         return supportedLocales;
+    }
+
+    public static List<String> getSupportedLanguages() {
+        List<String> supportedLanguages = new ArrayList<String>();
+
+        for (SupportedLocale locale : getSupportedLocales()) {
+            String strippedLocale = locale.code.split("-")[0];
+            if (!supportedLanguages.contains(strippedLocale)) {
+                supportedLanguages.add(strippedLocale);
+            }
+        }
+
+        return supportedLanguages;
     }
 
     public static boolean isSupportedLocale(String locale) {
