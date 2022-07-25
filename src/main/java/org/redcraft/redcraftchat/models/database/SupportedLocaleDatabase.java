@@ -5,7 +5,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-@Table(name = "rcc_supported_locale")
+@Table(name = "rcc_supported_locales")
 public class SupportedLocaleDatabase extends DatabaseModel {
     @Id
     @GeneratedValue

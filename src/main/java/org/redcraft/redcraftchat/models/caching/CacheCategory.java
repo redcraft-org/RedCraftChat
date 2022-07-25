@@ -8,4 +8,5 @@ public enum CacheCategory {
     PLAYER_PREFERENCES,
     ACCOUNT_LINK_CODE_USER_ID,
     ACCOUNT_LINK_CODE,
+    SUPPORTED_LOCALES,
 }

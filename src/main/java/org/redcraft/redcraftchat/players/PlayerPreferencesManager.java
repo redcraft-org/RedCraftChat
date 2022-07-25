@@ -9,6 +9,7 @@ import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.caching.CacheManager;
 import org.redcraft.redcraftchat.detection.DetectionManager;
 import org.redcraft.redcraftchat.discord.DiscordClient;
+import org.redcraft.redcraftchat.locales.LocaleManager;
 import org.redcraft.redcraftchat.models.caching.CacheCategory;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import org.redcraft.redcraftchat.players.providers.DatabasePlayerProvider;
@@ -185,9 +186,11 @@ public class PlayerPreferencesManager {
 
     public static String extractPlayerLanguage(ProxiedPlayer player) {
         try {
-            String detectedLanguage = player.getLocale().getLanguage() + "-" + player.getLocale().getCountry();
-            RedCraftChat.getInstance().getLogger().info("Detected language for " + player.getName() + ": " + detectedLanguage);
-            return detectedLanguage;
+            String detectedLocale = player.getLocale().getLanguage() + "-" + player.getLocale().getCountry();
+            if (LocaleManager.isSupportedLocale(detectedLocale)) {
+                RedCraftChat.getInstance().getLogger().info("Detected language for " + player.getName() + ": " + detectedLocale);
+                return detectedLocale;
+            }
         } catch (NullPointerException e) {
             // TODO GeoIP test (User has a very old version of Minecraft or Minechat)
         }

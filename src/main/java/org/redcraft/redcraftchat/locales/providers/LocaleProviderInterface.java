@@ -1,5 +1,9 @@
 package org.redcraft.redcraftchat.locales.providers;
 
-interface LocaleProviderInterface {
+import java.util.List;
 
+import org.redcraft.redcraftchat.models.locales.SupportedLocale;
+
+interface LocaleProviderInterface {
+    public List<SupportedLocale> getSupportedLocales();
 }
