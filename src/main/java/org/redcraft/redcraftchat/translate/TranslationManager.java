@@ -81,7 +81,7 @@ public class TranslationManager {
     }
 
     public static List<String> getTargetLanguages(String sourceLanguage) {
-        List<String> targetLanguages = new ArrayList<String>(Config.translationSupportedLanguages);
+        List<String> targetLanguages = new ArrayList<String>(Config.translationDiscordSupportedLanguages);
 
         for (ProxiedPlayer receiver : ProxyServer.getInstance().getPlayers()) {
             if (!PlayerPreferencesManager.playerSpeaksLanguage(receiver, sourceLanguage)) {

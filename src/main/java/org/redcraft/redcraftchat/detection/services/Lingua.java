@@ -19,7 +19,7 @@ public class Lingua {
         if (detector == null) {
             ArrayList<Language> supportedLanguages = new ArrayList<Language>();
 
-            for (String supportedLanguage : Config.translationSupportedLanguages) {
+            for (String supportedLanguage : Config.translationDiscordSupportedLanguages) {
                 IsoCode639_1 supportedLanguageIsoCode = IsoCode639_1.valueOf(supportedLanguage.toUpperCase());
                 supportedLanguages.add(Language.getByIsoCode639_1(supportedLanguageIsoCode));
             }

@@ -37,7 +37,7 @@ import net.md_5.bungee.protocol.packet.SystemChat;
 
 public class MinecraftRemoteServerMessageListener implements Listener {
 
-    static TranslationManager translationManager = new TranslationManager(Config.upstreamTranslationService);
+    static TranslationManager translationManager = new TranslationManager(Config.upstreamTranslationProvider);
 
     private static Deque<Long> pendingChatPackets = new ArrayDeque<>();
 

@@ -23,7 +23,7 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 public class DiscordMessageReceivedListener extends ListenerAdapter {
 
-    TranslationManager translationManager = new TranslationManager(Config.chatTranslationService);
+    TranslationManager translationManager = new TranslationManager(Config.chatTranslationProvider);
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {

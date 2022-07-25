@@ -14,7 +14,7 @@ import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import net.dv8tion.jda.api.entities.User;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
-public class DatabasePlayerProvider implements PlayerSourceInterface {
+public class DatabasePlayerProvider implements PlayerProviderInterface {
 
     Database db = DatabaseManager.getDatabase();
 

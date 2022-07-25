@@ -29,7 +29,7 @@ public class PlayerPreferencesManager {
 
     public static DatabasePlayerProvider getPlayerProvider() {
         if (playerProvider == null) {
-            switch (Config.playerSource) {
+            switch (Config.playerProvider) {
                 case "database":
                     playerProvider = new DatabasePlayerProvider();
                     break;
@@ -39,7 +39,7 @@ public class PlayerPreferencesManager {
                     break;
 
                 default:
-                    throw new IllegalStateException("Unknown database player source: " + Config.playerSource);
+                    throw new IllegalStateException("Unknown database player source: " + Config.playerProvider);
             }
         }
         return playerProvider;
@@ -165,7 +165,7 @@ public class PlayerPreferencesManager {
                 return message;
             }
 
-            return new TranslationManager(Config.upstreamTranslationService).translate(message, messageLanguage, preferences.mainLanguage);
+            return new TranslationManager(Config.upstreamTranslationProvider).translate(message, messageLanguage, preferences.mainLanguage);
         } catch (IOException | IllegalStateException | URISyntaxException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -196,7 +196,7 @@ public class PlayerPreferencesManager {
         }
 
         // Fallback
-        return Config.translationSupportedLanguages.get(0);
+        return Config.translationDiscordSupportedLanguages.get(0);
     }
 
     public static boolean playerSpeaksLanguage(ProxiedPlayer player, String languageIsoCode) {

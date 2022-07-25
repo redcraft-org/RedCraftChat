@@ -1,8 +1,10 @@
 package org.redcraft.redcraftchat.locales;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.redcraft.redcraftchat.Config;
+import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.caching.CacheManager;
 import org.redcraft.redcraftchat.locales.providers.DatabaseLocaleProvider;
 import org.redcraft.redcraftchat.locales.providers.RedCraftApiLocaleProvider;
@@ -15,7 +17,7 @@ public class LocaleManager {
 
     public static DatabaseLocaleProvider getLocaleProvider() {
         if (localeProvider == null) {
-            switch (Config.playerSource) {
+            switch (Config.supportedLocalesProvider) {
                 case "database":
                     localeProvider = new DatabaseLocaleProvider();
                     break;
@@ -25,7 +27,7 @@ public class LocaleManager {
                     break;
 
                 default:
-                    throw new IllegalStateException("Unknown database player Provider: " + Config.playerSource);
+                    throw new IllegalStateException("Unknown database player Provider: " + Config.supportedLocalesProvider);
             }
         }
         return localeProvider;
@@ -33,14 +35,19 @@ public class LocaleManager {
 
     @SuppressWarnings("unchecked")
     public static List<SupportedLocale> getSupportedLocales() {
-        List<SupportedLocale> supportedLocales = (List<SupportedLocale>) CacheManager.get(CacheCategory.SUPPORTED_LOCALES, Config.playerSource, List.class);
+        List<SupportedLocale> supportedLocales = (List<SupportedLocale>) CacheManager.get(CacheCategory.SUPPORTED_LOCALES, Config.supportedLocalesProvider, List.class);
 
         if (supportedLocales != null) {
             return supportedLocales;
         }
 
-        supportedLocales = getLocaleProvider().getSupportedLocales();
-        CacheManager.put(CacheCategory.SUPPORTED_LOCALES, Config.playerSource, supportedLocales);
+        try {
+            supportedLocales = getLocaleProvider().getSupportedLocales();
+            CacheManager.put(CacheCategory.SUPPORTED_LOCALES, Config.supportedLocalesProvider, supportedLocales);
+        } catch (IOException | InterruptedException e) {
+            RedCraftChat.getInstance().getLogger().severe("Failed to get supported locales");
+            e.printStackTrace();
+        }
 
         return supportedLocales;
     }

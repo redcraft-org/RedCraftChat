@@ -5,8 +5,8 @@ import org.redcraft.redcraftchat.detection.DetectionManager;
 
 public class DetectionManagerTest extends TestCase {
 	protected void setUp() {
-        Config.translationSupportedLanguages.add("fr");
-        Config.translationSupportedLanguages.add("en");
+        Config.translationDiscordSupportedLanguages.add("fr");
+        Config.translationDiscordSupportedLanguages.add("en");
     }
 
     public void testFrench() {

@@ -23,7 +23,7 @@ public class RedCraftApiPlayerProvider extends DatabasePlayerProvider {
     static HttpClient httpClient = HttpClient.newHttpClient();
 
     public PlayerPreferences getPlayerPreferences(ProxiedPlayer player) throws IOException, InterruptedException {
-        String url = Config.playerSourceApiUrl + "/" + player.getUniqueId().toString() + "?isProvider=true";
+        String url = Config.playerApiUrl + "/" + player.getUniqueId().toString() + "?isProvider=true";
 
         HttpRequest request = HttpRequest.newBuilder(
                 URI.create(url))
@@ -45,7 +45,7 @@ public class RedCraftApiPlayerProvider extends DatabasePlayerProvider {
     }
 
     public PlayerPreferences getPlayerPreferences(User user) throws IOException, InterruptedException {
-        String url = Config.playerSourceApiUrl + "/" + user.getId() + "?isProvider=true";
+        String url = Config.playerApiUrl + "/" + user.getId() + "?isProvider=true";
 
         HttpRequest request = HttpRequest.newBuilder(
                 URI.create(url))
@@ -69,7 +69,7 @@ public class RedCraftApiPlayerProvider extends DatabasePlayerProvider {
         String body = new Gson().toJson(transformToApi(new PlayerPreferences(player)));
 
         HttpRequest request = HttpRequest.newBuilder(
-                URI.create(Config.playerSourceApiUrl))
+                URI.create(Config.playerApiUrl))
                 .header("accept", "application/json")
                 .header("content-type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(body))
@@ -83,7 +83,7 @@ public class RedCraftApiPlayerProvider extends DatabasePlayerProvider {
     }
 
     public void updatePlayerPreferences(PlayerPreferences preferences) throws IOException, InterruptedException {
-        String url = Config.playerSourceApiUrl + "/" + preferences.internalUuid;
+        String url = Config.playerApiUrl + "/" + preferences.internalUuid;
 
         String body = new Gson().toJson(transformToApi(preferences));
 

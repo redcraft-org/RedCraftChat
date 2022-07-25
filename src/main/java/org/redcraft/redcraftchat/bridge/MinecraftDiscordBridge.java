@@ -22,7 +22,7 @@ import net.md_5.bungee.api.connection.ProxiedPlayer;
 public class MinecraftDiscordBridge {
 
     public class AsyncMinecraftMessageTranslator implements Runnable {
-        TranslationManager translationManager = new TranslationManager(Config.chatTranslationService);
+        TranslationManager translationManager = new TranslationManager(Config.chatTranslationProvider);
 
         ProxiedPlayer sender;
         String message;

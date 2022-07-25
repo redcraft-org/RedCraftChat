@@ -7,7 +7,7 @@ import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import net.dv8tion.jda.api.entities.User;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
-interface PlayerSourceInterface {
+interface PlayerProviderInterface {
     public PlayerPreferences getPlayerPreferences(ProxiedPlayer player) throws IOException, InterruptedException;
 
     public PlayerPreferences getPlayerPreferences(User user) throws IOException, InterruptedException;

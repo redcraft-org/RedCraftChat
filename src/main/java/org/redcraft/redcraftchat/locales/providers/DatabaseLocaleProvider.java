@@ -1,5 +1,6 @@
 package org.redcraft.redcraftchat.locales.providers;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.redcraft.redcraftchat.database.DatabaseManager;
@@ -13,11 +14,11 @@ public class DatabaseLocaleProvider implements LocaleProviderInterface {
     Database db = DatabaseManager.getDatabase();
 
     @Override
-    public List<SupportedLocale> getSupportedLocales() {
+    public List<SupportedLocale> getSupportedLocales() throws IOException, InterruptedException {
         return transform(db.results(SupportedLocaleDatabase.class));
     }
 
-    public List<SupportedLocale> transform(List<SupportedLocaleDatabase> locale) {
+    private List<SupportedLocale> transform(List<SupportedLocaleDatabase> locale) {
         return locale.stream().map(l -> new SupportedLocale(l.code, l.name)).collect(java.util.stream.Collectors.toList());
     }
 }

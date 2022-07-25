@@ -14,13 +14,13 @@ public class UrlShortenerManager extends UrlTransformer {
 
     public static RedCraftApiUrlShortenerProvider getShorteningProvider() {
         if (shorteningProvider == null) {
-            switch (Config.urlShorteningService) {
-                case "redcraft_url_shortener":
+            switch (Config.urlShorteningProvider) {
+                case "redcraft":
                     shorteningProvider = new RedCraftApiUrlShortenerProvider();
                     break;
 
                 default:
-                    throw new IllegalStateException("Unknown database player Provider: " + Config.urlShorteningService);
+                    throw new IllegalStateException("Unknown database player Provider: " + Config.urlShorteningProvider);
             }
         }
         return shorteningProvider;
@@ -29,10 +29,10 @@ public class UrlShortenerManager extends UrlTransformer {
     @Override
     public String transformUrl(String url) {
         try {
-            if (Config.urlShorteningService.equals("redcraft_url_shortener")) {
+            if (Config.urlShorteningProvider.equals("redcraft")) {
                 return getShorteningProvider().shorten(url);
             } else {
-                throw new IllegalStateException(String.format("Unknown URL shortener service \"%s\"", Config.urlShorteningService));
+                throw new IllegalStateException(String.format("Unknown URL shortener service \"%s\"", Config.urlShorteningProvider));
             }
         } catch (Exception ex) {
             RedCraftChat.getInstance().getLogger().severe("Error while shortening URL");

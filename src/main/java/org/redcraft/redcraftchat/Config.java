@@ -25,10 +25,13 @@ public class Config {
 	public static String discordActivityValue = "RedCraft.org";
 
 	public static boolean translationEnabled = false;
-	public static String chatTranslationService = "deepl";
-	public static String upstreamTranslationService = "modernmt";
-	public static List<String> translationSupportedLanguages = new ArrayList<String>();
+	public static String chatTranslationProvider = "deepl";
+	public static String upstreamTranslationProvider = "modernmt";
+	public static List<String> translationDiscordSupportedLanguages = new ArrayList<String>();
 	public static String translationDiscordCategoryFormat = "[%lang%] %topic%";
+
+	public static String supportedLocalesProvider = "database";
+	public static String supportedLocalesApiUrl = "https://redcraft.org/api/v1/language/list";
 
 	public static String deeplToken = "";
 	public static String deeplEndpoint = "https://api.deepl.com/v2/translate";
@@ -36,15 +39,15 @@ public class Config {
 	public static boolean deeplPreserveFormatting = false;
 
 	public static boolean urlShorteningEnabled = false;
-	public static String urlShorteningService = "redcraft_url_shortener";
+	public static String urlShorteningProvider = "redcraft";
 	public static String urlShorteningEndpoint = "https://redcraft.org/api/v1/url";
 	public static String urlShorteningToken = "";
 
 	public static String playerAvatarApiEndpoint = "https://redcraft.org/api/v1/skin/head/%playername%?size=128";
 	public static String playerAvatarFormat = "";
 
-	public static String playerSource = "database";
-	public static String playerSourceApiUrl = "https://redcraft.org/api/v1/player";
+	public static String playerProvider = "database";
+	public static String playerApiUrl = "https://redcraft.org/api/v1/player";
 	public static String databaseUri = "jdbc:sqlite:%plugin_config_path%/plugins/RedCraftChat/database.db";
 	public static String databaseUsername = "";
 	public static String databasePassword = "";
@@ -72,10 +75,13 @@ public class Config {
 		discordActivityValue = config.getString("discord-activity-value");
 
 		translationEnabled = config.getBoolean("translation-enabled");
-		chatTranslationService = config.getString("chat-translation-service");
-		upstreamTranslationService = config.getString("upstream-translation-service");
-		translationSupportedLanguages = config.getStringList("translation-supported-languages");
+		chatTranslationProvider = config.getString("chat-translation-provider");
+		upstreamTranslationProvider = config.getString("upstream-translation-provider");
+		translationDiscordSupportedLanguages = config.getStringList("translation-discord-supported-languages");
 		translationDiscordCategoryFormat = config.getString("translation-discord-category-format");
+
+		supportedLocalesProvider = config.getString("supported-locales-provider");
+		supportedLocalesApiUrl = config.getString("supported-locales-api-url");
 
 		deeplToken = config.getString("deepl-token");
 		deeplEndpoint = config.getString("deepl-endpoint");
@@ -83,15 +89,15 @@ public class Config {
 		deeplPreserveFormatting = config.getBoolean("deepl-preserve-formatting");
 
 		urlShorteningEnabled = config.getBoolean("url-shortening-enabled");
-		urlShorteningService = config.getString("url-shortening-service");
+		urlShorteningProvider = config.getString("url-shortening-provider");
 		urlShorteningEndpoint = config.getString("url-shortening-endpoint");
 		urlShorteningToken = config.getString("url-shortening-token");
 
-		playerAvatarApiEndpoint = config.getString("player-avatar-api-endpoint");
+		playerAvatarApiEndpoint = config.getString("player-avatar-endpoint");
 		playerAvatarFormat = config.getString("player-avatar-format");
 
-		playerSource = config.getString("player-source");
-		playerSourceApiUrl = config.getString("player-source-api-url");
+		playerProvider = config.getString("player-provider");
+		playerApiUrl = config.getString("player-api-url");
 		databaseUri = config.getString("database-uri");
 		databaseUsername = config.getString("database-username");
 		databasePassword = config.getString("database-password");

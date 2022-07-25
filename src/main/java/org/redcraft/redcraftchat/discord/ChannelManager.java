@@ -32,7 +32,7 @@ import net.dv8tion.jda.api.entities.TextChannel;
 
 public class ChannelManager {
 
-    static TranslationManager translationManager = new TranslationManager(Config.chatTranslationService);
+    static TranslationManager translationManager = new TranslationManager(Config.chatTranslationProvider);
 
     private static HashMap<TranslatedChannel, List<TranslatedChannel>> translatedChannelsMapping = new HashMap<>();
     private static ReadWriteLock translatedChannelsMappingLock = new ReentrantReadWriteLock();
@@ -59,7 +59,7 @@ public class ChannelManager {
                 List<String> topicTextChannel = textChannels.get(topic);
                 List<String> topicVoiceChannel = voiceChannels.get(topic);
 
-                for (String language : Config.translationSupportedLanguages) {
+                for (String language : Config.translationDiscordSupportedLanguages) {
                     String categoryName = getCategoryName(language, topic);
                     List<Category> matchingCategories = guild.getCategoriesByName(categoryName, false);
 
@@ -97,7 +97,7 @@ public class ChannelManager {
             for (String topic : detectedTopics) {
                 HashMap<String, List<TranslatedChannel>> channelsList = new HashMap<>();
 
-                for (String language : Config.translationSupportedLanguages) {
+                for (String language : Config.translationDiscordSupportedLanguages) {
                     String categoryName = getCategoryName(language, topic);
                     List<Category> matchingCategories = guild.getCategoriesByName(categoryName, false);
 
@@ -193,7 +193,7 @@ public class ChannelManager {
         List<String> detectedTopics = new ArrayList<>();
 
         for (Category category : guild.getCategories()) {
-            for (String supportedLanguage : Config.translationSupportedLanguages) {
+            for (String supportedLanguage : Config.translationDiscordSupportedLanguages) {
                 Matcher channelMatcher = getCategoryRegexMatcher(supportedLanguage, category.getName());
 
                 if (channelMatcher.matches()) {
@@ -209,7 +209,7 @@ public class ChannelManager {
     }
 
     public void createCategoryChannels(Guild guild, String topic, List<String> channelNames, ChannelType channelType) {
-        for (String language : Config.translationSupportedLanguages) {
+        for (String language : Config.translationDiscordSupportedLanguages) {
             String categoryName = getCategoryName(language, topic);
             List<Category> matchingCategories = guild.getCategoriesByName(categoryName, false);
 
