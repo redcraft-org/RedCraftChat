@@ -1,4 +1,4 @@
-package org.redcraft.redcraftchat.players.sources;
+package org.redcraft.redcraftchat.players.providers;
 
 import java.io.IOException;
 

@@ -1,4 +1,4 @@
-package org.redcraft.redcraftchat.translate.services;
+package org.redcraft.redcraftchat.translate.providers;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -22,12 +22,12 @@ import org.redcraft.redcraftchat.models.deepl.DeeplResponse;
 import org.redcraft.redcraftchat.models.deepl.DeeplTranslation;
 import org.redcraft.redcraftchat.models.deepl.DeeplSupportedLanguage;
 
-public class DeeplClient {
+public class DeeplProvider {
 
     private static HashMap<String, DeeplSupportedLanguage> supportedLanguages = new HashMap<>();
     private static boolean supportedLanguagesInitialized = false;
 
-    private DeeplClient() {
+    private DeeplProvider() {
         throw new IllegalStateException("This class should not be instantiated");
     }
 
@@ -40,8 +40,8 @@ public class DeeplClient {
             return cachedDeeplResponse;
         }
 
-        DeeplSupportedLanguage sourceLang = DeeplClient.getLanguage(sourceLanguageId);
-        DeeplSupportedLanguage targetLang = DeeplClient.getLanguage(targetLanguageId);
+        DeeplSupportedLanguage sourceLang = DeeplProvider.getLanguage(sourceLanguageId);
+        DeeplSupportedLanguage targetLang = DeeplProvider.getLanguage(targetLanguageId);
 
         if (sourceLang == null) {
             throw new IllegalStateException("The source language " + sourceLanguageId + " is not supported by Deepl");

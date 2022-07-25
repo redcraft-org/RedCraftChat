@@ -9,7 +9,7 @@ import com.dieselpoint.norm.Database;
 
 import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
-import org.redcraft.redcraftchat.models.database.PlayerMail;
+import org.redcraft.redcraftchat.models.database.PlayerMailDatabase;
 import org.redcraft.redcraftchat.models.database.PlayerPreferencesDatabase;
 
 public class DatabaseManager {
@@ -28,7 +28,7 @@ public class DatabaseManager {
 
         List<Class<?>> classes = new ArrayList<Class<?>>();
         classes.add(PlayerPreferencesDatabase.class);
-        classes.add(PlayerMail.class);
+        classes.add(PlayerMailDatabase.class);
         createStructure(classes);
 
         RedCraftChat.getInstance().getLogger().info("Connected to database!");
@@ -48,9 +48,11 @@ public class DatabaseManager {
                 // Auto generate the query if missing
                 sqlCreationQuery = database.getSqlMaker().getCreateTableSql(classToCreate);
             }
+
+            // Patch to avoid exceptions
+            sqlCreationQuery = sqlCreationQuery.replace("create table", "create table if not exists");
+
             try {
-                // Patch to avoid exceptions
-                sqlCreationQuery = sqlCreationQuery.replace("create table", "create table if not exists");
                 database.sql(sqlCreationQuery).execute();
             } catch (Exception ex) {
                 ex.printStackTrace();

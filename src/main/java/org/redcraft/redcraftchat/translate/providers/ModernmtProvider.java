@@ -1,4 +1,4 @@
-package org.redcraft.redcraftchat.translate.services;
+package org.redcraft.redcraftchat.translate.providers;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -17,9 +17,9 @@ import org.redcraft.redcraftchat.caching.CacheManager;
 import org.redcraft.redcraftchat.models.caching.CacheCategory;
 import org.redcraft.redcraftchat.models.modernmt.ModernmtResponse;
 
-public class ModernmtClient {
+public class ModernmtProvider {
 
-    private ModernmtClient() {
+    private ModernmtProvider() {
         throw new IllegalStateException("This class should not be instantiated");
     }
 
@@ -65,8 +65,10 @@ public class ModernmtClient {
 
         ModernmtResponse modernmtResponse = gson.fromJson(rawResponse.toString(), ModernmtResponse.class);
 
-        // Remove nbsp from modernmt response
+        // Remove special chars from modernmt response
         modernmtResponse.data.translation = modernmtResponse.data.translation.replace('\u00A0', ' ');
+        modernmtResponse.data.translation = modernmtResponse.data.translation.replace("&lt;", "<");
+        modernmtResponse.data.translation = modernmtResponse.data.translation.replace("&gt;", ">");
 
         CacheManager.put(CacheCategory.MODERNMT_TRANSLATED_MESSAGE, cacheKey, modernmtResponse);
 

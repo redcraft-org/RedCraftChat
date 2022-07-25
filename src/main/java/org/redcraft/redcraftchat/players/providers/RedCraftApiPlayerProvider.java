@@ -1,4 +1,4 @@
-package org.redcraft.redcraftchat.players.sources;
+package org.redcraft.redcraftchat.players.providers;
 
 import java.io.IOException;
 import java.net.URI;
@@ -18,14 +18,14 @@ import org.redcraft.redcraftchat.models.redcraft_api.PlayerProvider;
 import net.dv8tion.jda.api.entities.User;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
-public class ApiPlayerSource extends DatabasePlayerSource {
+public class RedCraftApiPlayerProvider extends DatabasePlayerProvider {
 
     static HttpClient httpClient = HttpClient.newHttpClient();
 
     public PlayerPreferences getPlayerPreferences(ProxiedPlayer player) throws IOException, InterruptedException {
         String url = Config.playerSourceApiUrl + "/" + player.getUniqueId().toString() + "?isProvider=true";
 
-        var request = HttpRequest.newBuilder(
+        HttpRequest request = HttpRequest.newBuilder(
                 URI.create(url))
                 .header("accept", "application/json")
                 .build();
@@ -47,7 +47,7 @@ public class ApiPlayerSource extends DatabasePlayerSource {
     public PlayerPreferences getPlayerPreferences(User user) throws IOException, InterruptedException {
         String url = Config.playerSourceApiUrl + "/" + user.getId() + "?isProvider=true";
 
-        var request = HttpRequest.newBuilder(
+        HttpRequest request = HttpRequest.newBuilder(
                 URI.create(url))
                 .header("accept", "application/json")
                 .build();
@@ -68,7 +68,7 @@ public class ApiPlayerSource extends DatabasePlayerSource {
     public void createPlayerPreferences(ProxiedPlayer player) throws IOException, InterruptedException {
         String body = new Gson().toJson(transformToApi(new PlayerPreferences(player)));
 
-        var request = HttpRequest.newBuilder(
+        HttpRequest request = HttpRequest.newBuilder(
                 URI.create(Config.playerSourceApiUrl))
                 .header("accept", "application/json")
                 .header("content-type", "application/json")
@@ -89,7 +89,7 @@ public class ApiPlayerSource extends DatabasePlayerSource {
 
         RedCraftChat.getInstance().getLogger().info("Updating player preferences: " + url + " " + body);
 
-        var request = HttpRequest.newBuilder(
+        HttpRequest request = HttpRequest.newBuilder(
                 URI.create(url))
                 .header("accept", "application/json")
                 .header("content-type", "application/json")

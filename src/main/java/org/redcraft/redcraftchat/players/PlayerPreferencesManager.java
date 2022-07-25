@@ -11,8 +11,8 @@ import org.redcraft.redcraftchat.detection.DetectionManager;
 import org.redcraft.redcraftchat.discord.DiscordClient;
 import org.redcraft.redcraftchat.models.caching.CacheCategory;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
-import org.redcraft.redcraftchat.players.sources.ApiPlayerSource;
-import org.redcraft.redcraftchat.players.sources.DatabasePlayerSource;
+import org.redcraft.redcraftchat.players.providers.DatabasePlayerProvider;
+import org.redcraft.redcraftchat.players.providers.RedCraftApiPlayerProvider;
 import org.redcraft.redcraftchat.translate.TranslationManager;
 
 import net.dv8tion.jda.api.entities.User;
@@ -20,28 +20,28 @@ import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 public class PlayerPreferencesManager {
 
-    static DatabasePlayerSource playerSource = null;
+    static DatabasePlayerProvider playerProvider = null;
 
     public PlayerPreferencesManager() {
         throw new IllegalStateException("This class should not be instantiated");
     }
 
-    public static DatabasePlayerSource getPlayerSource() {
-        if (playerSource == null) {
+    public static DatabasePlayerProvider getPlayerProvider() {
+        if (playerProvider == null) {
             switch (Config.playerSource) {
                 case "database":
-                    playerSource = new DatabasePlayerSource();
+                    playerProvider = new DatabasePlayerProvider();
                     break;
 
                 case "api":
-                    playerSource = new ApiPlayerSource();
+                    playerProvider = new RedCraftApiPlayerProvider();
                     break;
 
                 default:
                     throw new IllegalStateException("Unknown database player source: " + Config.playerSource);
             }
         }
-        return playerSource;
+        return playerProvider;
     }
 
     public static PlayerPreferences getPlayerPreferences(ProxiedPlayer player) throws IOException, InterruptedException {
@@ -52,7 +52,7 @@ public class PlayerPreferencesManager {
             return cachedPlayerPreferences;
         }
 
-        PlayerPreferences playerPreferences = getPlayerSource().getPlayerPreferences(player);
+        PlayerPreferences playerPreferences = getPlayerProvider().getPlayerPreferences(player);
 
         boolean updated = false;
 
@@ -83,7 +83,7 @@ public class PlayerPreferencesManager {
             return cachedPlayerPreferences;
         }
 
-        PlayerPreferences playerPreferences = getPlayerSource().getPlayerPreferences(user);
+        PlayerPreferences playerPreferences = getPlayerProvider().getPlayerPreferences(user);
 
         if (playerPreferences == null) {
             return null;
@@ -118,7 +118,7 @@ public class PlayerPreferencesManager {
     }
 
     public static void updatePlayerPreferences(PlayerPreferences preferences) throws IOException, InterruptedException {
-        getPlayerSource().updatePlayerPreferences(preferences);
+        getPlayerProvider().updatePlayerPreferences(preferences);
 
         if (preferences.minecraftUuid != null) {
             CacheManager.put(CacheCategory.PLAYER_PREFERENCES, preferences.minecraftUuid.toString(), preferences);

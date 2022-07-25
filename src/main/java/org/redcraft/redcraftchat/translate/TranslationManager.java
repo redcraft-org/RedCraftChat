@@ -13,8 +13,8 @@ import org.redcraft.redcraftchat.models.deepl.DeeplResponse;
 import org.redcraft.redcraftchat.models.modernmt.ModernmtResponse;
 import org.redcraft.redcraftchat.models.translate.TokenizedMessage;
 import org.redcraft.redcraftchat.tokenizer.TokenizerManager;
-import org.redcraft.redcraftchat.translate.services.DeeplClient;
-import org.redcraft.redcraftchat.translate.services.ModernmtClient;
+import org.redcraft.redcraftchat.translate.providers.DeeplProvider;
+import org.redcraft.redcraftchat.translate.providers.ModernmtProvider;
 
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
@@ -36,11 +36,11 @@ public class TranslationManager {
 
         switch (this.translationService) {
             case "deepl":
-                DeeplResponse dr = DeeplClient.translate(tokenizedMessage.getOriginalTokenizedMessage(), sourceLanguage.toUpperCase(), targetLanguage.toUpperCase());
-                tokenizedMessage.setOriginalTokenizedMessage(DeeplClient.parseDeeplResponse(dr));
+                DeeplResponse dr = DeeplProvider.translate(tokenizedMessage.getOriginalTokenizedMessage(), sourceLanguage.toUpperCase(), targetLanguage.toUpperCase());
+                tokenizedMessage.setOriginalTokenizedMessage(DeeplProvider.parseDeeplResponse(dr));
                 break;
             case "modernmt":
-                ModernmtResponse mr = ModernmtClient.translate(tokenizedMessage.getOriginalTokenizedMessage(), sourceLanguage.toLowerCase(), targetLanguage.toLowerCase());
+                ModernmtResponse mr = ModernmtProvider.translate(tokenizedMessage.getOriginalTokenizedMessage(), sourceLanguage.toLowerCase(), targetLanguage.toLowerCase());
                 tokenizedMessage.setOriginalTokenizedMessage(mr.data.translation.replaceAll("§( )+", "§")); // Fix for MC message
                 break;
             default:

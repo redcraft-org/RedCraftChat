@@ -1,4 +1,4 @@
-package org.redcraft.redcraftchat.players.sources;
+package org.redcraft.redcraftchat.players.providers;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -14,11 +14,11 @@ import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import net.dv8tion.jda.api.entities.User;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
-public class DatabasePlayerSource implements PlayerSourceInterface {
+public class DatabasePlayerProvider implements PlayerSourceInterface {
 
     Database db = DatabaseManager.getDatabase();
 
-    public DatabasePlayerSource() {
+    public DatabasePlayerProvider() {
     }
 
     public PlayerPreferences getPlayerPreferences(ProxiedPlayer player) throws IOException, InterruptedException {
