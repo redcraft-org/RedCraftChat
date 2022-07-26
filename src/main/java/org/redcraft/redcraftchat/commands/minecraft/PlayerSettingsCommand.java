@@ -3,7 +3,6 @@ package org.redcraft.redcraftchat.commands.minecraft;
 import java.io.IOException;
 
 import org.redcraft.redcraftchat.helpers.BasicMessageFormatter;
-import org.redcraft.redcraftchat.locales.LocaleManager;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 
@@ -50,8 +49,7 @@ public class PlayerSettingsCommand extends Command {
 
         try {
             PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);
-            BasicMessageFormatter.sendInternalMessage(sender, "Current settings : " + new Gson().toJson(preferences), ChatColor.GOLD);
-            BasicMessageFormatter.sendInternalMessage(sender, "Supported languages : " + new Gson().toJson(LocaleManager.getSupportedLocales()), ChatColor.GOLD);
+            BasicMessageFormatter.sendInternalMessage(sender, "Current settings: " + new Gson().toJson(preferences), ChatColor.GOLD);
         } catch (IOException | InterruptedException e) {
             BasicMessageFormatter.sendInternalError(sender, "An error occured while trying to display player settings, check logs for more info");
             e.printStackTrace();

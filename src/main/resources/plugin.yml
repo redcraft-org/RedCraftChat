@@ -9,6 +9,8 @@ permissions:
     description: Gives access to all RedCraftChat permissions
     children:
       redcraftchat.formatting.*: true
+      redcraftchat.command.*: true
+      redcraftchat.command.*.others: true
       redcraftchat.moderation.*: true
 
   redcraftchat.formatting.*:
@@ -29,12 +31,19 @@ permissions:
     children:
       redcraftchat.command.player-settings: true
       redcraftchat.command.link-discord-account: true
+      redcraftchat.command.lang: true
+  redcraftchat.command.*.others:
+    description: Allows access to all commands as other player
+    children:
+      redcraftchat.command.player-settings.others: true
   redcraftchat.command.player-settings:
     description: Allows to use /player-settings to dump your own player settings
   redcraftchat.command.player-settings.others:
     description: Allows to use /player-settings to dump another player's settings
   redcraftchat.command.link-discord-account:
     description: Allows to use /discord-link to link your Discord account
+  redcraftchat.command.lang:
+    description: Allows to use /lang to choose your language
 
   redcraftchat.moderation.*:
     description: Allows access to all moderation tools

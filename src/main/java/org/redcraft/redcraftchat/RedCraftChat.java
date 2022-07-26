@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import org.redcraft.redcraftchat.commands.discord.LinkMinecraftAccountCommand;
 import org.redcraft.redcraftchat.commands.discord.PlayersCommand;
 import org.redcraft.redcraftchat.commands.minecraft.CommandSpyCommand;
+import org.redcraft.redcraftchat.commands.minecraft.LangCommand;
 import org.redcraft.redcraftchat.commands.minecraft.LinkDiscordAccountCommand;
 import org.redcraft.redcraftchat.commands.minecraft.PlayerSettingsCommand;
 import org.redcraft.redcraftchat.database.DatabaseManager;
@@ -45,9 +46,6 @@ public class RedCraftChat extends Plugin {
 		discordClient.addEventListener(new PlayersCommand());
 		discordClient.addEventListener(new LinkMinecraftAccountCommand());
 
-		discordClient.upsertCommand("players", "List players on Minecraft servers").queue();
-		discordClient.upsertCommand("minecraft-link", "Link Minecraft account").queue();
-
 		getLogger().info("Discord events registered");
 
 		// Schedulers
@@ -63,8 +61,9 @@ public class RedCraftChat extends Plugin {
 
 		// Commands
 		pluginManager.registerCommand(this, new CommandSpyCommand());
-		pluginManager.registerCommand(this, new PlayerSettingsCommand());
+		pluginManager.registerCommand(this, new LangCommand());
 		pluginManager.registerCommand(this, new LinkDiscordAccountCommand());
+		pluginManager.registerCommand(this, new PlayerSettingsCommand());
 	}
 
 	@Override

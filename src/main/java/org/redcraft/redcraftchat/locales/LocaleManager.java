@@ -13,6 +13,8 @@ import org.redcraft.redcraftchat.locales.providers.StaticLocaleProvider;
 import org.redcraft.redcraftchat.models.caching.CacheCategory;
 import org.redcraft.redcraftchat.models.locales.SupportedLocale;
 
+import com.google.common.reflect.TypeToken;
+
 public class LocaleManager {
 
     private static StaticLocaleProvider localeProvider;
@@ -41,7 +43,7 @@ public class LocaleManager {
 
     @SuppressWarnings("unchecked")
     public static List<SupportedLocale> getSupportedLocales() {
-        List<SupportedLocale> supportedLocales = (List<SupportedLocale>) CacheManager.get(CacheCategory.SUPPORTED_LOCALES, Config.supportedLocalesProvider, List.class);
+        List<SupportedLocale> supportedLocales = (List<SupportedLocale>) CacheManager.get(CacheCategory.SUPPORTED_LOCALES, Config.supportedLocalesProvider, new TypeToken<List<SupportedLocale>>() {}.getType());
 
         if (supportedLocales != null) {
             return supportedLocales;

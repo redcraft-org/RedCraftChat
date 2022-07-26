@@ -1,5 +1,7 @@
 package org.redcraft.redcraftchat.caching;
 
+import java.lang.reflect.Type;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -13,6 +15,18 @@ public class CacheManager {
     }
 
     public static Object get(String key, Class<?> classType) {
+        String stringifiedObject;
+
+        if (Config.redisEnabled) {
+            stringifiedObject = RedisCache.getRaw(key);
+        } else {
+            stringifiedObject = MemoryCache.getRaw(key);
+        }
+
+        return deserializeObject(stringifiedObject, classType);
+    }
+
+    public static Object get(String key, Type classType) {
         String stringifiedObject;
 
         if (Config.redisEnabled) {
@@ -67,7 +81,15 @@ public class CacheManager {
         return new Gson().fromJson(element, classType);
     }
 
+    private static Object deserializeObject(String element, Type classType) {
+        return new Gson().fromJson(element, classType);
+    }
+
     public static Object get(CacheCategory category, String key, Class<?> classType) {
+        return get(formatCategoryKey(category, key), classType);
+    }
+
+    public static Object get(CacheCategory category, String key, Type classType) {
         return get(formatCategoryKey(category, key), classType);
     }
 

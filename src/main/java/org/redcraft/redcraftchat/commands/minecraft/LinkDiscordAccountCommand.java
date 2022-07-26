@@ -8,6 +8,12 @@ import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.CommandSender;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.ComponentBuilder;
+import net.md_5.bungee.api.chat.HoverEvent;
+import net.md_5.bungee.api.chat.ClickEvent.Action;
+import net.md_5.bungee.api.chat.hover.content.Text;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.plugin.Command;
 
@@ -48,7 +54,26 @@ public class LinkDiscordAccountCommand extends Command {
             }
 
             if (preferences.discordId != null) {
-                BasicMessageFormatter.sendInternalError(player, "You already linked your Discord account. If you wish to unlink it, use `/discord-link unlink`");
+                String message = PlayerPreferencesManager.localizeMessageForPlayer(preferences, "You already linked your Discord account. If you wish to unlink it, click on the button below");
+                String unlink = PlayerPreferencesManager.localizeMessageForPlayer(preferences, "Unlink");
+                String tooltip = PlayerPreferencesManager.localizeMessageForPlayer(preferences, "Unlink your Discord account");
+
+                String command = "/discord-link unlink";
+
+                BaseComponent[] formattedMessage = new ComponentBuilder()
+                        .append(message)
+                        .color(ChatColor.YELLOW)
+                        .create();
+
+                BaseComponent[] button = new ComponentBuilder()
+                        .append(ChatColor.BOLD + unlink)
+                        .color(ChatColor.DARK_RED)
+                        .event(new ClickEvent(Action.RUN_COMMAND, command))
+                        .event(new HoverEvent(net.md_5.bungee.api.chat.HoverEvent.Action.SHOW_TEXT, new Text(ChatColor.RED + tooltip)))
+                        .create();
+
+                player.sendMessage(formattedMessage);
+                player.sendMessage(button);
                 return;
             }
 
@@ -62,7 +87,22 @@ public class LinkDiscordAccountCommand extends Command {
             }
 
             AccountLinkCode code = AccountLinkManager.getLinkCode(player);
-            BasicMessageFormatter.sendInternalMessage(player, "Please run the following command on our Discord server: `/minecraft-link " + code.token + "`", ChatColor.GREEN);
+
+            String message = PlayerPreferencesManager.localizeMessageForPlayer(preferences, "Please run the following command on our Discord server (click to copy): ");
+            String copyToClipboard = PlayerPreferencesManager.localizeMessageForPlayer(preferences, "Copy to clipboard");
+
+            String command = "/minecraft-link " + code.token;
+
+            BaseComponent[] formattedMessage = new ComponentBuilder()
+                    .append(message)
+                    .color(ChatColor.GREEN)
+                    .append(command)
+                    .color(ChatColor.GOLD)
+                    .event(new ClickEvent(Action.COPY_TO_CLIPBOARD, command))
+                    .event(new HoverEvent(net.md_5.bungee.api.chat.HoverEvent.Action.SHOW_TEXT, new Text(ChatColor.GREEN + copyToClipboard)))
+                    .create();
+
+            player.sendMessage(formattedMessage);
         } catch (Exception e) {
             BasicMessageFormatter.sendInternalError(player, "An error occured while trying to link Discord account, please try again later");
             e.printStackTrace();

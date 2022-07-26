@@ -8,8 +8,10 @@ import org.redcraft.redcraftchat.models.caching.AccountLinkCode;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -18,7 +20,31 @@ import net.dv8tion.jda.api.interactions.commands.build.Commands;
 public class LinkMinecraftAccountCommand extends ListenerAdapter {
 
     public LinkMinecraftAccountCommand() {
-        DiscordClient.getClient().updateCommands().addCommands(Commands.slash("minecraft-link", "Link Minecraft account").addOption(OptionType.STRING, "code", "Validation code")).queue();
+        DiscordClient.getClient().upsertCommand(Commands.slash("minecraft-link", "Link Minecraft account").addOption(OptionType.STRING, "code", "Validation code")).queue();
+    }
+
+    // This is a fallback because Discord is sometimes dumb
+    @Override
+    public void onMessageReceived(MessageReceivedEvent event) {
+        if (!event.getMessage().getContentRaw().startsWith("/minecraft-link")) {
+            return;
+        }
+
+        String[] elements = event.getMessage().getContentRaw().split(" ");
+
+        try {
+            event.getMessage().delete().queue();
+        } catch (Exception e) {
+            // Ignore
+        }
+
+        User user = event.getAuthor();
+
+        String code = elements.length > 1 ? elements[1] : null;
+
+        event.getAuthor().openPrivateChannel().queue(channel -> {
+            channel.sendMessageEmbeds(handleCommand(user, code)).queue();
+        });
     }
 
     @Override
@@ -33,8 +59,10 @@ public class LinkMinecraftAccountCommand extends ListenerAdapter {
             code = codeOption.getAsString();
         }
 
-        User user = event.getUser();
+        event.replyEmbeds(handleCommand(event.getUser(), code)).queue();
+    }
 
+    public MessageEmbed handleCommand(User user, String code) {
         PlayerPreferences preferences = null;
 
         try {
@@ -44,33 +72,28 @@ public class LinkMinecraftAccountCommand extends ListenerAdapter {
 
             if (code != null && code.equalsIgnoreCase("unlink")) {
                 if (preferences == null || preferences.discordId == null) {
-                    event.replyEmbeds(BasicMessageFormatter.generateDiscordError(user, "You are not linked to a Discord account, can't unlink")).queue();
-                    return;
+                    return BasicMessageFormatter.generateDiscordError(user, "You are not linked to a Discord account, can't unlink");
                 }
                 AccountLinkManager.unLinkAccounts(preferences);
-                event.replyEmbeds(BasicMessageFormatter.generateDiscordMessage(user, "Success", "You have successfully unlinked your accounts", 0x00FF00)).queue();
-                return;
+                return BasicMessageFormatter.generateDiscordMessage(user, "Success", "You have successfully unlinked your accounts", 0x00FF00);
             }
 
             if (preferences != null && preferences.minecraftUuid != null) {
-                event.replyEmbeds(BasicMessageFormatter.generateDiscordError(user, "You are already linked to a Minecraft account, if you wish to unlink it, use `/minecraft-link unlink`")).queue();
-                return;
+                return BasicMessageFormatter.generateDiscordError(user, "You are already linked to a Minecraft account, if you wish to unlink it, use `/minecraft-link unlink`");
             }
 
             if (code != null) {
                 if (AccountLinkManager.linkAccounts(preferences, code, user)) {
-                    event.replyEmbeds(BasicMessageFormatter.generateDiscordMessage(user, "Success", "You have successfully linked your accounts", 0x00FF00)).queue();
-                    return;
+                    return BasicMessageFormatter.generateDiscordMessage(user, "Success", "You have successfully linked your accounts", 0x00FF00);
                 }
-                event.replyEmbeds(BasicMessageFormatter.generateDiscordError(user, "Either the code is invalid or you're not connected to our Minecraft server")).queue();
-                return;
+                return BasicMessageFormatter.generateDiscordError(user, "Either the code is invalid or you're not connected to our Minecraft server");
             }
 
             AccountLinkCode linkCode = AccountLinkManager.getLinkCode(user);
-            event.replyEmbeds(BasicMessageFormatter.generateDiscordMessage(user, "Action required", "Please run the following command on our Minecraft server: `/discord-link " + linkCode.token + "`", 0x00FF00)).queue();
+            return BasicMessageFormatter.generateDiscordMessage(user, "Action required", "Please run the following command on our Minecraft server: `/discord-link " + linkCode.token + "`", 0x00FF00);
         } catch (Exception e) {
-            event.replyEmbeds(BasicMessageFormatter.generateDiscordError(user, "An error occurred while trying to link your accounts, please try again later")).queue();
             e.printStackTrace();
         }
+        return BasicMessageFormatter.generateDiscordError(user, "An error occurred while trying to link your accounts, please try again later");
     }
 }

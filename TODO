@@ -7,14 +7,12 @@ General:
 Discord:
   ☐ Language selector
   ☐ LuckPerms support for ranks
-  ☐ Message reactions
-  ☐ Message replies threads
   ☐ Add nickname change detection
   ✔ Account sync @done(22-07-24 20:48)
   ✔ Forget sync command @done(22-07-24 20:53)
 
 In-game:
-  ☐ Language selector
+  ✔ Language selector @started(22-07-25 21:05) @done(22-07-26 02:08) @lasted(5h3m26s)
   ☐ Litebans support for muted players
   ☐ Join message
   ☐ Private message

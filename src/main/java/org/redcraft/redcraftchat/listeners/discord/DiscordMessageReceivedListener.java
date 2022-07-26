@@ -27,6 +27,11 @@ public class DiscordMessageReceivedListener extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
+        // Ignore commands
+        if (event.getMessage().getContentRaw().startsWith("/")) {
+            return;
+        }
+
         if (event.isFromType(ChannelType.PRIVATE)) {
             this.handlePrivateMessage(event);
         } else if (event.isFromType(ChannelType.TEXT)) {

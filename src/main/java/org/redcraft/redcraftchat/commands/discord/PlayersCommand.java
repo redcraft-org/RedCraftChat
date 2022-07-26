@@ -10,7 +10,9 @@ import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.md_5.bungee.api.config.ServerInfo;
@@ -19,7 +21,27 @@ import net.md_5.bungee.api.connection.ProxiedPlayer;
 public class PlayersCommand extends ListenerAdapter {
 
     public PlayersCommand() {
-        DiscordClient.getClient().updateCommands().addCommands(Commands.slash("players", "List online players")).queue();
+        DiscordClient.getClient().upsertCommand(Commands.slash("players", "List online players")).queue();
+    }
+
+    // This is a fallback because Discord is sometimes dumb
+    @Override
+    public void onMessageReceived(MessageReceivedEvent event) {
+        if (!event.getMessage().getContentRaw().startsWith("/players")) {
+            return;
+        }
+
+        try {
+            event.getMessage().delete().queue();
+        } catch (Exception e) {
+            // Ignore
+        }
+
+        User user = event.getAuthor();
+
+        event.getAuthor().openPrivateChannel().queue(channel -> {
+            channel.sendMessageEmbeds(handleCommand(user)).queue();
+        });
     }
 
     @Override
@@ -28,6 +50,10 @@ public class PlayersCommand extends ListenerAdapter {
             return;
         }
 
+        event.replyEmbeds(handleCommand(event.getUser())).queue();
+    }
+
+    public List<MessageEmbed> handleCommand(User user) {
         List<MessageEmbed> serverMessageEmbeds = new ArrayList<>();
 
         for (ServerInfo server : RedCraftChat.getInstance().getProxy().getServers().values()) {
@@ -43,16 +69,16 @@ public class PlayersCommand extends ListenerAdapter {
 
             description += "\n*" + playerCount + " " + English.plural("player", playerCount) + " online*";
 
-            description = PlayerPreferencesManager.localizeMessageForPlayer(event.getUser(), description);
+            description = PlayerPreferencesManager.localizeMessageForPlayer(user, description);
 
             MessageEmbed message = new EmbedBuilder()
-                .setTitle(server.getName())
-                .setDescription(description)
-                .build();
+                    .setTitle(server.getName())
+                    .setDescription(description)
+                    .build();
 
             serverMessageEmbeds.add(message);
         }
 
-        event.replyEmbeds(serverMessageEmbeds).queue();
+        return serverMessageEmbeds;
     }
 }

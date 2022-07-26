@@ -174,6 +174,52 @@ public class PlayerPreferencesManager {
         return message;
     }
 
+    public static void togglePlayerLocale(PlayerPreferences preferences, String locale) {
+        if (!LocaleManager.isSupportedLocale(locale)) {
+            throw new IllegalArgumentException("Unsupported locale: " + locale);
+        }
+
+        if (preferences.mainLanguage.equals(locale)) {
+            throw new IllegalArgumentException("You cannot delete your main language, please set another one first");
+        }
+
+        if (preferences.languages.contains(locale)) {
+            preferences.languages.remove(locale);
+        } else {
+            preferences.languages.add(locale);
+        }
+
+        try {
+            updatePlayerPreferences(preferences);
+        } catch (IOException | InterruptedException e) {
+            RedCraftChat.getInstance().getLogger().severe("Failed to update player preferences");
+            e.printStackTrace();
+            throw new IllegalStateException("Failed to update player preferences, please try again later");
+        }
+    }
+
+    public static boolean setMainPlayerLocale(PlayerPreferences preferences, String locale) {
+        if (!LocaleManager.isSupportedLocale(locale)) {
+            return false;
+        }
+
+        if (!preferences.languages.contains(locale)) {
+            preferences.languages.add(locale);
+        }
+
+        preferences.mainLanguage = locale;
+
+        try {
+            updatePlayerPreferences(preferences);
+        } catch (IOException | InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return false;
+        }
+
+        return true;
+    }
+
     public static boolean toggleCommandSpy(ProxiedPlayer player) throws IOException, InterruptedException {
         PlayerPreferences preferences = getPlayerPreferences(player);
 
