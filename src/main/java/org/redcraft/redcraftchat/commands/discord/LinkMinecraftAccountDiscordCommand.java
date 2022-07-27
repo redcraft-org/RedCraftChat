@@ -17,9 +17,9 @@ import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 
-public class LinkMinecraftAccountCommand extends ListenerAdapter {
+public class LinkMinecraftAccountDiscordCommand extends ListenerAdapter {
 
-    public LinkMinecraftAccountCommand() {
+    public LinkMinecraftAccountDiscordCommand() {
         DiscordClient.getClient().upsertCommand(Commands.slash("minecraft-link", "Link Minecraft account").addOption(OptionType.STRING, "code", "Validation code")).queue();
     }
 

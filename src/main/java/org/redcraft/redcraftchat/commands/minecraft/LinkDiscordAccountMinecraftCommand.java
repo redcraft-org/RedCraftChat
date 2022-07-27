@@ -17,9 +17,9 @@ import net.md_5.bungee.api.chat.hover.content.Text;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.plugin.Command;
 
-public class LinkDiscordAccountCommand extends Command {
+public class LinkDiscordAccountMinecraftCommand extends Command {
 
-    public LinkDiscordAccountCommand() {
+    public LinkDiscordAccountMinecraftCommand() {
         super("discord-link");
     }
 

@@ -21,9 +21,9 @@ import net.md_5.bungee.api.chat.hover.content.Text;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.plugin.Command;
 
-public class LangCommand extends Command {
+public class LangMinecraftCommand extends Command {
 
-    public LangCommand() {
+    public LangMinecraftCommand() {
         super("lang");
     }
 
@@ -46,7 +46,7 @@ public class LangCommand extends Command {
             PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);
 
             if (args.length > 0) {
-                if (args.length > 1 &&args[1].equals("main")) {
+                if (args.length > 1 && args[1].equals("main")) {
                     PlayerPreferencesManager.setMainPlayerLocale(preferences, args[0]);
                 } else {
                     try {

@@ -7,12 +7,13 @@ import net.md_5.bungee.api.scheduler.TaskScheduler;
 
 import java.util.concurrent.TimeUnit;
 
-import org.redcraft.redcraftchat.commands.discord.LinkMinecraftAccountCommand;
-import org.redcraft.redcraftchat.commands.discord.PlayersCommand;
-import org.redcraft.redcraftchat.commands.minecraft.CommandSpyCommand;
-import org.redcraft.redcraftchat.commands.minecraft.LangCommand;
-import org.redcraft.redcraftchat.commands.minecraft.LinkDiscordAccountCommand;
-import org.redcraft.redcraftchat.commands.minecraft.PlayerSettingsCommand;
+import org.redcraft.redcraftchat.commands.discord.LangDiscordCommand;
+import org.redcraft.redcraftchat.commands.discord.LinkMinecraftAccountDiscordCommand;
+import org.redcraft.redcraftchat.commands.discord.PlayersDiscordCommand;
+import org.redcraft.redcraftchat.commands.minecraft.CommandSpyMinecraftCommand;
+import org.redcraft.redcraftchat.commands.minecraft.LangMinecraftCommand;
+import org.redcraft.redcraftchat.commands.minecraft.LinkDiscordAccountMinecraftCommand;
+import org.redcraft.redcraftchat.commands.minecraft.PlayerSettingsMinecraftCommand;
 import org.redcraft.redcraftchat.database.DatabaseManager;
 import org.redcraft.redcraftchat.discord.DiscordClient;
 import org.redcraft.redcraftchat.listeners.discord.DiscordMessageDeletedListener;
@@ -43,8 +44,9 @@ public class RedCraftChat extends Plugin {
 		discordClient.addEventListener(new DiscordMessageDeletedListener());
 
 		// Discord commands
-		discordClient.addEventListener(new PlayersCommand());
-		discordClient.addEventListener(new LinkMinecraftAccountCommand());
+		discordClient.addEventListener(new PlayersDiscordCommand());
+		discordClient.addEventListener(new LangDiscordCommand());
+		discordClient.addEventListener(new LinkMinecraftAccountDiscordCommand());
 
 		getLogger().info("Discord events registered");
 
@@ -59,11 +61,11 @@ public class RedCraftChat extends Plugin {
 		pluginManager.registerListener(this, new MinecraftPlayerPreferencesListener());
 		pluginManager.registerListener(this, new MinecraftTabCompleteListener());
 
-		// Commands
-		pluginManager.registerCommand(this, new CommandSpyCommand());
-		pluginManager.registerCommand(this, new LangCommand());
-		pluginManager.registerCommand(this, new LinkDiscordAccountCommand());
-		pluginManager.registerCommand(this, new PlayerSettingsCommand());
+		// Game commands
+		pluginManager.registerCommand(this, new CommandSpyMinecraftCommand());
+		pluginManager.registerCommand(this, new LangMinecraftCommand());
+		pluginManager.registerCommand(this, new LinkDiscordAccountMinecraftCommand());
+		pluginManager.registerCommand(this, new PlayerSettingsMinecraftCommand());
 	}
 
 	@Override

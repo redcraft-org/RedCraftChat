@@ -5,7 +5,7 @@ General:
     ☐ Check that people have the right username on Discord
 
 Discord:
-  ☐ Language selector
+  ✔ Language selector @done(22-07-27 00:20)
   ☐ LuckPerms support for ranks
   ☐ Add nickname change detection
   ✔ Account sync @done(22-07-24 20:48)

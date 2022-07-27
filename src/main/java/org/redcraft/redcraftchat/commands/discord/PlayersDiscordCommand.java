@@ -18,9 +18,9 @@ import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
-public class PlayersCommand extends ListenerAdapter {
+public class PlayersDiscordCommand extends ListenerAdapter {
 
-    public PlayersCommand() {
+    public PlayersDiscordCommand() {
         DiscordClient.getClient().upsertCommand(Commands.slash("players", "List online players")).queue();
     }
 
