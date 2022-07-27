@@ -41,7 +41,7 @@ public class TranslationManager {
                 break;
             case "modernmt":
                 ModernmtResponse mr = ModernmtProvider.translate(tokenizedMessage.getOriginalTokenizedMessage(), sourceLanguage.toLowerCase(), targetLanguage.toLowerCase());
-                tokenizedMessage.setOriginalTokenizedMessage(mr.data.translation.replaceAll("§( )+", "§")); // Fix for MC message
+                tokenizedMessage.setOriginalTokenizedMessage(mr.data.translation.replaceAll("§( )+", "§")); // Color fix for MC message
                 break;
             default:
                 throw new IllegalStateException(String.format("Unknown translation service \"%s\"", this.translationService));
