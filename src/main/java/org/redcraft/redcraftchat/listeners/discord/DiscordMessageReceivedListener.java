@@ -28,7 +28,7 @@ public class DiscordMessageReceivedListener extends ListenerAdapter {
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
         // Ignore commands
-        if (event.getMessage().getContentRaw().startsWith("/")) {
+        if (event.getMessage().getContentRaw().equals("") || event.getMessage().getContentRaw().startsWith("/")) {
             return;
         }
 

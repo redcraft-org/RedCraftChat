@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 
+import net.dv8tion.jda.api.entities.User;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 public class PlayerPreferences {
@@ -40,5 +42,15 @@ public class PlayerPreferences {
 
         minecraftUuid = player.getUniqueId();
         lastKnownMinecraftName = player.getName();
+    }
+
+    public PlayerPreferences(User user) {
+        mainLanguage = Config.defaultLocale;
+
+        languages = new ArrayList<String>();
+        languages.add(mainLanguage);
+
+        discordId = user.getId();
+        lastKnownDiscordName = user.getName();
     }
 }

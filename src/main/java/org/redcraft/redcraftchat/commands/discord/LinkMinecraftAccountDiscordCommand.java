@@ -42,7 +42,7 @@ public class LinkMinecraftAccountDiscordCommand extends ListenerAdapter {
 
         String code = elements.length > 1 ? elements[1] : null;
 
-        event.getAuthor().openPrivateChannel().queue(channel -> {
+        user.openPrivateChannel().queue(channel -> {
             channel.sendMessageEmbeds(handleCommand(user, code)).queue();
         });
     }
@@ -53,13 +53,15 @@ public class LinkMinecraftAccountDiscordCommand extends ListenerAdapter {
             return;
         }
 
+        event.deferReply().setEphemeral(true).queue();
+
         String code = null;
         OptionMapping codeOption = event.getOption("code");
         if (codeOption != null) {
             code = codeOption.getAsString();
         }
 
-        event.replyEmbeds(handleCommand(event.getUser(), code)).queue();
+        event.getHook().editOriginalEmbeds(handleCommand(event.getUser(), code)).queue();
     }
 
     public MessageEmbed handleCommand(User user, String code) {

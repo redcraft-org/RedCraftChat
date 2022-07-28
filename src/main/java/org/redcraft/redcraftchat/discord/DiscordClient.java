@@ -24,6 +24,7 @@ import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.Webhook;
 import net.dv8tion.jda.api.entities.Activity.ActivityType;
 import net.dv8tion.jda.api.entities.Message.Attachment;
+import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.requests.RestAction;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
@@ -50,7 +51,11 @@ public class DiscordClient {
         }
 
         try {
-            jdaClient = builder.build();
+            jdaClient = builder.enableIntents(
+                    GatewayIntent.GUILD_MESSAGES,
+                    GatewayIntent.MESSAGE_CONTENT,
+                    GatewayIntent.GUILD_MEMBERS).build();
+
             RedCraftChat.getInstance().getLogger().info("Connected to Discord!");
         } catch (LoginException e) {
             jdaCrashed = true;

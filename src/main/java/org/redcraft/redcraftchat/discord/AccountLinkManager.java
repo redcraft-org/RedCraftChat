@@ -3,6 +3,7 @@ package org.redcraft.redcraftchat.discord;
 import java.io.IOException;
 import java.util.UUID;
 
+import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.caching.CacheManager;
 import org.redcraft.redcraftchat.models.caching.AccountLinkCode;
@@ -57,6 +58,9 @@ public class AccountLinkManager {
         }
         if ((preferences == null || preferences.minecraftUuid == null) && code.minecraftUuid != null) {
             ProxiedPlayer player = ProxyServer.getInstance().getPlayer(UUID.fromString(code.minecraftUuid));
+            if (player == null) {
+                return false;
+            }
             preferences = PlayerPreferencesManager.getPlayerPreferences(player);
         }
         if (preferences == null || preferences.minecraftUuid == null) {
@@ -65,10 +69,30 @@ public class AccountLinkManager {
         if (user == null && code.discordId != null) {
             user = DiscordClient.getClient().getUserById(code.discordId);
         }
+
+        PlayerPreferences discordPreferences = null;
+        if (user != null) {
+            discordPreferences = PlayerPreferencesManager.getPlayerPreferences(user);
+        }
+        if (discordPreferences != null) {
+            // Merge settings
+            if (!discordPreferences.mainLanguage.equals(Config.defaultLocale) && preferences.mainLanguage.equals(Config.defaultLocale)) {
+                preferences.mainLanguage = discordPreferences.mainLanguage;
+            }
+            for (String language : discordPreferences.languages) {
+                if (!preferences.languages.contains(language)) {
+                    preferences.languages.add(language);
+                }
+            }
+            // Delete discord preferences as it's now linked to minecraft
+            PlayerPreferencesManager.deletePlayerPreferences(discordPreferences);
+        }
+
         preferences.discordId = user.getId();
-        preferences.lastKnownDiscordName = user.getName() + "#" + user.getDiscriminator();
-        PlayerPreferencesManager.updatePlayerPreferences(preferences);
+        preferences.lastKnownDiscordName = user.getName();
+        // void the link code so it can't be used maliciously if update fails and code was intercepted
         AccountLinkManager.voidLinkCode(code);
+        PlayerPreferencesManager.updatePlayerPreferences(preferences);
 
         RedCraftChat.getInstance().getLogger().info("Linked accounts for " + preferences.minecraftUuid + " and " + user.getId());
 

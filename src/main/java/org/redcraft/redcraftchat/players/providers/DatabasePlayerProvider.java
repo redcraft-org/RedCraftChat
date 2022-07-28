@@ -7,6 +7,7 @@ import java.util.UUID;
 import com.dieselpoint.norm.Database;
 import com.google.gson.Gson;
 
+import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.database.DatabaseManager;
 import org.redcraft.redcraftchat.models.database.PlayerPreferencesDatabase;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
@@ -21,27 +22,41 @@ public class DatabasePlayerProvider implements PlayerProviderInterface {
     public DatabasePlayerProvider() {
     }
 
-    public PlayerPreferences getPlayerPreferences(ProxiedPlayer player) throws IOException, InterruptedException {
+    public PlayerPreferences getPlayerPreferences(ProxiedPlayer player, boolean createIfNotFound) throws IOException, InterruptedException {
         UUID playerUniqueId = player.getUniqueId();
 
         PlayerPreferencesDatabase result = db.where("minecraft_uuid=?", playerUniqueId.toString()).first(PlayerPreferencesDatabase.class);
 
         if (result == null) {
-            updatePlayerPreferences(new PlayerPreferences(player));
-            return getPlayerPreferences(player);
+            if (createIfNotFound) {
+                updatePlayerPreferences(new PlayerPreferences(player));
+                return getPlayerPreferences(player, false);
+            } else {
+                return null;
+            }
         }
 
         return transform(result);
     }
 
-    public PlayerPreferences getPlayerPreferences(User user) throws IOException, InterruptedException {
+    public PlayerPreferences getPlayerPreferences(User user, boolean createIfNotFound) throws IOException, InterruptedException {
         PlayerPreferencesDatabase result = db.where("discord_id=?", user.getId()).first(PlayerPreferencesDatabase.class);
 
         if (result == null) {
-            return null;
+            if (createIfNotFound) {
+                updatePlayerPreferences(new PlayerPreferences(user));
+                return getPlayerPreferences(user, false);
+            } else {
+                return null;
+            }
         }
 
         return transform(result);
+    }
+
+    public void deletePlayerPreferences(PlayerPreferences playerPreferences) throws IOException, InterruptedException {
+        RedCraftChat.getInstance().getLogger().info("Deleting player preferences for Minecraft " + playerPreferences.minecraftUuid + " and Discord " + playerPreferences.discordId);
+        db.delete(transformToDatabase(playerPreferences));
     }
 
     public void updatePlayerPreferences(PlayerPreferences preferences) throws IOException, InterruptedException {
@@ -70,7 +85,13 @@ public class DatabasePlayerProvider implements PlayerProviderInterface {
         if (playerAlreadyExists) {
             db.update(transformedPreferences);
         } else {
-            db.insert(transformedPreferences);
+            try {
+                db.insert(transformedPreferences);
+            } catch (Exception e) {
+                if (!e.getMessage().contains("Could not set value into pojo.")) {
+                    throw e;
+                }
+            }
         }
     }
 
@@ -79,7 +100,7 @@ public class DatabasePlayerProvider implements PlayerProviderInterface {
 
         playerPreferences.internalUuid = String.valueOf(preferences.id);
 
-        playerPreferences.minecraftUuid = UUID.fromString(preferences.minecraftUuid);
+        playerPreferences.minecraftUuid = preferences.minecraftUuid == null ? null : UUID.fromString(preferences.minecraftUuid);
         playerPreferences.lastKnownMinecraftName = preferences.lastKnownMinecraftName;
         playerPreferences.previousKnownDiscordName = preferences.previousKnownDiscordName;
 
@@ -99,9 +120,9 @@ public class DatabasePlayerProvider implements PlayerProviderInterface {
     public PlayerPreferencesDatabase transformToDatabase(PlayerPreferences preferences) {
         PlayerPreferencesDatabase playerPreferences = new PlayerPreferencesDatabase();
 
-        playerPreferences.id = Long.parseLong(preferences.internalUuid);
+        playerPreferences.id = preferences.internalUuid == null ? 0 : Long.parseLong(preferences.internalUuid);
 
-        playerPreferences.minecraftUuid = preferences.minecraftUuid.toString();
+        playerPreferences.minecraftUuid = preferences.minecraftUuid == null ? null : preferences.minecraftUuid.toString();
         playerPreferences.lastKnownMinecraftName = preferences.lastKnownMinecraftName;
         playerPreferences.previousKnownDiscordName = preferences.previousKnownDiscordName;
 

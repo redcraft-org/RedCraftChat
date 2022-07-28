@@ -8,7 +8,6 @@ import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.caching.CacheManager;
 import org.redcraft.redcraftchat.detection.DetectionManager;
-import org.redcraft.redcraftchat.discord.DiscordClient;
 import org.redcraft.redcraftchat.locales.LocaleManager;
 import org.redcraft.redcraftchat.models.caching.CacheCategory;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
@@ -46,6 +45,10 @@ public class PlayerPreferencesManager {
     }
 
     public static PlayerPreferences getPlayerPreferences(ProxiedPlayer player) throws IOException, InterruptedException {
+        return getPlayerPreferences(player, true);
+    }
+
+    public static PlayerPreferences getPlayerPreferences(ProxiedPlayer player, boolean createIfNotFound) throws IOException, InterruptedException {
         UUID playerUniqueId = player.getUniqueId();
 
         PlayerPreferences cachedPlayerPreferences = (PlayerPreferences) CacheManager.get(CacheCategory.PLAYER_PREFERENCES, playerUniqueId.toString(), PlayerPreferences.class);
@@ -53,7 +56,7 @@ public class PlayerPreferencesManager {
             return cachedPlayerPreferences;
         }
 
-        PlayerPreferences playerPreferences = getPlayerProvider().getPlayerPreferences(player);
+        PlayerPreferences playerPreferences = getPlayerProvider().getPlayerPreferences(player, createIfNotFound);
 
         boolean updated = false;
 
@@ -77,6 +80,10 @@ public class PlayerPreferencesManager {
     }
 
     public static PlayerPreferences getPlayerPreferences(User user) throws IOException, InterruptedException {
+        return getPlayerPreferences(user, true);
+    }
+
+    public static PlayerPreferences getPlayerPreferences(User user, boolean createIfNotFound) throws IOException, InterruptedException {
         String discordId = user.getId();
         PlayerPreferences cachedPlayerPreferences = (PlayerPreferences) CacheManager.get(CacheCategory.PLAYER_PREFERENCES, discordId, PlayerPreferences.class);
 
@@ -84,17 +91,11 @@ public class PlayerPreferencesManager {
             return cachedPlayerPreferences;
         }
 
-        PlayerPreferences playerPreferences = getPlayerProvider().getPlayerPreferences(user);
-
-        if (playerPreferences == null) {
-            return null;
-        }
+        PlayerPreferences playerPreferences = getPlayerProvider().getPlayerPreferences(user, createIfNotFound);
 
         boolean updated = false;
 
-        User discordUser = DiscordClient.getClient().getUserById(discordId);
-
-        String discordName = discordUser.getName() + "#" + discordUser.getDiscriminator();
+        String discordName = user.getName();
 
         if (!discordName.equals(playerPreferences.lastKnownDiscordName)) {
             // Detect username change
@@ -116,6 +117,19 @@ public class PlayerPreferencesManager {
         }
 
         return playerPreferences;
+    }
+
+    public static void deletePlayerPreferences(PlayerPreferences preferences) throws IOException, InterruptedException {
+        RedCraftChat.getInstance().getLogger().info("Deleting player preferences for " + preferences.internalUuid + " (Minecraft " + preferences.minecraftUuid + " and Discord " + preferences.discordId + ")");
+
+        getPlayerProvider().deletePlayerPreferences(preferences);
+
+        if (preferences.minecraftUuid != null) {
+            CacheManager.delete(CacheCategory.PLAYER_PREFERENCES, preferences.minecraftUuid.toString());
+        }
+        if (preferences.discordId != null) {
+            CacheManager.delete(CacheCategory.PLAYER_PREFERENCES, preferences.discordId);
+        }
     }
 
     public static void updatePlayerPreferences(PlayerPreferences preferences) throws IOException, InterruptedException {
@@ -158,7 +172,7 @@ public class PlayerPreferencesManager {
             String messageLanguage = DetectionManager.getLanguage(message);
 
             if (messageLanguage == null) {
-                messageLanguage = "en";
+                messageLanguage = Config.defaultLocale.split("-")[0];
             }
 
             if (preferences == null || playerSpeaksLanguage(preferences, messageLanguage)) {
@@ -242,7 +256,7 @@ public class PlayerPreferencesManager {
         }
 
         // Fallback
-        return Config.translationDiscordSupportedLanguages.get(0);
+        return Config.defaultLocale;
     }
 
     public static boolean playerSpeaksLanguage(ProxiedPlayer player, String languageIsoCode) {
@@ -257,17 +271,11 @@ public class PlayerPreferencesManager {
     }
 
     public static String getMainPlayerLanguage(ProxiedPlayer player) {
-        String playerLanguage = null;
-
         try {
-            playerLanguage = getMainPlayerLanguage(getPlayerPreferences(player));
+            return getMainPlayerLanguage(getPlayerPreferences(player));
         } catch (IOException | InterruptedException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        }
-
-        if (playerLanguage != null) {
-            return playerLanguage;
         }
 
         return extractPlayerLanguage(player);

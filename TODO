@@ -8,8 +8,10 @@ Discord:
   ✔ Language selector @done(22-07-27 00:20)
   ☐ LuckPerms support for ranks
   ☐ Add nickname change detection
+  ☐ Check if we can copy minecraft link command to clipboard from Discord
   ✔ Account sync @done(22-07-24 20:48)
   ✔ Forget sync command @done(22-07-24 20:53)
+  ✔ Merge accounts if Discord and Minecraft accounts are linked @done(22-07-28 03:41)
 
 In-game:
   ✔ Language selector @started(22-07-25 21:05) @done(22-07-26 02:08) @lasted(5h3m26s)

@@ -22,7 +22,7 @@ public class RedCraftApiPlayerProvider extends DatabasePlayerProvider {
 
     static HttpClient httpClient = HttpClient.newHttpClient();
 
-    public PlayerPreferences getPlayerPreferences(ProxiedPlayer player) throws IOException, InterruptedException {
+    public PlayerPreferences getPlayerPreferences(ProxiedPlayer player, boolean createIfNotFound) throws IOException, InterruptedException {
         String url = Config.playerApiUrl + "/" + player.getUniqueId().toString() + "?isProvider=true";
 
         HttpRequest request = HttpRequest.newBuilder(
@@ -33,8 +33,12 @@ public class RedCraftApiPlayerProvider extends DatabasePlayerProvider {
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() == 404) {
-            createPlayerPreferences(player);
-            return getPlayerPreferences(player);
+            if (createIfNotFound) {
+                createPlayerPreferences(new PlayerPreferences(player));
+                return getPlayerPreferences(player, false);
+            } else {
+                return null;
+            }
         }
 
         if (response.statusCode() != 200) {
@@ -44,7 +48,7 @@ public class RedCraftApiPlayerProvider extends DatabasePlayerProvider {
         return transform(new Gson().fromJson(response.body(), PlayerPreferenceApi.class));
     }
 
-    public PlayerPreferences getPlayerPreferences(User user) throws IOException, InterruptedException {
+    public PlayerPreferences getPlayerPreferences(User user, boolean createIfNotFound) throws IOException, InterruptedException {
         String url = Config.playerApiUrl + "/" + user.getId() + "?isProvider=true";
 
         HttpRequest request = HttpRequest.newBuilder(
@@ -55,7 +59,12 @@ public class RedCraftApiPlayerProvider extends DatabasePlayerProvider {
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() == 404) {
-            return null;
+            if (createIfNotFound) {
+                createPlayerPreferences(new PlayerPreferences(user));
+                return getPlayerPreferences(user, false);
+            } else {
+                return null;
+            }
         }
 
         if (response.statusCode() != 200) {
@@ -65,8 +74,24 @@ public class RedCraftApiPlayerProvider extends DatabasePlayerProvider {
         return transform(new Gson().fromJson(response.body(), PlayerPreferenceApi.class));
     }
 
-    public void createPlayerPreferences(ProxiedPlayer player) throws IOException, InterruptedException {
-        String body = new Gson().toJson(transformToApi(new PlayerPreferences(player)));
+    public void deletePlayerPreferences(PlayerPreferences playerPreferences) throws IOException, InterruptedException {
+        String url = Config.playerApiUrl + "/" + playerPreferences.internalUuid;
+
+        HttpRequest request = HttpRequest.newBuilder(
+                URI.create(url))
+                .header("accept", "application/json")
+                .DELETE()
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() != 200) {
+            throw new IOException("Failed to delete player preferences: " + response.statusCode() + " - " + response.body());
+        }
+    }
+
+    public void createPlayerPreferences(PlayerPreferences playerPreferences) throws IOException, InterruptedException {
+        String body = new Gson().toJson(transformToApi(playerPreferences));
 
         HttpRequest request = HttpRequest.newBuilder(
                 URI.create(Config.playerApiUrl))
@@ -77,7 +102,7 @@ public class RedCraftApiPlayerProvider extends DatabasePlayerProvider {
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-        if (response.statusCode() != 201) {
+        if (response.statusCode() != 200 && response.statusCode() != 201) {
             throw new IOException("Failed to create player preferences: " + response.statusCode() + " - " + response.body());
         }
     }

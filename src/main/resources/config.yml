@@ -25,6 +25,7 @@ upstream-translation-provider: 'modernmt' # This is to translate plugins from up
 supported-locales-provider: 'database'
 # Required only if player-provider is set to "api"
 supported-locales-api-url: 'https://redcraft.org/api/v1/language/list'
+default-locale: 'en-US'
 
 # These are the settings for Deepl live translation
 deepl-token: ''

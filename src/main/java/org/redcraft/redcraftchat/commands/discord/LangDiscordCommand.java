@@ -22,10 +22,10 @@ import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.selections.SelectMenu;
 import net.dv8tion.jda.api.interactions.components.selections.SelectMenu.Builder;
-import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
 
 public class LangDiscordCommand extends ListenerAdapter {
 
@@ -60,7 +60,7 @@ public class LangDiscordCommand extends ListenerAdapter {
 
         boolean isMain = elements.length > 2 ? elements[2].equals("main") : false;
 
-        event.getAuthor().openPrivateChannel().queue(channel -> {
+        user.openPrivateChannel().queue(channel -> {
             channel.sendMessageEmbeds(handleCommand(user, locale, isMain)).queue();
         });
     }
@@ -70,6 +70,8 @@ public class LangDiscordCommand extends ListenerAdapter {
         if (!event.getName().equals("lang")) {
             return;
         }
+
+        event.deferReply().setEphemeral(true).queue();
 
         String locale = null;
         OptionMapping localeOption = event.getOption("locale");
@@ -86,7 +88,7 @@ public class LangDiscordCommand extends ListenerAdapter {
         MessageEmbed response = handleCommand(event, locale, isMain);
 
         if (response != null) {
-            event.replyEmbeds(response).queue();
+            event.getHook().editOriginalEmbeds(response).queue();
         }
     }
 
@@ -95,6 +97,8 @@ public class LangDiscordCommand extends ListenerAdapter {
         if (!event.getComponentId().equals(mainLanguageMenuId)) {
             return;
         }
+
+        event.deferEdit().queue();
 
         User user = event.getUser();
 
@@ -107,7 +111,7 @@ public class LangDiscordCommand extends ListenerAdapter {
 
             this.sendLanguageSelector(event);
         } catch (IOException | InterruptedException e) {
-            event.replyEmbeds(BasicMessageFormatter.generateDiscordError(user, "An error occurred while trying to main language, please try again later")).queue();
+            event.getHook().editOriginalEmbeds(BasicMessageFormatter.generateDiscordError(user, "An error occurred while trying to main language, please try again later")).queue();
             e.printStackTrace();
             return;
         }
@@ -120,6 +124,8 @@ public class LangDiscordCommand extends ListenerAdapter {
             return;
         }
 
+        event.deferEdit().queue();
+
         User user = event.getUser();
 
         try {
@@ -130,13 +136,17 @@ public class LangDiscordCommand extends ListenerAdapter {
             PlayerPreferencesManager.togglePlayerLocale(preferences, locale);
             this.sendLanguageSelector(event);
         } catch (Exception e) {
-            event.replyEmbeds(BasicMessageFormatter.generateDiscordError(user, "An error occurred while trying to change languages, please try again later")).queue();
+            event.getHook().editOriginalEmbeds(BasicMessageFormatter.generateDiscordError(user, "An error occurred while trying to change languages, please try again later")).queue();
             e.printStackTrace();
             return;
         }
     }
 
     public MessageEmbed handleCommand(SlashCommandInteractionEvent event, String locale, boolean isMain) {
+        if (!event.isAcknowledged()) {
+            event.deferReply().setEphemeral(true).queue();
+        }
+
         return handleCommand(event, event.getUser(), locale, isMain);
     }
 
@@ -151,13 +161,13 @@ public class LangDiscordCommand extends ListenerAdapter {
 
         MessageEmbed header = BasicMessageFormatter.generateDiscordMessage(user, "Language selector", "Please select your languages:", 0xFFFF00);
 
-        ReplyCallbackAction embed = event.replyEmbeds(header);
-
         String chooseMainLanguage = PlayerPreferencesManager.localizeMessageForPlayer(preferences, "Change main language");
 
         Builder mainLocaleMenu = SelectMenu.create(mainLanguageMenuId).setPlaceholder(chooseMainLanguage);
 
         List<Button> buttons = new ArrayList<Button>();
+
+        List <ActionRow> actionRows = new ArrayList<ActionRow>();
 
         for (SupportedLocale locale : LocaleManager.getSupportedLocales()) {
             String buttonId = buttonPrefixToggle + locale.code;
@@ -175,7 +185,7 @@ public class LangDiscordCommand extends ListenerAdapter {
             }
 
             if (buttons.size() >= 5) {
-                embed.addActionRow(buttons);
+                actionRows.add(ActionRow.of(buttons));
                 buttons.clear();
             }
 
@@ -183,13 +193,13 @@ public class LangDiscordCommand extends ListenerAdapter {
         }
 
         if (buttons.size() > 0) {
-            embed.addActionRow(buttons);
+            actionRows.add(ActionRow.of(buttons));
             buttons.clear();
         }
 
-        embed.addActionRow(mainLocaleMenu.build());
+        actionRows.add(ActionRow.of(mainLocaleMenu.build()));
 
-        embed.setEphemeral(true).queue();
+        event.getHook().editOriginalEmbeds(header).setActionRows(actionRows).queue();
     }
 
     public MessageEmbed handleCommand(SlashCommandInteractionEvent event, User user, String locale, boolean isMain) {

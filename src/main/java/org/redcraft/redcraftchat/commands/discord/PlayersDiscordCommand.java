@@ -39,7 +39,7 @@ public class PlayersDiscordCommand extends ListenerAdapter {
 
         User user = event.getAuthor();
 
-        event.getAuthor().openPrivateChannel().queue(channel -> {
+        user.openPrivateChannel().queue(channel -> {
             channel.sendMessageEmbeds(handleCommand(user)).queue();
         });
     }
@@ -50,7 +50,9 @@ public class PlayersDiscordCommand extends ListenerAdapter {
             return;
         }
 
-        event.replyEmbeds(handleCommand(event.getUser())).queue();
+        event.deferReply().setEphemeral(true).queue();
+
+        event.getHook().editOriginalEmbeds(handleCommand(event.getUser())).queue();
     }
 
     public List<MessageEmbed> handleCommand(User user) {
