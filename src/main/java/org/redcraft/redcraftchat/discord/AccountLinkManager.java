@@ -23,6 +23,7 @@ public class AccountLinkManager {
 
         if (code.minecraftUuid == null) {
             code.minecraftUuid = uniqueId;
+            code.minecraftName = player.getName();
             CacheManager.put(CacheCategory.ACCOUNT_LINK_CODE_USER_ID, uniqueId, code);
             CacheManager.put(CacheCategory.ACCOUNT_LINK_CODE, code.token, code);
         }
@@ -36,6 +37,7 @@ public class AccountLinkManager {
 
         if (code.discordId == null) {
             code.discordId = uniqueId;
+            code.discordName = user.getName();
             CacheManager.put(CacheCategory.ACCOUNT_LINK_CODE_USER_ID, uniqueId, code);
             CacheManager.put(CacheCategory.ACCOUNT_LINK_CODE, code.token, code);
         }
@@ -66,13 +68,17 @@ public class AccountLinkManager {
         if (preferences == null || preferences.minecraftUuid == null) {
             return false;
         }
-        if (user == null && code.discordId != null) {
-            user = DiscordClient.getClient().getUserById(code.discordId);
+
+        if (user == null) {
+            user = DiscordClient.getUser(code.discordId);
         }
 
         PlayerPreferences discordPreferences = null;
         if (user != null) {
             discordPreferences = PlayerPreferencesManager.getPlayerPreferences(user);
+        }
+        if (discordPreferences == null) {
+            discordPreferences = (PlayerPreferences) CacheManager.get(CacheCategory.PLAYER_PREFERENCES, code.discordId, PlayerPreferences.class);
         }
         if (discordPreferences != null) {
             // Merge settings
@@ -88,13 +94,19 @@ public class AccountLinkManager {
             PlayerPreferencesManager.deletePlayerPreferences(discordPreferences);
         }
 
-        preferences.discordId = user.getId();
-        preferences.lastKnownDiscordName = user.getName();
+        if (code.discordId != null) {
+            preferences.discordId = code.discordId;
+            preferences.lastKnownDiscordName = code.discordName;
+        } else {
+            preferences.discordId = user.getId();
+            preferences.lastKnownDiscordName = user.getName();
+        }
+
         // void the link code so it can't be used maliciously if update fails and code was intercepted
         AccountLinkManager.voidLinkCode(code);
         PlayerPreferencesManager.updatePlayerPreferences(preferences);
 
-        RedCraftChat.getInstance().getLogger().info("Linked accounts for " + preferences.minecraftUuid + " and " + user.getId());
+        RedCraftChat.getInstance().getLogger().info("Linked accounts for " + preferences.minecraftUuid + " and " + preferences.discordId);
 
         return true;
     }

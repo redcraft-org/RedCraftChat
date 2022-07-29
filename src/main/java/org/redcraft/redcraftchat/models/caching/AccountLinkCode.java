@@ -15,7 +15,9 @@ import org.redcraft.redcraftchat.models.SerializableModel;
 public class AccountLinkCode extends SerializableModel {
     public String token;
     public String discordId;
+    public String discordName;
     public String minecraftUuid;
+    public String minecraftName;
 
     public AccountLinkCode(String token) {
         this.token = token;

@@ -19,8 +19,10 @@ import club.minnced.discord.webhook.send.WebhookMessageBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.Webhook;
 import net.dv8tion.jda.api.entities.Activity.ActivityType;
 import net.dv8tion.jda.api.entities.Message.Attachment;
@@ -54,7 +56,8 @@ public class DiscordClient {
             jdaClient = builder.enableIntents(
                     GatewayIntent.GUILD_MESSAGES,
                     GatewayIntent.MESSAGE_CONTENT,
-                    GatewayIntent.GUILD_MEMBERS).build();
+                    GatewayIntent.GUILD_MEMBERS,
+                    GatewayIntent.GUILD_WEBHOOKS).build();
 
             RedCraftChat.getInstance().getLogger().info("Connected to Discord!");
         } catch (LoginException e) {
@@ -63,6 +66,18 @@ public class DiscordClient {
             e.printStackTrace();
         }
         return jdaClient;
+    }
+
+    public static User getUser(String userId) {
+        for (Guild guild : getClient().getGuilds()) {
+            for (Member member : guild.getMembers()) {
+                if (member.getUser().getId().equals(userId)) {
+                    return member.getUser();
+                }
+            }
+        }
+
+        return null;
     }
 
     public static Webhook getOrCreateWebhook(TextChannel channel, String webhookName) {
