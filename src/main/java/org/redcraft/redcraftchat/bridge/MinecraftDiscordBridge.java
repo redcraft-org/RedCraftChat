@@ -5,6 +5,8 @@ import java.util.Map;
 
 import com.vdurmont.emoji.EmojiParser;
 
+import dev.vankka.mcdiscordreserializer.discord.DiscordSerializer;
+
 import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
@@ -13,6 +15,8 @@ import org.redcraft.redcraftchat.discord.DiscordClient;
 import org.redcraft.redcraftchat.models.discord.TranslatedChannel;
 import org.redcraft.redcraftchat.translate.TranslationManager;
 
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.chat.BaseComponent;
@@ -74,7 +78,10 @@ public class MinecraftDiscordBridge {
 
             String suffix = " [" + TranslationManager.getLanguagePrefix(sourceLanguage, channel.languageId) + "][" + server + "]";
 
-            DiscordClient.postAsPlayer(channel.channelId, sender, translatedMessage, suffix);
+            TextComponent parsedMessage = LegacyComponentSerializer.legacySection().deserialize(translatedMessage);
+            String discordMessage = DiscordSerializer.INSTANCE.serialize(parsedMessage);
+
+            DiscordClient.postAsPlayer(channel.channelId, sender, discordMessage, suffix);
         }
     }
 

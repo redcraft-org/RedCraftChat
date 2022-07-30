@@ -18,12 +18,15 @@ import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 import org.redcraft.redcraftchat.translate.TranslationManager;
 
+import dev.vankka.mcdiscordreserializer.minecraft.MinecraftSerializer;
 import litebans.api.Database;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 public class DiscordMessageReceivedListener extends ListenerAdapter {
 
@@ -89,8 +92,12 @@ public class DiscordMessageReceivedListener extends ListenerAdapter {
                 }
             }
             List<String> targetLanguages = TranslationManager.getTargetLanguages(sourceChannel.languageId);
-            Map<String, String> translatedLanguages = translationManager.translateBulk(message.getContentDisplay(), sourceChannel.languageId, targetLanguages);
-            MinecraftDiscordBridge.getInstance().sendMessageToPlayers("Discord", member.getEffectiveName(), sourceChannel.languageId, message.getContentDisplay(), translatedLanguages);
+
+            Component parsedMessage = MinecraftSerializer.INSTANCE.serialize(message.getContentDisplay());
+            String formattedMessage = LegacyComponentSerializer.legacySection().serialize(parsedMessage);
+
+            Map<String, String> translatedLanguages = translationManager.translateBulk(formattedMessage, sourceChannel.languageId, targetLanguages);
+            MinecraftDiscordBridge.getInstance().sendMessageToPlayers("Discord", member.getEffectiveName(), sourceChannel.languageId, formattedMessage, translatedLanguages);
         }
 
         if (sourceChannel != null && translatedChannelsMappings.containsKey(sourceChannel)) {
