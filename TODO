@@ -4,12 +4,13 @@ Discord:
   ☐ Check that people have the right username on Discord
 
 In-game:
-  ☐ Join message
   ☐ Private messages
   ☐ Mail command
+  ☐ Broadcast command
   ☐ /me command
 
 Archive:
+  ✔ Join message @started(22-07-30 18:13) @done(22-07-30 21:59) @lasted(3h46m46s) @project(In-game)
   ✔ Add Markdown <> Minecraft formatting with https://github.com/Vankka/MCDiscordReserializer @started(22-07-30 14:50) @done(22-07-30 15:56) @lasted(1h6m30s) @project(Discord)
   ✔ Language selector @done(22-07-27 00:20) @project(Discord)
   ✔ Add nickname change detection @done(22-07-30 02:06) @project(Discord)
