@@ -2,6 +2,7 @@ package org.redcraft.redcraftchat.commands.minecraft;
 
 import java.io.IOException;
 
+import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.helpers.BasicMessageFormatter;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 
@@ -17,45 +18,63 @@ public class CommandSpyMinecraftCommand extends Command {
         super("cspy");
     }
 
-    @Override
-    public void execute(CommandSender sender, String[] args) {
-        ProxiedPlayer player = null;
+    public class CommandSpyMinecraftCommandHandler implements Runnable {
+        CommandSender sender;
+        String[] args;
 
-        if (!sender.hasPermission("redcraftchat.moderation.commandspy")) {
-            BasicMessageFormatter.sendInternalError(sender, "You do not have the permission to use this command");
-            return;
+        public CommandSpyMinecraftCommandHandler(CommandSender sender, String[] args) {
+            this.sender = sender;
+            this.args = args;
         }
 
-        // If it's not a player we need an arg
-        if (!(sender instanceof ProxiedPlayer) && args.length < 1) {
-            BasicMessageFormatter.sendInternalError(sender, "You need to specify a player name");
-            return;
-        }
+        @Override
+        public void run() {
+            ProxiedPlayer player = null;
 
-        // Get from arg
-        if (args.length > 0 && sender.hasPermission("redcraftchat.moderation.commandspy.others")) {
-            player = ProxyServer.getInstance().getPlayer(args[0]);
-        } else {
-            player = (ProxiedPlayer) sender;
-        }
+            if (!sender.hasPermission("redcraftchat.moderation.commandspy")) {
+                BasicMessageFormatter.sendInternalError(sender, "You do not have the permission to use this command");
+                return;
+            }
 
-        if (player == null) {
-            BasicMessageFormatter.sendInternalError(sender, "The specified player doesn't seem to be online");
-            return;
-        }
+            // If it's not a player we need an arg
+            if (!(sender instanceof ProxiedPlayer) && args.length < 1) {
+                BasicMessageFormatter.sendInternalError(sender, "You need to specify a player name");
+                return;
+            }
 
-        if (!player.hasPermission("redcraftchat.moderation.commandspy")) {
-            BasicMessageFormatter.sendInternalError(sender, "This player does not have the permission to use command spy");
-            return;
-        }
+            // Get from arg
+            if (args.length > 0 && sender.hasPermission("redcraftchat.moderation.commandspy.others")) {
+                player = ProxyServer.getInstance().getPlayer(args[0]);
+            } else {
+                player = (ProxiedPlayer) sender;
+            }
 
-        try {
-            boolean commandSpyEnabled = PlayerPreferencesManager.toggleCommandSpy(player);
-            BasicMessageFormatter.sendInternalMessage(sender, "Command spy " + (commandSpyEnabled ? "enabled" : "disabled"), ChatColor.GREEN);
-        } catch (IOException | InterruptedException e) {
-            BasicMessageFormatter.sendInternalError(sender, "An error occured while trying to toggle command spy, check logs for more info");
-            e.printStackTrace();
+            if (player == null) {
+                BasicMessageFormatter.sendInternalError(sender, "The specified player doesn't seem to be online");
+                return;
+            }
+
+            if (!player.hasPermission("redcraftchat.moderation.commandspy")) {
+                BasicMessageFormatter.sendInternalError(sender,
+                        "This player does not have the permission to use command spy");
+                return;
+            }
+
+            try {
+                boolean commandSpyEnabled = PlayerPreferencesManager.toggleCommandSpy(player);
+                BasicMessageFormatter.sendInternalMessage(sender,
+                        "Command spy " + (commandSpyEnabled ? "enabled" : "disabled"), ChatColor.GREEN);
+            } catch (IOException | InterruptedException e) {
+                BasicMessageFormatter.sendInternalError(sender,
+                        "An error occured while trying to toggle command spy, check logs for more info");
+                e.printStackTrace();
+            }
         }
     }
 
+    @Override
+    public void execute(CommandSender sender, String[] args) {
+        var commandHandler = new CommandSpyMinecraftCommandHandler(sender, args);
+        RedCraftChat.getInstance().getProxy().getScheduler().runAsync(RedCraftChat.getInstance(), commandHandler);
+    }
 }
