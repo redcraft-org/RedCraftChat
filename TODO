@@ -10,6 +10,7 @@ In-game:
   ☐ /me command
 
 Archive:
+  ✔ Add Markdown <> Minecraft formatting with https://github.com/Vankka/MCDiscordReserializer @started(22-07-30 14:50) @done(22-07-30 15:56) @lasted(1h6m30s) @project(Discord)
   ✔ Language selector @done(22-07-27 00:20) @project(Discord)
   ✔ Add nickname change detection @done(22-07-30 02:06) @project(Discord)
   ✔ Check if we can copy minecraft link command to clipboard from Discord -> no we can't @done(22-07-30 02:06) @project(Discord)
