@@ -1,26 +1,23 @@
 
-General:
-  ☐ Integrity checker scheduler
+Discord:
+  ☐ LuckPerms support for ranks
     ☐ Check that people have the right username on Discord
 
-Discord:
-  ✔ Language selector @done(22-07-27 00:20)
-  ☐ LuckPerms support for ranks
-  ☐ Add nickname change detection
-  ☐ Check if we can copy minecraft link command to clipboard from Discord
-  ✔ Account sync @done(22-07-24 20:48)
-  ✔ Forget sync command @done(22-07-24 20:53)
-  ✔ Merge accounts if Discord and Minecraft accounts are linked @done(22-07-28 03:41)
-
 In-game:
-  ✔ Language selector @started(22-07-25 21:05) @done(22-07-26 02:08) @lasted(5h3m26s)
-  ✔ Litebans support for muted players @started(22-07-30 01:00) @done(22-07-30 01:58) @lasted(58m7s)
   ☐ Join message
-  ☐ Private message
+  ☐ Private messages
   ☐ Mail command
   ☐ /me command
 
 Archive:
+  ✔ Language selector @done(22-07-27 00:20) @project(Discord)
+  ✔ Add nickname change detection @done(22-07-30 02:06) @project(Discord)
+  ✔ Check if we can copy minecraft link command to clipboard from Discord -> no we can't @done(22-07-30 02:06) @project(Discord)
+  ✔ Account sync @done(22-07-24 20:48) @project(Discord)
+  ✔ Forget sync command @done(22-07-24 20:53) @project(Discord)
+  ✔ Merge accounts if Discord and Minecraft accounts are linked @done(22-07-28 03:41) @project(Discord)
+  ✔ Language selector @started(22-07-25 21:05) @done(22-07-26 02:08) @lasted(5h3m26s) @project(In-game)
+  ✔ Litebans support for muted players @started(22-07-30 01:00) @done(22-07-30 01:58) @lasted(58m7s) @project(In-game)
   ✔ Database models and migrations @project(General)
   ✔ Channel sync @project(General)
   ✔ CommandSpy perms check @project(General)
