@@ -167,7 +167,10 @@ public class PlayerPreferencesManager {
         return null;
     }
 
-    public static String localizeMessageForPlayer(PlayerPreferences preferences, String message) {
+    public static String localizeMessageForPlayer(PlayerPreferences preferences, String message, String translationProvider) {
+        if (translationProvider == null) {
+            translationProvider = Config.upstreamTranslationProvider;
+        }
         try {
             String messageLanguage = DetectionManager.getLanguage(message);
 
@@ -179,13 +182,17 @@ public class PlayerPreferencesManager {
                 return message;
             }
 
-            return new TranslationManager(Config.upstreamTranslationProvider).translate(message, messageLanguage, preferences.mainLanguage);
+            return new TranslationManager(translationProvider).translate(message, messageLanguage, preferences.mainLanguage);
         } catch (IOException | IllegalStateException | URISyntaxException | InterruptedException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
         return message;
+    }
+
+    public static String localizeMessageForPlayer(PlayerPreferences preferences, String message) {
+        return localizeMessageForPlayer(preferences, message, null);
     }
 
     public static void togglePlayerLocale(PlayerPreferences preferences, String locale) {
@@ -281,15 +288,19 @@ public class PlayerPreferencesManager {
         return extractPlayerLanguage(player);
     }
 
-    public static String localizeMessageForPlayer(ProxiedPlayer player, String message) {
+    public static String localizeMessageForPlayer(ProxiedPlayer player, String message, String translationProvider) {
         try {
-            return localizeMessageForPlayer(getPlayerPreferences(player), message);
+            return localizeMessageForPlayer(getPlayerPreferences(player), message, translationProvider);
         } catch (IOException | InterruptedException | IllegalStateException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
         return message;
+    }
+
+    public static String localizeMessageForPlayer(ProxiedPlayer player, String message) {
+        return localizeMessageForPlayer(player, message, null);
     }
 
     public static boolean playerSpeaksLanguage(User user, String languageIsoCode) {
@@ -314,15 +325,19 @@ public class PlayerPreferencesManager {
         return null;
     }
 
-    public static String localizeMessageForPlayer(User user, String message) {
+    public static String localizeMessageForPlayer(User user, String message, String translationProvider) {
         try {
-            return localizeMessageForPlayer(getPlayerPreferences(user), message);
+            return localizeMessageForPlayer(getPlayerPreferences(user), message, translationProvider);
         } catch (IOException | InterruptedException | IllegalStateException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
         return message;
+    }
+
+    public static String localizeMessageForPlayer(User user, String message) {
+        return localizeMessageForPlayer(user, message, null);
     }
 
 }

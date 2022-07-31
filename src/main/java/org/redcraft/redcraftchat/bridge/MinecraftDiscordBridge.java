@@ -141,7 +141,7 @@ public class MinecraftDiscordBridge {
         }
 
         for (ProxiedPlayer receiver : ProxyServer.getInstance().getPlayers()) {
-            String targetMessage = PlayerPreferencesManager.localizeMessageForPlayer(receiver, formattedMessage);
+            String targetMessage = PlayerPreferencesManager.localizeMessageForPlayer(receiver, formattedMessage, Config.chatTranslationProvider);
 
             targetMessage = TokenizerManager.replaceTokens(targetMessage, tokens);
 
