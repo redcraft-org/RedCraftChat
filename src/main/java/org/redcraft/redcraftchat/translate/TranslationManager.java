@@ -73,7 +73,7 @@ public class TranslationManager {
     public static String getSourceLanguage(String message, ProxiedPlayer sender) {
         String sourceLanguage = DetectionManager.getLanguage(message);
 
-        if (sourceLanguage == null) {
+        if (sourceLanguage == null && sender != null) {
             sourceLanguage = PlayerPreferencesManager.getMainPlayerLanguage(sender);
         }
 

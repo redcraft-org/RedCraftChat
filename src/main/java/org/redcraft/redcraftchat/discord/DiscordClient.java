@@ -163,10 +163,12 @@ public class DiscordClient {
             case "uuid":
                 avatarUrl = avatarUrl.replaceAll("%player%", player.getUniqueId().toString());
                 break;
+
             case "name":
-            default:
                 avatarUrl = avatarUrl.replaceAll("%player%", player.getName());
-                break;
+
+            default:
+                throw new IllegalArgumentException("Unsupported player-avatar-format: " + Config.playerAvatarFormat);
         }
 
         builder.setAvatarUrl(avatarUrl);

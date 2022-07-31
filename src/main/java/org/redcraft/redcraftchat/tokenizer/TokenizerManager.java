@@ -94,7 +94,7 @@ public class TokenizerManager {
 
             while (matcher.find()) {
                 String match = matcher.group();
-                String token = DigestUtils.sha1Hex(match).substring(0, 7);
+                String token = generateToken(match);
 
                 tokenizedElements.put(token, match);
                 tokenizedMessage = tokenizedMessage.replace(match, token);
@@ -127,6 +127,22 @@ public class TokenizerManager {
         }
 
         message = EmojiParser.parseToUnicode(message);
+
+        return message;
+    }
+
+    public static String generateToken(String element) {
+        return DigestUtils.sha1Hex(element).substring(0, 7);
+    }
+
+    public static String replaceTokens(String message, Map<String, String> tokens) {
+        for (Map.Entry<String, String> entry : tokens.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            if (key != null && value != null) {
+                message = message.replace(key, value);
+            }
+        }
 
         return message;
     }

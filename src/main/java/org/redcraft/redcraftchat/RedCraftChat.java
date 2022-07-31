@@ -20,6 +20,7 @@ import org.redcraft.redcraftchat.listeners.discord.DiscordMessageDeletedListener
 import org.redcraft.redcraftchat.listeners.discord.DiscordMessageEditedListener;
 import org.redcraft.redcraftchat.listeners.discord.DiscordMessageReceivedListener;
 import org.redcraft.redcraftchat.listeners.minecraft.MinecraftChatListener;
+import org.redcraft.redcraftchat.listeners.minecraft.MinecraftConnectDisconnectMessageListener;
 import org.redcraft.redcraftchat.listeners.minecraft.MinecraftPlayerPreferencesListener;
 import org.redcraft.redcraftchat.listeners.minecraft.MinecraftRemoteServerMessageListener;
 import org.redcraft.redcraftchat.listeners.minecraft.MinecraftTabCompleteListener;
@@ -57,6 +58,7 @@ public class RedCraftChat extends Plugin {
 		// Game listeners
 		PluginManager pluginManager = this.getProxy().getPluginManager();
 		pluginManager.registerListener(this, new MinecraftChatListener());
+		pluginManager.registerListener(this, new MinecraftConnectDisconnectMessageListener());
 		pluginManager.registerListener(this, new MinecraftRemoteServerMessageListener());
 		pluginManager.registerListener(this, new MinecraftPlayerPreferencesListener());
 		pluginManager.registerListener(this, new MinecraftTabCompleteListener());

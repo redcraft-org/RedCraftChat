@@ -2,6 +2,7 @@ package org.redcraft.redcraftchat.listeners.minecraft;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.Deque;
 import java.util.Iterator;
@@ -22,6 +23,7 @@ import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
+import net.md_5.bungee.api.chat.TranslatableComponent;
 import net.md_5.bungee.api.chat.HoverEvent.Action;
 import net.md_5.bungee.api.chat.hover.content.Text;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
@@ -62,6 +64,16 @@ public class MinecraftRemoteServerMessageListener implements Listener {
 
                 BaseComponent[] messages = ComponentSerializer.parse(rawJson);
 
+                for (BaseComponent message : messages) {
+                    if (message instanceof TranslatableComponent) {
+                        TranslatableComponent component = (TranslatableComponent) message;
+                        String[] nonBroadcastableMessages = {"multiplayer.player.joined", "multiplayer.player.left"};
+                        if (Arrays.asList(nonBroadcastableMessages).contains(component.getTranslate())) {
+                            return;
+                        }
+                    }
+                }
+
                 ChatMessageType messageType;
 
                 if (chatPacket.getPosition() == 2) {
@@ -88,8 +100,6 @@ public class MinecraftRemoteServerMessageListener implements Listener {
         Channel channel = (Channel) PrivateFieldExtractor.extractPrivateApiField(channelWrapper, "ch");
 
         channel.pipeline().addBefore("inbound-boss", "redcraft-chat", getPacketInterceptor(event));
-
-        RedCraftChat.getInstance().getLogger().info("Added packet interceptor to " + serverConnection.getInfo().getName());
     }
 
     public static void handleChatPacket(long chatPacketTimestamp, Server server, ProxiedPlayer player, BaseComponent[] messages, ChatMessageType position) throws InterruptedException {
