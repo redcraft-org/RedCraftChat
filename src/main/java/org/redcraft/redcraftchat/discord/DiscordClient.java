@@ -155,8 +155,9 @@ public class DiscordClient {
         // Change appearance of webhook message
         WebhookMessageBuilder builder = new WebhookMessageBuilder();
         String username = ChatColor.stripColor(player.getDisplayName());
+        suffix = ChatColor.stripColor(suffix);
 
-        builder.setUsername("[" + player.getServer().getInfo().getName() + "] " + username + suffix);
+        builder.setUsername(username + suffix);
 
         String avatarUrl = Config.playerAvatarApiEndpoint;
         switch (Config.playerAvatarFormat) {

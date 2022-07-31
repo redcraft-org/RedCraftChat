@@ -57,7 +57,7 @@ public class MinecraftDiscordBridge {
             // Translate
             Map<String, String> translatedLanguages = translationManager.translateBulk(message, sourceLanguage, targetLanguages);
 
-            String server = sender.getServer().getInfo().getName();
+            String server = sender.getServer().getInfo().getMotd();
 
             // Send to players
             MinecraftDiscordBridge.getInstance().sendMessageToPlayers(server, sender.getDisplayName(), sourceLanguage, message, translatedLanguages);
@@ -133,7 +133,7 @@ public class MinecraftDiscordBridge {
             String discordMessage = DiscordSerializer.INSTANCE.serialize(parsedMessage);
 
             if (sender != null) {
-                DiscordClient.postAsPlayer(channel.channelId, sender, discordMessage, "");
+                DiscordClient.postAsPlayer(channel.channelId, sender, discordMessage, "[" + sender.getServer().getInfo().getMotd() + "]");
             } else {
                 TextChannel discordChannel = DiscordClient.getClient().getTextChannelById(channel.channelId);
                 discordChannel.sendMessage(discordMessage).queue();

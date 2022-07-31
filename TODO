@@ -6,10 +6,10 @@ Discord:
 In-game:
   ☐ Private messages
   ☐ Mail command
-  ☐ Detect servers going up/down
   ☐ Scheduled messages (tips, donations, etc...)
 
 Archive:
+  ✔ Detect servers going up/down @started(22-07-31 15:31) @done(22-07-31 16:24) @lasted(53m49s) @project(In-game)
   ✔ /me command @started(22-07-31 02:50) @done(22-07-31 03:35) @lasted(45m8s) @project(In-game)
   ✔ Broadcast command @started(22-07-31 01:47) @done(22-07-31 02:44) @lasted(57m57s) @project(In-game)
   ✔ Join message @started(22-07-30 18:13) @done(22-07-30 21:59) @lasted(3h46m46s) @project(In-game)

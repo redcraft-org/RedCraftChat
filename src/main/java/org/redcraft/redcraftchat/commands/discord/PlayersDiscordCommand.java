@@ -15,6 +15,7 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
@@ -74,7 +75,7 @@ public class PlayersDiscordCommand extends ListenerAdapter {
             description = PlayerPreferencesManager.localizeMessageForPlayer(user, description);
 
             MessageEmbed message = new EmbedBuilder()
-                    .setTitle(server.getName())
+                    .setTitle(ChatColor.stripColor(server.getMotd()))
                     .setDescription(description)
                     .build();
 

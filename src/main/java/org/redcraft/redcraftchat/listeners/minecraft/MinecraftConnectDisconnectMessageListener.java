@@ -3,6 +3,7 @@ package org.redcraft.redcraftchat.listeners.minecraft;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.bridge.MinecraftDiscordBridge;
@@ -28,7 +29,7 @@ public class MinecraftConnectDisconnectMessageListener implements Listener {
         @Override
         public void run() {
             String previousServer = previousServers.get(event.getPlayer().getUniqueId());
-            String currentServer = this.event.getServer().getInfo().getName();
+            String currentServer = this.event.getServer().getInfo().getMotd();
             previousServers.put(event.getPlayer().getUniqueId(), currentServer);
             String message;
             if (previousServer != null && !previousServer.equals(currentServer)) {
@@ -39,8 +40,8 @@ public class MinecraftConnectDisconnectMessageListener implements Listener {
 
             Map<String, String> replacements = new HashMap<String, String>();
             replacements.put("%player%", event.getPlayer().getDisplayName());
-            replacements.put("%previous_server%", previousServer);
-            replacements.put("%current_server%", currentServer);
+            replacements.put("%previous_server%", previousServer + ChatColor.YELLOW);
+            replacements.put("%current_server%", currentServer + ChatColor.YELLOW);
 
             // TODO make nice embeds
             MinecraftDiscordBridge.getInstance().broadcastMessage(message, replacements);
@@ -69,16 +70,17 @@ public class MinecraftConnectDisconnectMessageListener implements Listener {
 
 	@EventHandler
 	public void onPlayerJoin(final ServerConnectedEvent e) {
-		RedCraftChat.getInstance().getProxy().getScheduler().runAsync(RedCraftChat.getInstance(), new AsyncPlayerJoinHandler(e));
+        // Delay by a second to make sure we logged the player switch
+		RedCraftChat.getInstance().getProxy().getScheduler().schedule(RedCraftChat.getInstance(), new AsyncPlayerJoinHandler(e), 1, TimeUnit.SECONDS);
 	}
 
 	@EventHandler
 	public void onPlayerSwitch(ServerDisconnectEvent e) {
-		previousServers.put(e.getPlayer().getUniqueId(), e.getTarget().getName());
+		previousServers.put(e.getPlayer().getUniqueId(), e.getTarget().getMotd());
 	}
 
 	@EventHandler
 	public void onPlayerLeave(PlayerDisconnectEvent e) {
-		RedCraftChat.getInstance().getProxy().getScheduler().runAsync(RedCraftChat.getInstance(), new AsyncPlayerLeaveHandler(e));
+        RedCraftChat.getInstance().getProxy().getScheduler().runAsync(RedCraftChat.getInstance(), new AsyncPlayerLeaveHandler(e));
 	}
 }
