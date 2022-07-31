@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.bridge.MinecraftDiscordBridge;
+import org.redcraft.redcraftchat.runnables.LuckPermsSynchronizerTask;
 
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.event.PlayerDisconnectEvent;
@@ -28,6 +29,8 @@ public class MinecraftConnectDisconnectMessageListener implements Listener {
 
         @Override
         public void run() {
+            LuckPermsSynchronizerTask.updateUsername(event.getPlayer());
+
             String previousServer = previousServers.get(event.getPlayer().getUniqueId());
             String currentServer = this.event.getServer().getInfo().getMotd();
             previousServers.put(event.getPlayer().getUniqueId(), currentServer);
@@ -39,7 +42,7 @@ public class MinecraftConnectDisconnectMessageListener implements Listener {
             }
 
             Map<String, String> replacements = new HashMap<String, String>();
-            replacements.put("%player%", event.getPlayer().getDisplayName());
+            replacements.put("%player%", event.getPlayer().getDisplayName() + ChatColor.YELLOW);
             replacements.put("%previous_server%", previousServer + ChatColor.YELLOW);
             replacements.put("%current_server%", currentServer + ChatColor.YELLOW);
 
