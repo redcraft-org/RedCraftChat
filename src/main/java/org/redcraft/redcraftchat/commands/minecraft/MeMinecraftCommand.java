@@ -12,7 +12,7 @@ import net.md_5.bungee.api.plugin.Command;
 public class MeMinecraftCommand extends Command {
 
     public MeMinecraftCommand() {
-        super("me");
+        super("me", "redcraftchat.command.me", "minecraft:me");
     }
 
     public class MeMinecraftCommandHandler implements Runnable {
@@ -32,11 +32,6 @@ public class MeMinecraftCommand extends Command {
             }
 
             ProxiedPlayer player = (ProxiedPlayer) sender;
-
-            if (!player.hasPermission("redcraftchat.command.me")) {
-                BasicMessageFormatter.sendInternalError(player, "You do not have the permission to use this command");
-                return;
-            }
 
             if (args.length < 1) {
                 BasicMessageFormatter.sendInternalError(player, "You must specify a message");

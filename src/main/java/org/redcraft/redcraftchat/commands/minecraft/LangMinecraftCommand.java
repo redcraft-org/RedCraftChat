@@ -25,7 +25,7 @@ import net.md_5.bungee.api.plugin.Command;
 public class LangMinecraftCommand extends Command {
 
     public LangMinecraftCommand() {
-        super("lang");
+        super("lang", "redcraftchat.command.lang", "languages");
     }
 
     public class LangMinecraftCommandHandler implements Runnable {
@@ -46,11 +46,6 @@ public class LangMinecraftCommand extends Command {
             }
 
             ProxiedPlayer player = (ProxiedPlayer) sender;
-
-            if (!player.hasPermission("redcraftchat.command.lang")) {
-                BasicMessageFormatter.sendInternalError(player, "You do not have the permission to use this command");
-                return;
-            }
 
             try {
                 PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);

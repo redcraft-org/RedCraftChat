@@ -18,7 +18,7 @@ import net.md_5.bungee.api.plugin.Command;
 public class PlayerSettingsMinecraftCommand extends Command {
 
     public PlayerSettingsMinecraftCommand() {
-        super("player-settings");
+        super("player-settings", "redcraftchat.command.player-settings");
     }
 
     public class PlayerSettingsMinecraftCommandHandler implements Runnable {
@@ -33,11 +33,6 @@ public class PlayerSettingsMinecraftCommand extends Command {
         @Override
         public void run() {
             ProxiedPlayer player = null;
-
-            if (!sender.hasPermission("redcraftchat.command.player-settings")) {
-                BasicMessageFormatter.sendInternalError(sender, "You do not have the permission to use this command");
-                return;
-            }
 
             // If it's not a player we need an arg
             if (!(sender instanceof ProxiedPlayer) && args.length < 1) {

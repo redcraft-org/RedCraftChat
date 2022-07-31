@@ -180,7 +180,7 @@ public class PlayerPreferencesManager {
             }
 
             return new TranslationManager(Config.upstreamTranslationProvider).translate(message, messageLanguage, preferences.mainLanguage);
-        } catch (IOException | IllegalStateException | URISyntaxException e) {
+        } catch (IOException | IllegalStateException | URISyntaxException | InterruptedException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }

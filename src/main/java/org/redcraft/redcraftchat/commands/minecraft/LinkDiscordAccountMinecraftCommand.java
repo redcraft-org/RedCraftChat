@@ -21,7 +21,7 @@ import net.md_5.bungee.api.plugin.Command;
 public class LinkDiscordAccountMinecraftCommand extends Command {
 
     public LinkDiscordAccountMinecraftCommand() {
-        super("discord-link");
+        super("discord-link", "redcraftchat.command.link-discord-account");
     }
 
     public class LinkDiscordAccountMinecraftCommandHandler implements Runnable {
@@ -41,11 +41,6 @@ public class LinkDiscordAccountMinecraftCommand extends Command {
             }
 
             ProxiedPlayer player = (ProxiedPlayer) sender;
-
-            if (!player.hasPermission("redcraftchat.command.link-discord-account")) {
-                BasicMessageFormatter.sendInternalError(player, "You do not have the permission to use this command");
-                return;
-            }
 
             try {
                 PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);

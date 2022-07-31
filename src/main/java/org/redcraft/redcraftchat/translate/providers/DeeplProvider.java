@@ -1,17 +1,14 @@
 package org.redcraft.redcraftchat.translate.providers;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
 import java.net.URISyntaxException;
-import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 import org.apache.http.client.utils.URIBuilder;
 import org.redcraft.redcraftchat.Config;
@@ -24,6 +21,7 @@ import org.redcraft.redcraftchat.models.deepl.DeeplSupportedLanguage;
 
 public class DeeplProvider {
 
+    private static HttpClient httpClient = HttpClient.newHttpClient();
     private static HashMap<String, DeeplSupportedLanguage> supportedLanguages = new HashMap<>();
     private static boolean supportedLanguagesInitialized = false;
 
@@ -31,7 +29,7 @@ public class DeeplProvider {
         throw new IllegalStateException("This class should not be instantiated");
     }
 
-    public static DeeplResponse translate(String text, String sourceLanguageId, String targetLanguageId) throws IllegalStateException, URISyntaxException, IOException {
+    public static DeeplResponse translate(String text, String sourceLanguageId, String targetLanguageId) throws IllegalStateException, URISyntaxException, IOException, InterruptedException {
         String sourceLangId = sourceLanguageId.toLowerCase().split("-")[0];
         String targetLangId = targetLanguageId.toLowerCase().split("-")[0];
         String cacheKey = String.format("%s;%s;%s", sourceLangId, targetLangId, text);
@@ -53,42 +51,31 @@ public class DeeplProvider {
             throw new IllegalStateException("The source language " + sourceLangId + " is not supported by Deepl");
         }
 
-        URIBuilder ub = new URIBuilder(Config.deeplEndpoint);
-        ub.addParameter("auth_key", Config.deeplToken);
-        ub.addParameter("text", text);
-        ub.addParameter("source_lang", sourceLang.languageId);
-        ub.addParameter("target_lang", targetLang.languageId);
-        ub.addParameter("preserve_formatting", Config.deeplPreserveFormatting ? "1" : "0");
+        URIBuilder url = new URIBuilder(Config.deeplEndpoint);
+        url.addParameter("auth_key", Config.deeplToken);
+        url.addParameter("text", text);
+        url.addParameter("source_lang", sourceLang.languageId);
+        url.addParameter("target_lang", targetLang.languageId);
+        url.addParameter("preserve_formatting", Config.deeplPreserveFormatting ? "1" : "0");
 
         if (targetLang.formalityAvailable) {
-            ub.addParameter("formality", Config.deeplFormality);
+            url.addParameter("formality", Config.deeplFormality);
         }
 
-        URL endpointUrl = new URL(ub.toString());
+        HttpRequest request = HttpRequest.newBuilder(url.build())
+                .header("accept", "application/json")
+                .header("content-type", "application/json")
+                .GET()
+                .build();
 
-        HttpURLConnection httpURLConnection = (HttpURLConnection) endpointUrl.openConnection();
-        httpURLConnection.setRequestMethod("GET");
-        httpURLConnection.setDoOutput(true);
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        DeeplResponse deeplResponse = new Gson().fromJson(response.body(), DeeplResponse.class);
+
+        CacheManager.put(CacheCategory.DEEPL_TRANSLATED_MESSAGE, cacheKey, deeplResponse);
 
         // TODO remove debug
         RedCraftChat.getInstance().getLogger().info("Used " + text.length() + " Deepl chars to translate to " + targetLangId);
-
-        BufferedReader in = new BufferedReader(new InputStreamReader(httpURLConnection.getInputStream()));
-        String inputLine;
-        StringBuilder rawResponse = new StringBuilder();
-
-        while ((inputLine = in.readLine()) != null) {
-            rawResponse.append(inputLine);
-        }
-        in.close();
-
-        Gson gson = new GsonBuilder()
-            .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-            .create();
-
-        DeeplResponse deeplResponse = gson.fromJson(rawResponse.toString(), DeeplResponse.class);
-
-        CacheManager.put(CacheCategory.DEEPL_TRANSLATED_MESSAGE, cacheKey, deeplResponse);
 
         return deeplResponse;
     }

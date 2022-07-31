@@ -26,7 +26,7 @@ public class Config {
 
 	public static boolean translationEnabled = false;
 	public static String chatTranslationProvider = "deepl";
-	public static String upstreamTranslationProvider = "modernmt";
+	public static String upstreamTranslationProvider = "modernMt";
 	public static List<String> translationDiscordSupportedLanguages = new ArrayList<String>();
 	public static String translationDiscordCategoryFormat = "[%lang%] %topic%";
 
@@ -38,6 +38,8 @@ public class Config {
 	public static String deeplEndpoint = "https://api.deepl.com/v2/translate";
 	public static String deeplFormality = "normal";
 	public static boolean deeplPreserveFormatting = false;
+
+	public static String modernMtToken = "";
 
 	public static boolean urlShorteningEnabled = false;
 	public static String urlShorteningProvider = "redcraft";
@@ -89,6 +91,8 @@ public class Config {
 		deeplEndpoint = config.getString("deepl-endpoint");
 		deeplFormality = config.getString("deepl-formality");
 		deeplPreserveFormatting = config.getBoolean("deepl-preserve-formatting");
+
+		modernMtToken = config.getString("modernmt-token");
 
 		urlShorteningEnabled = config.getBoolean("url-shortening-enabled");
 		urlShorteningProvider = config.getString("url-shortening-provider");

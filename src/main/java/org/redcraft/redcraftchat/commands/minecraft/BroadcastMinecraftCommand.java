@@ -11,7 +11,7 @@ import net.md_5.bungee.api.plugin.Command;
 public class BroadcastMinecraftCommand extends Command {
 
     public BroadcastMinecraftCommand() {
-        super("broadcast");
+        super("broadcast", "redcraftchat.command.broadcast", "bc", "alert");
     }
 
     public class BroadcastMinecraftCommandHandler implements Runnable {
@@ -25,11 +25,6 @@ public class BroadcastMinecraftCommand extends Command {
 
         @Override
         public void run() {
-            if (!sender.hasPermission("redcraftchat.command.broadcast")) {
-                BasicMessageFormatter.sendInternalError(sender, "You do not have the permission to use this command");
-                return;
-            }
-
             if (args.length < 1) {
                 BasicMessageFormatter.sendInternalError(sender, "You must specify a message");
                 return;

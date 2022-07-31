@@ -15,7 +15,7 @@ import net.md_5.bungee.api.plugin.Command;
 public class CommandSpyMinecraftCommand extends Command {
 
     public CommandSpyMinecraftCommand() {
-        super("cspy");
+        super("commandspy", "redcraftchat.moderation.commandspy", "cspy");
     }
 
     public class CommandSpyMinecraftCommandHandler implements Runnable {
@@ -30,11 +30,6 @@ public class CommandSpyMinecraftCommand extends Command {
         @Override
         public void run() {
             ProxiedPlayer player = null;
-
-            if (!sender.hasPermission("redcraftchat.moderation.commandspy")) {
-                BasicMessageFormatter.sendInternalError(sender, "You do not have the permission to use this command");
-                return;
-            }
 
             // If it's not a player we need an arg
             if (!(sender instanceof ProxiedPlayer) && args.length < 1) {

@@ -18,8 +18,8 @@ discord-activity-value: 'RedCraft.org'
 translation-enabled: true
 translation-discord-supported-languages: ['en', 'fr']
 translation-discord-category-format: '[%lang%] %topic%'
-chat-translation-provider: 'deepl'
-upstream-translation-provider: 'modernmt' # This is to translate plugins from upstream servers
+chat-translation-provider: 'modernmt-free'
+upstream-translation-provider: 'modernmt-free' # This is to translate plugins from upstream servers
 
 # This is for supported locales
 supported-locales-provider: 'database'
@@ -27,11 +27,15 @@ supported-locales-provider: 'database'
 supported-locales-api-url: 'https://redcraft.org/api/v1/language/list'
 default-locale: 'en-US'
 
-# These are the settings for Deepl live translation
+# These are the settings for Deepl live translation (if you use that provider)
 deepl-token: ''
 deepl-endpoint: 'https://api.deepl.com/v2/translate' # If you use a proxy or something
 deepl-formality: 'less' # can be "normal", "more" or "less". Default is "less" so messages seem more friendly
 deepl-preserve-formatting: false # whether the translation engine should respect the original formatting, even if it would usually correct some aspects
+
+# These are the settings for the ModernMT live translation (if you use that provider)
+# PS: If you use modernmt-free, these settings will be ignored
+modernmt-token: ''
 
 # Shorten URLs
 url-shortening-enabled: false

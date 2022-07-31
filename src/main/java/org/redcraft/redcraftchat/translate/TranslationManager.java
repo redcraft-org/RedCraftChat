@@ -14,7 +14,10 @@ import org.redcraft.redcraftchat.models.modernmt.ModernmtResponse;
 import org.redcraft.redcraftchat.models.translate.TokenizedMessage;
 import org.redcraft.redcraftchat.tokenizer.TokenizerManager;
 import org.redcraft.redcraftchat.translate.providers.DeeplProvider;
+import org.redcraft.redcraftchat.translate.providers.ModernmtFreeProvider;
 import org.redcraft.redcraftchat.translate.providers.ModernmtProvider;
+
+import com.modernmt.model.Translation;
 
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
@@ -27,7 +30,7 @@ public class TranslationManager {
         this.translationService = translationService;
     }
 
-    public String translate(String text, String sourceLanguage, String targetLanguage) throws IllegalStateException, URISyntaxException, IOException {
+    public String translate(String text, String sourceLanguage, String targetLanguage) throws IllegalStateException, URISyntaxException, IOException, InterruptedException {
         if (!Config.translationEnabled) {
             throw new IllegalStateException("TranslationManager was called but translation is disabled in the configuration");
         }
@@ -39,10 +42,17 @@ public class TranslationManager {
                 DeeplResponse dr = DeeplProvider.translate(tokenizedMessage.getOriginalTokenizedMessage(), sourceLanguage.toUpperCase(), targetLanguage.toUpperCase());
                 tokenizedMessage.setOriginalTokenizedMessage(DeeplProvider.parseDeeplResponse(dr));
                 break;
+
             case "modernmt":
-                ModernmtResponse mr = ModernmtProvider.translate(tokenizedMessage.getOriginalTokenizedMessage(), sourceLanguage.toLowerCase(), targetLanguage.toLowerCase());
-                tokenizedMessage.setOriginalTokenizedMessage(mr.data.translation.replaceAll("§( )+", "§")); // Color fix for MC message
+                Translation mr = ModernmtProvider.translate(tokenizedMessage.getOriginalTokenizedMessage(), sourceLanguage.toLowerCase(), targetLanguage.toLowerCase());
+                tokenizedMessage.setOriginalTokenizedMessage(mr.getTranslation().replaceAll("§( )+", "§")); // Color fix for MC message
                 break;
+
+            case "modernmt-free":
+                ModernmtResponse mfr = ModernmtFreeProvider.translate(tokenizedMessage.getOriginalTokenizedMessage(), sourceLanguage.toLowerCase(), targetLanguage.toLowerCase());
+                tokenizedMessage.setOriginalTokenizedMessage(mfr.data.translation.replaceAll("§( )+", "§")); // Color fix for MC message
+                break;
+
             default:
                 throw new IllegalStateException(String.format("Unknown translation service \"%s\"", this.translationService));
         }

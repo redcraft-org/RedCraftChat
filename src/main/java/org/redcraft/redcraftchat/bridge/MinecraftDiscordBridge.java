@@ -117,7 +117,7 @@ public class MinecraftDiscordBridge {
             if (!channel.languageId.equals(originalLanguage)) {
                 try {
                     targetMessage = translationManager.translate(targetMessage, originalLanguage, channel.languageId);
-                } catch (IllegalStateException | URISyntaxException | IOException e) {
+                } catch (IllegalStateException | URISyntaxException | IOException | InterruptedException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
