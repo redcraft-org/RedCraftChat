@@ -78,10 +78,18 @@ public class MinecraftDiscordBridge {
     }
 
     public void broadcastMessage(String message) {
-        broadcastMessage(message, null);
+        broadcastMessage(message, null, null);
+    }
+
+    public void broadcastMessage(String message, ProxiedPlayer sender) {
+        broadcastMessage(message, null, sender);
     }
 
     public void broadcastMessage(String message, Map<String, String> replacements) {
+        broadcastMessage(message, replacements, null);
+    }
+
+    public void broadcastMessage(String message, Map<String, String> replacements, ProxiedPlayer sender) {
         String formattedMessage = ChatColor.translateAlternateColorCodes('&', message);
 
         Map<String, String> tokens = new HashMap<String, String>();
@@ -97,6 +105,10 @@ public class MinecraftDiscordBridge {
         for (TranslatedChannel channel : ChannelManager.getMinecraftBridgeChannels()) {
             String targetMessage = formattedMessage;
             String originalLanguage = TranslationManager.getSourceLanguage(formattedMessage, null);
+
+            if (originalLanguage == null && sender != null) {
+                originalLanguage = PlayerPreferencesManager.getMainPlayerLanguage(sender);
+            }
 
             if (originalLanguage == null) {
                 originalLanguage = "en";
@@ -120,8 +132,12 @@ public class MinecraftDiscordBridge {
             TextComponent parsedMessage = LegacyComponentSerializer.legacySection().deserialize(targetMessage);
             String discordMessage = DiscordSerializer.INSTANCE.serialize(parsedMessage);
 
-            TextChannel discordChannel = DiscordClient.getClient().getTextChannelById(channel.channelId);
-            discordChannel.sendMessage(discordMessage).queue();
+            if (sender != null) {
+                DiscordClient.postAsPlayer(channel.channelId, sender, discordMessage, "");
+            } else {
+                TextChannel discordChannel = DiscordClient.getClient().getTextChannelById(channel.channelId);
+                discordChannel.sendMessage(discordMessage).queue();
+            }
         }
 
         for (ProxiedPlayer receiver : ProxyServer.getInstance().getPlayers()) {

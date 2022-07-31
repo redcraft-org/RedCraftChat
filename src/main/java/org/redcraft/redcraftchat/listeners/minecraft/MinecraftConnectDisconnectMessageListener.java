@@ -38,7 +38,7 @@ public class MinecraftConnectDisconnectMessageListener implements Listener {
             }
 
             Map<String, String> replacements = new HashMap<String, String>();
-            replacements.put("%player%", event.getPlayer().getName());
+            replacements.put("%player%", event.getPlayer().getDisplayName());
             replacements.put("%previous_server%", previousServer);
             replacements.put("%current_server%", currentServer);
 

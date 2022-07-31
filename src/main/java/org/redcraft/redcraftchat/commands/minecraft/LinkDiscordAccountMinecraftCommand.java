@@ -35,15 +35,12 @@ public class LinkDiscordAccountMinecraftCommand extends Command {
 
         @Override
         public void run() {
-            ProxiedPlayer player = null;
-
-            // If it's not a player we need an arg
             if (!(sender instanceof ProxiedPlayer)) {
                 BasicMessageFormatter.sendInternalError(sender, "This command can only be used by players");
                 return;
             }
 
-            player = (ProxiedPlayer) sender;
+            ProxiedPlayer player = (ProxiedPlayer) sender;
 
             if (!player.hasPermission("redcraftchat.command.link-discord-account")) {
                 BasicMessageFormatter.sendInternalError(player, "You do not have the permission to use this command");
