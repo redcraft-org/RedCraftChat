@@ -32,6 +32,7 @@ permissions:
       redcraftchat.command.player-settings: true
       redcraftchat.command.link-discord-account: true
       redcraftchat.command.lang: true
+      redcraftchat.command.broadcast: true
   redcraftchat.command.*.others:
     description: Allows access to all commands as other player
     children:
@@ -44,6 +45,8 @@ permissions:
     description: Allows to use /discord-link to link your Discord account
   redcraftchat.command.lang:
     description: Allows to use /lang to choose your language
+  redcraftchat.command.broadcast:
+    description: Allows to use /broadcast to send an broadcast on Discord and Minecraft
 
   redcraftchat.moderation.*:
     description: Allows access to all moderation tools

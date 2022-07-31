@@ -24,7 +24,10 @@ public class ModernmtProvider {
     }
 
     public static ModernmtResponse translate(String text, String sourceLanguageId, String targetLanguageId) throws IllegalStateException, URISyntaxException, IOException {
-        String cacheKey = String.format("%s;%s;%s", sourceLanguageId, targetLanguageId, text);
+        String sourceLangId = sourceLanguageId.toLowerCase().split("-")[0];
+        String targetLangId = targetLanguageId.toLowerCase().split("-")[0];
+
+        String cacheKey = String.format("%s;%s;%s", sourceLangId, targetLangId, text);
 
         ModernmtResponse cachedModernmtResponse = (ModernmtResponse) CacheManager.get(CacheCategory.MODERNMT_TRANSLATED_MESSAGE, cacheKey, ModernmtResponse.class);
 
@@ -32,14 +35,10 @@ public class ModernmtProvider {
             return cachedModernmtResponse;
         }
 
-        if (targetLanguageId == null) {
-            throw new IllegalStateException("The source language " + targetLanguageId + " is not supported by Modernmt");
-        }
-
         URIBuilder ub = new URIBuilder("https://webapi.modernmt.com/translate");
         ub.addParameter("q", text);
-        ub.addParameter("source", sourceLanguageId);
-        ub.addParameter("target", targetLanguageId);
+        ub.addParameter("source", sourceLangId);
+        ub.addParameter("target", targetLangId);
 
         URL endpointUrl = new URL(ub.toString());
 
@@ -48,7 +47,7 @@ public class ModernmtProvider {
         httpURLConnection.setDoOutput(true);
 
         // TODO remove debug
-        RedCraftChat.getInstance().getLogger().info("Used " + text.length() + " Modernmt chars to translate to " + targetLanguageId);
+        RedCraftChat.getInstance().getLogger().info("Used " + text.length() + " Modernmt chars to translate to " + targetLangId);
 
         BufferedReader in = new BufferedReader(new InputStreamReader(httpURLConnection.getInputStream()));
         String inputLine;

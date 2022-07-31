@@ -42,6 +42,7 @@ public class MinecraftConnectDisconnectMessageListener implements Listener {
             replacements.put("%previous_server%", previousServer);
             replacements.put("%current_server%", currentServer);
 
+            // TODO make nice embeds
             MinecraftDiscordBridge.getInstance().broadcastMessage(message, replacements);
         }
     }

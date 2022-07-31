@@ -32,7 +32,9 @@ public class DeeplProvider {
     }
 
     public static DeeplResponse translate(String text, String sourceLanguageId, String targetLanguageId) throws IllegalStateException, URISyntaxException, IOException {
-        String cacheKey = String.format("%s;%s;%s", sourceLanguageId, targetLanguageId, text);
+        String sourceLangId = sourceLanguageId.toLowerCase().split("-")[0];
+        String targetLangId = targetLanguageId.toLowerCase().split("-")[0];
+        String cacheKey = String.format("%s;%s;%s", sourceLangId, targetLangId, text);
 
         DeeplResponse cachedDeeplResponse = (DeeplResponse) CacheManager.get(CacheCategory.DEEPL_TRANSLATED_MESSAGE, cacheKey, DeeplResponse.class);
 
@@ -40,15 +42,15 @@ public class DeeplProvider {
             return cachedDeeplResponse;
         }
 
-        DeeplSupportedLanguage sourceLang = DeeplProvider.getLanguage(sourceLanguageId);
-        DeeplSupportedLanguage targetLang = DeeplProvider.getLanguage(targetLanguageId);
+        DeeplSupportedLanguage sourceLang = DeeplProvider.getLanguage(sourceLangId);
+        DeeplSupportedLanguage targetLang = DeeplProvider.getLanguage(targetLangId);
 
         if (sourceLang == null) {
-            throw new IllegalStateException("The source language " + sourceLanguageId + " is not supported by Deepl");
+            throw new IllegalStateException("The source language " + sourceLangId + " is not supported by Deepl");
         }
 
         if (targetLang == null) {
-            throw new IllegalStateException("The source language " + targetLanguageId + " is not supported by Deepl");
+            throw new IllegalStateException("The source language " + sourceLangId + " is not supported by Deepl");
         }
 
         URIBuilder ub = new URIBuilder(Config.deeplEndpoint);
@@ -69,7 +71,7 @@ public class DeeplProvider {
         httpURLConnection.setDoOutput(true);
 
         // TODO remove debug
-        RedCraftChat.getInstance().getLogger().info("Used " + text.length() + " Deepl chars to translate to " + targetLanguageId);
+        RedCraftChat.getInstance().getLogger().info("Used " + text.length() + " Deepl chars to translate to " + targetLangId);
 
         BufferedReader in = new BufferedReader(new InputStreamReader(httpURLConnection.getInputStream()));
         String inputLine;

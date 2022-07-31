@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import org.redcraft.redcraftchat.commands.discord.LangDiscordCommand;
 import org.redcraft.redcraftchat.commands.discord.LinkMinecraftAccountDiscordCommand;
 import org.redcraft.redcraftchat.commands.discord.PlayersDiscordCommand;
+import org.redcraft.redcraftchat.commands.minecraft.BroadcastMinecraftCommand;
 import org.redcraft.redcraftchat.commands.minecraft.CommandSpyMinecraftCommand;
 import org.redcraft.redcraftchat.commands.minecraft.LangMinecraftCommand;
 import org.redcraft.redcraftchat.commands.minecraft.LinkDiscordAccountMinecraftCommand;
@@ -64,6 +65,7 @@ public class RedCraftChat extends Plugin {
 		pluginManager.registerListener(this, new MinecraftTabCompleteListener());
 
 		// Game commands
+		pluginManager.registerCommand(this, new BroadcastMinecraftCommand());
 		pluginManager.registerCommand(this, new CommandSpyMinecraftCommand());
 		pluginManager.registerCommand(this, new LangMinecraftCommand());
 		pluginManager.registerCommand(this, new LinkDiscordAccountMinecraftCommand());
