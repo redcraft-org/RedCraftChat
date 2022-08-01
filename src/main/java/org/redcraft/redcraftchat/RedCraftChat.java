@@ -29,6 +29,7 @@ import org.redcraft.redcraftchat.listeners.minecraft.MinecraftPlayerPreferencesL
 import org.redcraft.redcraftchat.listeners.minecraft.MinecraftRemoteServerMessageListener;
 import org.redcraft.redcraftchat.listeners.minecraft.MinecraftTabCompleteListener;
 import org.redcraft.redcraftchat.runnables.DiscordChannelSynchronizerTask;
+import org.redcraft.redcraftchat.runnables.DiscordUsersSynchronizerTask;
 import org.redcraft.redcraftchat.runnables.LuckPermsSynchronizerTask;
 import org.redcraft.redcraftchat.runnables.MinecraftServerStatusWatcherTask;
 
@@ -60,6 +61,7 @@ public class RedCraftChat extends Plugin {
 		// Schedulers
 		TaskScheduler scheduler = getProxy().getScheduler();
 		scheduler.schedule(this, new DiscordChannelSynchronizerTask(), 3, 60, TimeUnit.SECONDS);
+		scheduler.schedule(this, new DiscordUsersSynchronizerTask(), 3, 60, TimeUnit.SECONDS);
 		scheduler.schedule(this, new LuckPermsSynchronizerTask(), 10, 30, TimeUnit.SECONDS);
 		scheduler.schedule(this, new MinecraftServerStatusWatcherTask(), 5, 5, TimeUnit.SECONDS);
 

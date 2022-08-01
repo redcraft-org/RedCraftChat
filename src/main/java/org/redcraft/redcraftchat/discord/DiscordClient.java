@@ -52,12 +52,11 @@ public class DiscordClient {
             builder.setActivity(activity);
         }
 
+        builder.enableIntents(
+                GatewayIntent.getIntents(GatewayIntent.ALL_INTENTS));
+
         try {
-            jdaClient = builder.enableIntents(
-                    GatewayIntent.GUILD_MESSAGES,
-                    GatewayIntent.MESSAGE_CONTENT,
-                    GatewayIntent.GUILD_MEMBERS,
-                    GatewayIntent.GUILD_WEBHOOKS).build();
+            jdaClient = builder.build();
 
             RedCraftChat.getInstance().getLogger().info("Connected to Discord!");
         } catch (LoginException e) {

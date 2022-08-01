@@ -10,6 +10,7 @@ import org.redcraft.redcraftchat.models.caching.AccountLinkCode;
 import org.redcraft.redcraftchat.models.caching.CacheCategory;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
+import org.redcraft.redcraftchat.runnables.DiscordUsersSynchronizerTask;
 
 import net.dv8tion.jda.api.entities.User;
 import net.md_5.bungee.api.ProxyServer;
@@ -105,6 +106,7 @@ public class AccountLinkManager {
         // void the link code so it can't be used maliciously if update fails and code was intercepted
         AccountLinkManager.voidLinkCode(code);
         PlayerPreferencesManager.updatePlayerPreferences(preferences);
+        DiscordUsersSynchronizerTask.syncDiscordUser(user);
 
         RedCraftChat.getInstance().getLogger().info("Linked accounts for " + preferences.minecraftUuid + " and " + preferences.discordId);
 
@@ -127,6 +129,8 @@ public class AccountLinkManager {
         if (minecraftUuid != null) {
             CacheManager.delete(CacheCategory.PLAYER_PREFERENCES, minecraftUuid.toString());
         }
+
+        DiscordUsersSynchronizerTask.syncDiscordUser(DiscordClient.getUser(discordId));
 
         RedCraftChat.getInstance().getLogger().info("Unlinked accounts for " + minecraftUuid + " and " + discordId);
     }

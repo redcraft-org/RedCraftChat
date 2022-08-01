@@ -26,7 +26,7 @@ public class Config {
 
 	public static boolean translationEnabled = false;
 	public static String chatTranslationProvider = "deepl";
-	public static String upstreamTranslationProvider = "modernMt";
+	public static String upstreamTranslationProvider = "modernmt";
 	public static List<String> translationDiscordSupportedLanguages = new ArrayList<String>();
 	public static String translationDiscordCategoryFormat = "[%lang%] %topic%";
 
