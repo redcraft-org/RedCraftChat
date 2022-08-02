@@ -30,7 +30,7 @@ public class MsgMinecraftCommand extends Command {
         @Override
         public void run() {
             if (args.length < 2) {
-                BasicMessageFormatter.sendInternalError(sender, ChatColor.RED + "Usage: /m <player> <message>");
+                BasicMessageFormatter.sendInternalError(sender, "Usage: /m <player> <message>");
                 return;
             }
 
