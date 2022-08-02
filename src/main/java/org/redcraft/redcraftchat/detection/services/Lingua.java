@@ -30,6 +30,11 @@ public class Lingua {
             detector = LanguageDetectorBuilder.fromLanguages(argsList).withMinimumRelativeDistance(0.1).build();
         }
 
+        // Crashes Lingua (OutOfMemory) for some reason, maybe fixed in 1.2.x?
+        if (text.contains("<--[HERE]")) {
+            return "en";
+        }
+
         Language language = detector.detectLanguageOf(text);
 
         if (language.equals(Language.UNKNOWN)) {

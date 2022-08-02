@@ -107,6 +107,10 @@ public class TranslationManager {
 
     // Get stuff like EN->FR
     public static String getLanguagePrefix(String sourceLanguage, String targetLanguage) {
+        if (sourceLanguage == null || targetLanguage == null) {
+            return null;
+        }
+
         String languagePrefix = sourceLanguage.toUpperCase();
 
         if (!targetLanguage.equalsIgnoreCase(sourceLanguage)) {

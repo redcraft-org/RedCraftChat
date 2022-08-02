@@ -2,6 +2,8 @@ package org.redcraft.redcraftchat.detection;
 
 import org.redcraft.redcraftchat.detection.services.Lingua;
 
+import net.md_5.bungee.api.ChatColor;
+
 public class DetectionManager {
 
     private DetectionManager() {
@@ -9,6 +11,6 @@ public class DetectionManager {
     }
 
     public static String getLanguage(String text) {
-        return Lingua.getLanguage(text);
+        return Lingua.getLanguage(ChatColor.stripColor(text));
     }
 }

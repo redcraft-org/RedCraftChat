@@ -105,7 +105,7 @@ public class DiscordUsersSynchronizerTask implements Runnable {
             }
         }
 
-        if (!member.getEffectiveName().equals(player.lastKnownMinecraftName)) {
+        if (player.lastKnownMinecraftName != null && !member.getEffectiveName().equals(player.lastKnownMinecraftName)) {
             try {
                 member.modifyNickname(player.lastKnownMinecraftName).queue();
                 updated = true;

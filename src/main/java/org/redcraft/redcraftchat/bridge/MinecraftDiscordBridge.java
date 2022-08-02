@@ -197,7 +197,7 @@ public class MinecraftDiscordBridge {
         String parsedTranslatedMessage = EmojiParser.parseToAliases(translatedMessage);
 
         BaseComponent[] formattedMessage = new ComponentBuilder(
-                "[" + languagePrefix.toUpperCase() + "][" + serverPrefix + "][" + senderPrefix + "] " + parsedTranslatedMessage)
+                "[" + languagePrefix + "][" + serverPrefix + "][" + senderPrefix + "] " + parsedTranslatedMessage)
                 .create();
 
         receiver.sendMessage(formattedMessage);

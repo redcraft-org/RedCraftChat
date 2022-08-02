@@ -17,7 +17,9 @@ import org.redcraft.redcraftchat.commands.minecraft.CommandSpyMinecraftCommand;
 import org.redcraft.redcraftchat.commands.minecraft.LangMinecraftCommand;
 import org.redcraft.redcraftchat.commands.minecraft.LinkDiscordAccountMinecraftCommand;
 import org.redcraft.redcraftchat.commands.minecraft.MeMinecraftCommand;
+import org.redcraft.redcraftchat.commands.minecraft.MsgMinecraftCommand;
 import org.redcraft.redcraftchat.commands.minecraft.PlayerSettingsMinecraftCommand;
+import org.redcraft.redcraftchat.commands.minecraft.ReplyMinecraftCommand;
 import org.redcraft.redcraftchat.database.DatabaseManager;
 import org.redcraft.redcraftchat.discord.DiscordClient;
 import org.redcraft.redcraftchat.listeners.discord.DiscordMessageDeletedListener;
@@ -78,8 +80,10 @@ public class RedCraftChat extends Plugin {
 		pluginManager.registerCommand(this, new CommandSpyMinecraftCommand());
 		pluginManager.registerCommand(this, new LangMinecraftCommand());
 		pluginManager.registerCommand(this, new LinkDiscordAccountMinecraftCommand());
+		pluginManager.registerCommand(this, new MsgMinecraftCommand());
 		pluginManager.registerCommand(this, new MeMinecraftCommand());
 		pluginManager.registerCommand(this, new PlayerSettingsMinecraftCommand());
+		pluginManager.registerCommand(this, new ReplyMinecraftCommand());
 	}
 
 	@Override
