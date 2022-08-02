@@ -24,7 +24,6 @@ import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ProxyServer;
-import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.HoverEvent.Action;
@@ -180,27 +179,34 @@ public class MinecraftDiscordBridge {
             if (translatedMessage == null) {
                 translatedMessage = originalMessage;
             }
-            formatAndSendMessageToPlayer(server, sender, receiver, translatedMessage, sourceLanguage);
+            formatAndSendMessageToPlayer(server, sender, receiver, translatedMessage, originalMessage, sourceLanguage);
         }
     }
 
-    public void formatAndSendMessageToPlayer(String server, String sender, ProxiedPlayer receiver, String translatedMessage, String sourceLanguage) {
-        String languagePrefix = sourceLanguage;
+    public void formatAndSendMessageToPlayer(String server, String sender, ProxiedPlayer receiver, String translatedMessage, String originalMessage, String sourceLanguage) {
         String serverPrefix = server + ChatColor.RESET;
         String senderPrefix = sender + ChatColor.RESET;
 
+        String targetLanguage = null;
         if (!PlayerPreferencesManager.playerSpeaksLanguage(receiver, sourceLanguage)) {
-            String targetLanguage = PlayerPreferencesManager.getMainPlayerLanguage(receiver);
-            languagePrefix = TranslationManager.getLanguagePrefix(sourceLanguage, targetLanguage);
+            targetLanguage = PlayerPreferencesManager.getMainPlayerLanguage(receiver);
         }
+
+        String languagePrefix = TranslationManager.getLanguagePrefix(sourceLanguage, targetLanguage);
 
         String parsedTranslatedMessage = EmojiParser.parseToAliases(translatedMessage);
 
-        BaseComponent[] formattedMessage = new ComponentBuilder(
-                "[" + languagePrefix + "][" + serverPrefix + "][" + senderPrefix + "] " + parsedTranslatedMessage)
-                .create();
+        ComponentBuilder messageBuilder = new ComponentBuilder()
+                .append("[" + languagePrefix + "]")
+                .append("[" + serverPrefix + "]")
+                .append("[" + senderPrefix + "] ")
+                .append(parsedTranslatedMessage);
 
-        receiver.sendMessage(formattedMessage);
+        if (targetLanguage != null) {
+            messageBuilder.event(new HoverEvent(Action.SHOW_TEXT, new Text(originalMessage)));
+        }
+
+        receiver.sendMessage(messageBuilder.create());
     }
 
     public void translateAndPostMessage(ProxiedPlayer sender, String message) {
