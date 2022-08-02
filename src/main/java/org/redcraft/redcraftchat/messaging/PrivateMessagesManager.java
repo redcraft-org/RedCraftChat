@@ -1,11 +1,14 @@
 package org.redcraft.redcraftchat.messaging;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.caching.CacheManager;
 import org.redcraft.redcraftchat.detection.DetectionManager;
+import org.redcraft.redcraftchat.helpers.BasicMessageFormatter;
 import org.redcraft.redcraftchat.models.caching.CacheCategory;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 import org.redcraft.redcraftchat.translate.TranslationManager;
@@ -53,37 +56,57 @@ public class PrivateMessagesManager {
         String senderDisplayName = sender.getDisplayName();
         String receiverDisplayName = receiver.getDisplayName();
 
-        sendToPlayer(sender, senderDisplayName, receiverDisplayName, translatedMessage, message, messageLanguage, targetLanguage, receiver.getName());
-        sendToPlayer(receiver, senderDisplayName, receiverDisplayName, message, translatedMessage, messageLanguage, targetLanguage, sender.getName());
-
-        // Set last private message sender
-        CacheManager.put(CacheCategory.LAST_PRIVATE_MESSAGE_SENDER, sender.getUniqueId().toString(), receiver.getUniqueId());
+        sendToPlayer(receiver, senderDisplayName, receiverDisplayName, translatedMessage, message, messageLanguage, targetLanguage, sender.getName());
         CacheManager.put(CacheCategory.LAST_PRIVATE_MESSAGE_SENDER, receiver.getUniqueId().toString(), sender.getUniqueId());
+
+        // Make sure we're not sending duplicate if you send a message to yourself
+        if (!sender.getUniqueId().equals(receiver.getUniqueId())) {
+            sendToPlayer(sender, senderDisplayName, receiverDisplayName, message, translatedMessage, messageLanguage, targetLanguage, receiver.getName());
+            CacheManager.put(CacheCategory.LAST_PRIVATE_MESSAGE_SENDER, sender.getUniqueId().toString(), receiver.getUniqueId());
+        }
     }
 
     public static void sendToPlayer(ProxiedPlayer player, String senderDisplayName, String receiverDisplayName, String displayedMessage, String hoverMessage, String originalLanguage, String targetLanguage, String replyTo) {
         String languagePrefix = TranslationManager.getLanguagePrefix(originalLanguage, targetLanguage);
 
-        String messagePrefix = "[" + ChatColor.LIGHT_PURPLE + ChatColor.BOLD + PlayerPreferencesManager.localizeMessageForPlayer(player, "Private message") + ChatColor.RESET + "]";
+        ComponentBuilder messageBuilder = new ComponentBuilder("[" + ChatColor.LIGHT_PURPLE + ChatColor.BOLD + "PM" + ChatColor.RESET + "]");
 
         if (languagePrefix != null) {
-            messagePrefix += "[" + languagePrefix + "]";
+            messageBuilder.append("[" + languagePrefix + "]");
         }
 
-        messagePrefix += "[" + senderDisplayName + ChatColor.RESET + " ➔ " + receiverDisplayName + ChatColor.RESET +  "] ";
+        messageBuilder.append("[");
 
-        ComponentBuilder messageBuilder = new ComponentBuilder(messagePrefix);
+        String sender = BasicMessageFormatter.getDisplayNameWithoutRank(senderDisplayName);
+        String receiver = BasicMessageFormatter.getDisplayNameWithoutRank(receiverDisplayName);
 
-        if (replyTo != null) {
-                messageBuilder.event(new ClickEvent(net.md_5.bungee.api.chat.ClickEvent.Action.SUGGEST_COMMAND, "/msg " + receiverDisplayName + " "));
-                String clickToReply = PlayerPreferencesManager.localizeMessageForPlayer(player, "Click to reply");
-                messageBuilder.event(new HoverEvent(Action.SHOW_TEXT, new Text(ChatColor.DARK_AQUA + clickToReply)));
+        messageBuilder.append(sender + ChatColor.RESET);
+        if (!sender.equals(senderDisplayName)) {
+            messageBuilder.event(new HoverEvent(Action.SHOW_TEXT, new Text(senderDisplayName)));
+        }
+        messageBuilder.append(" ➔ ");
+
+        messageBuilder.append(receiver + ChatColor.RESET);
+        if (!receiver.equals(receiverDisplayName)) {
+            messageBuilder.event(new HoverEvent(Action.SHOW_TEXT, new Text(receiverDisplayName)));
         }
 
+        messageBuilder.append("] ");
         messageBuilder.append(displayedMessage);
 
+        List<String> tooltip = new ArrayList<String>();
+
         if (hoverMessage != null && !hoverMessage.equals(displayedMessage)) {
-             messageBuilder.event(new HoverEvent(Action.SHOW_TEXT, new Text(hoverMessage)));
+             tooltip.add(hoverMessage);
+        }
+
+        if (replyTo != null) {
+            messageBuilder.event(new ClickEvent(net.md_5.bungee.api.chat.ClickEvent.Action.SUGGEST_COMMAND, "/msg " + replyTo + " "));
+            tooltip.add(ChatColor.DARK_AQUA + PlayerPreferencesManager.localizeMessageForPlayer(player, "Click to reply"));
+        }
+
+        if (tooltip.size() > 0) {
+            messageBuilder.event(new HoverEvent(Action.SHOW_TEXT, new Text(String.join("\n", tooltip))));
         }
 
         player.sendMessage(messageBuilder.create());

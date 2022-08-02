@@ -36,7 +36,7 @@ public class MsgMinecraftCommand extends Command {
 
             ProxiedPlayer receiver = RedCraftChat.getInstance().getProxy().getPlayer(args[0]);
             if (receiver == null) {
-                BasicMessageFormatter.sendInternalError(sender, ChatColor.RED + "Player not found or not online");
+                BasicMessageFormatter.sendInternalError(sender, "Not found:", args[0]);
                 return;
             }
 

@@ -8,7 +8,6 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.CommandSender;
-import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.HoverEvent.Action;
@@ -21,19 +20,34 @@ public class BasicMessageFormatter {
         throw new IllegalStateException("This class should not be instantiated");
     }
 
-    public static void sendInternalMessage(CommandSender target, String message, ChatColor color) {
+    public static void sendInternalMessage(CommandSender target, String message, String extra, ChatColor color) {
         HoverEvent hoverEvent = new HoverEvent(Action.SHOW_TEXT, new Text(color + message));
 
+        String translatedMessage = message;
         if (target instanceof ProxiedPlayer) {
-            message = PlayerPreferencesManager.localizeMessageForPlayer((ProxiedPlayer) target, message);
+            translatedMessage = PlayerPreferencesManager.localizeMessageForPlayer((ProxiedPlayer) target, message);
         }
 
-        BaseComponent[] formattedMessage = prepareInternalMessage().append(message).color(color).event(hoverEvent).create();
-        target.sendMessage(formattedMessage);
+        ComponentBuilder messageBuilder = prepareInternalMessage().append(translatedMessage).color(color);
+        if (!translatedMessage.equals(message)) {
+            messageBuilder.event(hoverEvent);
+        }
+        if (extra != null) {
+            messageBuilder.append(" " + extra);
+        }
+        target.sendMessage(messageBuilder.create());
+    }
+
+    public static void sendInternalMessage(CommandSender target, String message, ChatColor color) {
+        sendInternalMessage(target, message, null, color);
     }
 
     public static void sendInternalError(CommandSender target, String message) {
-        sendInternalMessage(target, message, ChatColor.RED);
+        sendInternalError(target, message, null);
+    }
+
+    public static void sendInternalError(CommandSender target, String message, String extra) {
+        sendInternalMessage(target, message, extra, ChatColor.RED);
     }
 
     public static ComponentBuilder prepareInternalMessage() {
@@ -50,5 +64,10 @@ public class BasicMessageFormatter {
 
     public static MessageEmbed generateDiscordError(User target, String message) {
         return generateDiscordMessage(target, "Error", message, 0xFF0000);
+    }
+
+    public static String getDisplayNameWithoutRank(String displayName) {
+        var parts = displayName.split(">");
+        return parts.length > 1 ? parts[1] : displayName;
     }
 }
