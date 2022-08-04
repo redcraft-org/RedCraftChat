@@ -20,23 +20,17 @@ public class MinecraftServerStatusWatcherTask implements Runnable {
     List<String> offlineServers = new ArrayList<String>();
 
     public boolean isServerOnline(ServerInfo server) {
-        Socket socket = new Socket();
-        try {
+        try (
+            Socket socket = new Socket();
+        ) {
             socket.connect(server.getSocketAddress(), 5);
             return true;
         } catch(IOException e) {
-        } finally {
-            if (!socket.isClosed()) {
-                try {
-                    socket.close();
-                } catch (IOException e) {
-                }
-            }
+            return false;
         }
-        return false;
     }
 
-    public void handleServerStatusChange(String server, ServerInfo serverInfo, boolean online) {
+    public void handleServerStatusChange(ServerInfo serverInfo, boolean online) {
         String message = ChatColor.GOLD + "[RedCraft] " + ChatColor.YELLOW  + "The Minecraft server %server% is now ";
 
         if (online) {
@@ -57,13 +51,13 @@ public class MinecraftServerStatusWatcherTask implements Runnable {
                 if (!onlineServers.contains(server.getKey())) {
                     onlineServers.add(server.getKey());
                     offlineServers.remove(server.getKey());
-                    handleServerStatusChange(server.getKey(), server.getValue(), true);
+                    handleServerStatusChange(server.getValue(), true);
                 }
             } else {
                 if (!offlineServers.contains(server.getKey())) {
                     offlineServers.add(server.getKey());
                     onlineServers.remove(server.getKey());
-                    handleServerStatusChange(server.getKey(), server.getValue(), false);
+                    handleServerStatusChange(server.getValue(), false);
                 }
             }
         }

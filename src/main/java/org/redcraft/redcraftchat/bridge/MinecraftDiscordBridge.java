@@ -101,6 +101,11 @@ public class MinecraftDiscordBridge {
             }
         }
 
+        broadcastDiscord(formattedMessage, tokens, sender);
+        broadcastMinecraft(formattedMessage, tokens);
+    }
+
+    public void broadcastDiscord(String formattedMessage, Map<String, String> tokens, ProxiedPlayer sender) {
         for (TranslatedChannel channel : ChannelManager.getMinecraftBridgeChannels()) {
             String targetMessage = formattedMessage;
             String originalLanguage = TranslationManager.getSourceLanguage(formattedMessage, null);
@@ -124,10 +129,6 @@ public class MinecraftDiscordBridge {
 
             targetMessage = TokenizerManager.replaceTokens(targetMessage, tokens);
 
-            if (channel.languageId.equals("en")) {
-                RedCraftChat.getInstance().getLogger().info("Broadcasting message: " + targetMessage);
-            }
-
             TextComponent parsedMessage = LegacyComponentSerializer.legacySection().deserialize(targetMessage);
             String discordMessage = DiscordSerializer.INSTANCE.serialize(parsedMessage);
 
@@ -138,7 +139,9 @@ public class MinecraftDiscordBridge {
                 discordChannel.sendMessage(discordMessage).queue();
             }
         }
+    }
 
+    public void broadcastMinecraft(String formattedMessage, Map<String, String> tokens) {
         for (ProxiedPlayer receiver : ProxyServer.getInstance().getPlayers()) {
             String targetMessage = PlayerPreferencesManager.localizeMessageForPlayer(receiver, formattedMessage, Config.chatTranslationProvider);
 
@@ -147,8 +150,7 @@ public class MinecraftDiscordBridge {
             String originalMessage = TokenizerManager.replaceTokens(formattedMessage, tokens);
 
             receiver.sendMessage(new ComponentBuilder(targetMessage)
-                    .event(new HoverEvent(Action.SHOW_TEXT, new Text(
-                            originalMessage)))
+                    .event(new HoverEvent(Action.SHOW_TEXT, new Text(originalMessage)))
                     .create());
         }
     }

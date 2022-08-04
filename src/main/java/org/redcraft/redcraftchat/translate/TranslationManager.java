@@ -9,25 +9,34 @@ import java.util.Map;
 import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 import org.redcraft.redcraftchat.detection.DetectionManager;
-import org.redcraft.redcraftchat.models.deepl.DeeplResponse;
-import org.redcraft.redcraftchat.models.modernmt.ModernmtResponse;
 import org.redcraft.redcraftchat.models.translate.TokenizedMessage;
 import org.redcraft.redcraftchat.tokenizer.TokenizerManager;
 import org.redcraft.redcraftchat.translate.providers.DeeplProvider;
 import org.redcraft.redcraftchat.translate.providers.ModernmtFreeProvider;
 import org.redcraft.redcraftchat.translate.providers.ModernmtProvider;
-
-import com.modernmt.model.Translation;
+import org.redcraft.redcraftchat.translate.providers.TranslationProvider;
 
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 public class TranslationManager {
 
-    String translationService;
+    private TranslationProvider translationProvider;
 
-    public TranslationManager(String translationService) {
-        this.translationService = translationService;
+    public TranslationManager(String translationProvider) {
+        switch (translationProvider) {
+            case "deepl":
+                this.translationProvider = new DeeplProvider();
+                break;
+            case "modernmt-free":
+                this.translationProvider = new ModernmtFreeProvider();
+                break;
+            case "modernmt":
+                this.translationProvider = new ModernmtProvider();
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown translation provider: " + translationProvider);
+        }
     }
 
     public String translate(String text, String sourceLanguage, String targetLanguage) throws IllegalStateException, URISyntaxException, IOException, InterruptedException {
@@ -37,25 +46,9 @@ public class TranslationManager {
 
         TokenizedMessage tokenizedMessage = TokenizerManager.tokenizeElements(text, true);
 
-        switch (this.translationService) {
-            case "deepl":
-                DeeplResponse dr = DeeplProvider.translate(tokenizedMessage.getOriginalTokenizedMessage(), sourceLanguage.toUpperCase(), targetLanguage.toUpperCase());
-                tokenizedMessage.setOriginalTokenizedMessage(DeeplProvider.parseDeeplResponse(dr));
-                break;
+        String translated = this.translationProvider.translate(tokenizedMessage.getOriginalTokenizedMessage(), sourceLanguage.toUpperCase(), targetLanguage.toUpperCase());
 
-            case "modernmt":
-                Translation mr = ModernmtProvider.translate(tokenizedMessage.getOriginalTokenizedMessage(), sourceLanguage.toLowerCase(), targetLanguage.toLowerCase());
-                tokenizedMessage.setOriginalTokenizedMessage(mr.getTranslation().replaceAll("§( )+", "§")); // Color fix for MC message
-                break;
-
-            case "modernmt-free":
-                ModernmtResponse mfr = ModernmtFreeProvider.translate(tokenizedMessage.getOriginalTokenizedMessage(), sourceLanguage.toLowerCase(), targetLanguage.toLowerCase());
-                tokenizedMessage.setOriginalTokenizedMessage(mfr.data.translation.replaceAll("§( )+", "§")); // Color fix for MC message
-                break;
-
-            default:
-                throw new IllegalStateException(String.format("Unknown translation service \"%s\"", this.translationService));
-        }
+        tokenizedMessage.setOriginalTokenizedMessage(translated);
 
         return TokenizerManager.untokenizeElements(tokenizedMessage);
     }

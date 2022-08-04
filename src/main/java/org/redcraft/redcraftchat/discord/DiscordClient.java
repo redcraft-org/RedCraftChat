@@ -68,7 +68,12 @@ public class DiscordClient {
     }
 
     public static User getUser(String userId) {
-        for (Guild guild : getClient().getGuilds()) {
+        JDA client = getClient();
+        if (client == null) {
+            return null;
+        }
+
+        for (Guild guild : client.getGuilds()) {
             for (Member member : guild.getMembers()) {
                 if (member.getUser().getId().equals(userId)) {
                     return member.getUser();
@@ -161,11 +166,12 @@ public class DiscordClient {
         String avatarUrl = Config.playerAvatarApiEndpoint;
         switch (Config.playerAvatarFormat) {
             case "uuid":
-                avatarUrl = avatarUrl.replaceAll("%player%", player.getUniqueId().toString());
+                avatarUrl = avatarUrl.replace("%player%", player.getUniqueId().toString());
                 break;
 
             case "name":
-                avatarUrl = avatarUrl.replaceAll("%player%", player.getName());
+                avatarUrl = avatarUrl.replace("%player%", player.getName());
+                break;
 
             default:
                 throw new IllegalArgumentException("Unsupported player-avatar-format: " + Config.playerAvatarFormat);

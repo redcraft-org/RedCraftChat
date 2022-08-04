@@ -8,6 +8,7 @@ import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.caching.CacheManager;
 import org.redcraft.redcraftchat.locales.providers.DatabaseLocaleProvider;
+import org.redcraft.redcraftchat.locales.providers.LocaleProvider;
 import org.redcraft.redcraftchat.locales.providers.RedCraftApiLocaleProvider;
 import org.redcraft.redcraftchat.locales.providers.StaticLocaleProvider;
 import org.redcraft.redcraftchat.models.caching.CacheCategory;
@@ -17,9 +18,13 @@ import com.google.common.reflect.TypeToken;
 
 public class LocaleManager {
 
-    private static StaticLocaleProvider localeProvider;
+    private LocaleManager() {
+        throw new IllegalStateException("This class should not be instantiated");
+    }
 
-    public static StaticLocaleProvider getLocaleProvider() {
+    private static LocaleProvider localeProvider;
+
+    public static LocaleProvider getLocaleProvider() {
         if (localeProvider == null) {
             switch (Config.supportedLocalesProvider) {
                 case "static":
@@ -74,6 +79,10 @@ public class LocaleManager {
     }
 
     public static boolean isSupportedLocale(String locale) {
-        return getSupportedLocales().stream().anyMatch(l -> l.code.equals(locale));
+        List<SupportedLocale> locales = getSupportedLocales();
+        if (locales == null) {
+            return locale.equals(Config.defaultLocale);
+        }
+        return locales.stream().anyMatch(l -> l.code.equals(locale));
     }
 }

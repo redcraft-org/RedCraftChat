@@ -15,12 +15,9 @@ import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import net.dv8tion.jda.api.entities.User;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
-public class DatabasePlayerProvider implements PlayerProviderInterface {
+public class DatabasePlayerProvider implements PlayerProvider {
 
     Database db = DatabaseManager.getDatabase();
-
-    public DatabasePlayerProvider() {
-    }
 
     public PlayerPreferences getPlayerPreferences(ProxiedPlayer player, boolean createIfNotFound) throws IOException, InterruptedException {
         UUID playerUniqueId = player.getUniqueId();
@@ -54,15 +51,42 @@ public class DatabasePlayerProvider implements PlayerProviderInterface {
         return transform(result);
     }
 
+    public PlayerPreferences getPlayerPreferences(UUID player) throws IOException, InterruptedException {
+        PlayerPreferencesDatabase result = db.where("minecraft_uuid=?", player).first(PlayerPreferencesDatabase.class);
+
+        if (result == null) {
+            return null;
+        }
+
+        return transform(result);
+    }
+
+    public PlayerPreferences getPlayerPreferences(String username, boolean searchMinecraft, boolean searchDiscord) throws IOException, InterruptedException {
+        PlayerPreferencesDatabase result = null;
+
+        if (searchMinecraft) {
+            result = db.where("last_known_minecraft_name=?", username).first(PlayerPreferencesDatabase.class);
+        }
+
+        if (result == null && searchDiscord) {
+            result = db.where("last_known_discord_name=?", username).first(PlayerPreferencesDatabase.class);
+        }
+
+        if (result == null) {
+            return null;
+        }
+
+        return transform(result);
+    }
+
     public void deletePlayerPreferences(PlayerPreferences playerPreferences) throws IOException, InterruptedException {
-        RedCraftChat.getInstance().getLogger().info("Deleting player preferences for Minecraft " + playerPreferences.minecraftUuid + " and Discord " + playerPreferences.discordId);
+        String debugMessage = "Deleting player preferences for Minecraft " + playerPreferences.minecraftUuid + " and Discord " + playerPreferences.discordId;
+        RedCraftChat.getInstance().getLogger().info(debugMessage);
         db.delete(transformToDatabase(playerPreferences));
     }
 
     public void updatePlayerPreferences(PlayerPreferences preferences) throws IOException, InterruptedException {
         PlayerPreferencesDatabase transformedPreferences = transformToDatabase(preferences);
-
-        Database db = DatabaseManager.getDatabase();
 
         String query, params;
 

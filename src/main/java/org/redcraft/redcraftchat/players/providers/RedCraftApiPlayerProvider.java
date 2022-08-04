@@ -10,15 +10,14 @@ import java.util.UUID;
 import com.google.gson.Gson;
 
 import org.redcraft.redcraftchat.Config;
-import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import org.redcraft.redcraftchat.models.redcraft_api.PlayerPreferenceApi;
-import org.redcraft.redcraftchat.models.redcraft_api.PlayerProvider;
+import org.redcraft.redcraftchat.models.redcraft_api.PlayerProviderApi;
 
 import net.dv8tion.jda.api.entities.User;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
-public class RedCraftApiPlayerProvider extends DatabasePlayerProvider {
+public class RedCraftApiPlayerProvider implements PlayerProvider {
 
     static HttpClient httpClient = HttpClient.newHttpClient();
 
@@ -74,6 +73,32 @@ public class RedCraftApiPlayerProvider extends DatabasePlayerProvider {
         return transform(new Gson().fromJson(response.body(), PlayerPreferenceApi.class));
     }
 
+    public PlayerPreferences getPlayerPreferences(UUID player) throws IOException, InterruptedException {
+        String url = Config.playerApiUrl + "/" + player.toString() + "?isProvider=true";
+
+        HttpRequest request = HttpRequest.newBuilder(
+                URI.create(url))
+                .header("accept", "application/json")
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() == 404) {
+            return null;
+        }
+
+        if (response.statusCode() != 200) {
+            throw new IOException("Failed to get player preferences: " + response.statusCode() + " - " + response.body());
+        }
+
+        return transform(new Gson().fromJson(response.body(), PlayerPreferenceApi.class));
+    }
+
+    public PlayerPreferences getPlayerPreferences(String username, boolean searchMinecraft, boolean searchDiscord) throws IOException, InterruptedException {
+        // TODO IMPLEMENT GET PLAYER PREFERENCES FROM USERNAME
+        return null;
+    }
+
     public void deletePlayerPreferences(PlayerPreferences playerPreferences) throws IOException, InterruptedException {
         String url = Config.playerApiUrl + "/" + playerPreferences.internalUuid;
 
@@ -112,8 +137,6 @@ public class RedCraftApiPlayerProvider extends DatabasePlayerProvider {
 
         String body = new Gson().toJson(transformToApi(preferences));
 
-        RedCraftChat.getInstance().getLogger().info("Updating player preferences: " + url + " " + body);
-
         HttpRequest request = HttpRequest.newBuilder(
                 URI.create(url))
                 .header("accept", "application/json")
@@ -133,7 +156,7 @@ public class RedCraftApiPlayerProvider extends DatabasePlayerProvider {
 
         playerPreferences.internalUuid = preferences.id;
 
-        for (PlayerProvider provider : preferences.providers) {
+        for (PlayerProviderApi provider : preferences.providers) {
             switch (provider.name) {
                 case "minecraft":
                     playerPreferences.minecraftUuid = UUID.fromString(provider.uuid);
@@ -166,11 +189,11 @@ public class RedCraftApiPlayerProvider extends DatabasePlayerProvider {
         playerPreferences.id = preferences.internalUuid;
 
         if (preferences.minecraftUuid != null) {
-            playerPreferences.providers.add(new PlayerProvider("minecraft", preferences.minecraftUuid.toString(), preferences.lastKnownMinecraftName, preferences.previousKnownMinecraftName));
+            playerPreferences.providers.add(new PlayerProviderApi("minecraft", preferences.minecraftUuid.toString(), preferences.lastKnownMinecraftName, preferences.previousKnownMinecraftName));
         }
 
         if (preferences.discordId != null) {
-            playerPreferences.providers.add(new PlayerProvider("discord", preferences.discordId, preferences.lastKnownDiscordName, preferences.previousKnownDiscordName));
+            playerPreferences.providers.add(new PlayerProviderApi("discord", preferences.discordId, preferences.lastKnownDiscordName, preferences.previousKnownDiscordName));
         }
 
         playerPreferences.languages = preferences.languages;

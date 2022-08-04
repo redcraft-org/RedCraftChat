@@ -1,7 +1,5 @@
 package org.redcraft.redcraftchat.models.database;
 
-import java.time.LocalDate;
-
 import javax.persistence.Column;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -19,10 +17,16 @@ public class PlayerMailDatabase extends DatabaseModel {
     @Column(name = "recipient_uuid")
     public String recipientUuid;
 
-    @Column(name = "sent_at")
-    public LocalDate sent_at;
+    @Column(name = "message")
+    public String message;
 
-    @Column(name = "read_at")
-    public LocalDate read_at;
+    @Column(name = "original_language")
+    public String originalLanguage;
+
+    @Column(name = "sent_at")
+    public String sentAt;
+
+    @Column(name = "read_at", nullable = true)
+    public String readAt;
 
 }

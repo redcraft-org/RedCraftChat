@@ -6,6 +6,7 @@ import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.api.plugin.PluginManager;
 import net.md_5.bungee.api.scheduler.TaskScheduler;
 
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import org.redcraft.redcraftchat.bridge.MinecraftDiscordBridge;
@@ -16,6 +17,7 @@ import org.redcraft.redcraftchat.commands.minecraft.BroadcastMinecraftCommand;
 import org.redcraft.redcraftchat.commands.minecraft.CommandSpyMinecraftCommand;
 import org.redcraft.redcraftchat.commands.minecraft.LangMinecraftCommand;
 import org.redcraft.redcraftchat.commands.minecraft.LinkDiscordAccountMinecraftCommand;
+import org.redcraft.redcraftchat.commands.minecraft.MailMinecraftCommand;
 import org.redcraft.redcraftchat.commands.minecraft.MeMinecraftCommand;
 import org.redcraft.redcraftchat.commands.minecraft.MsgMinecraftCommand;
 import org.redcraft.redcraftchat.commands.minecraft.PlayerSettingsMinecraftCommand;
@@ -44,7 +46,14 @@ public class RedCraftChat extends Plugin {
 		setInstance(this);
 
 		// Setup
-		Config.readConfig(this);
+		try {
+			Config.readConfig(this);
+		} catch (IOException e) {
+			this.getLogger().severe("Could not read config.yml");
+			e.printStackTrace();
+			this.onDisable();
+			return;
+		}
 		DatabaseManager.connect();
 
 		// Discord events
@@ -80,6 +89,7 @@ public class RedCraftChat extends Plugin {
 		pluginManager.registerCommand(this, new CommandSpyMinecraftCommand());
 		pluginManager.registerCommand(this, new LangMinecraftCommand());
 		pluginManager.registerCommand(this, new LinkDiscordAccountMinecraftCommand());
+		pluginManager.registerCommand(this, new MailMinecraftCommand());
 		pluginManager.registerCommand(this, new MsgMinecraftCommand());
 		pluginManager.registerCommand(this, new MeMinecraftCommand());
 		pluginManager.registerCommand(this, new PlayerSettingsMinecraftCommand());

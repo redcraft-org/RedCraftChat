@@ -70,7 +70,8 @@ public class LinkMinecraftAccountDiscordCommand extends ListenerAdapter {
         try {
             preferences = PlayerPreferencesManager.getPlayerPreferences(user);
 
-            RedCraftChat.getInstance().getLogger().info("User " + user.getName() + " (" + user.getId() + ") is trying to link their Minecraft account with the code `" + code + "`");
+            String debugMessage = "User " + user.getName() + " (" + user.getId() + ") is trying to link their Minecraft account with the code `" + code + "`";
+            RedCraftChat.getInstance().getLogger().info(debugMessage);
 
             if (code != null && code.equalsIgnoreCase("unlink")) {
                 if (preferences == null || preferences.discordId == null) {

@@ -12,6 +12,7 @@ import org.redcraft.redcraftchat.locales.LocaleManager;
 import org.redcraft.redcraftchat.models.caching.CacheCategory;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import org.redcraft.redcraftchat.players.providers.DatabasePlayerProvider;
+import org.redcraft.redcraftchat.players.providers.PlayerProvider;
 import org.redcraft.redcraftchat.players.providers.RedCraftApiPlayerProvider;
 import org.redcraft.redcraftchat.translate.TranslationManager;
 
@@ -20,13 +21,13 @@ import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 public class PlayerPreferencesManager {
 
-    static DatabasePlayerProvider playerProvider = null;
+    static PlayerProvider playerProvider = null;
 
-    public PlayerPreferencesManager() {
+    private PlayerPreferencesManager() {
         throw new IllegalStateException("This class should not be instantiated");
     }
 
-    public static DatabasePlayerProvider getPlayerProvider() {
+    public static PlayerProvider getPlayerProvider() {
         if (playerProvider == null) {
             switch (Config.playerProvider) {
                 case "database":
@@ -79,6 +80,31 @@ public class PlayerPreferencesManager {
         return playerPreferences;
     }
 
+    public static PlayerPreferences getPlayerPreferences(UUID playerUniqueId) throws IOException, InterruptedException {
+        ProxiedPlayer onlinePlayer = RedCraftChat.getInstance().getProxy().getPlayer(playerUniqueId);
+        if (onlinePlayer != null) {
+            return getPlayerPreferences(onlinePlayer, false);
+        }
+
+        PlayerPreferences cachedPlayerPreferences = (PlayerPreferences) CacheManager.get(CacheCategory.PLAYER_PREFERENCES, playerUniqueId.toString(), PlayerPreferences.class);
+        if (cachedPlayerPreferences != null) {
+            return cachedPlayerPreferences;
+        }
+
+        PlayerPreferences playerPreferences = getPlayerProvider().getPlayerPreferences(playerUniqueId);
+
+        CacheManager.put(CacheCategory.PLAYER_PREFERENCES, playerUniqueId.toString(), playerPreferences);
+        if (playerPreferences.discordId != null) {
+            CacheManager.put(CacheCategory.PLAYER_PREFERENCES, playerPreferences.discordId, playerPreferences);
+        }
+
+        return playerPreferences;
+    }
+
+    public static PlayerPreferences getPlayerPreferences(String username, boolean searchMinecraft, boolean searchDiscord) throws IOException, InterruptedException {
+        return getPlayerProvider().getPlayerPreferences(username, searchMinecraft, searchDiscord);
+    }
+
     public static PlayerPreferences getPlayerPreferences(User user) throws IOException, InterruptedException {
         return getPlayerPreferences(user, true);
     }
@@ -120,7 +146,8 @@ public class PlayerPreferencesManager {
     }
 
     public static void deletePlayerPreferences(PlayerPreferences preferences) throws IOException, InterruptedException {
-        RedCraftChat.getInstance().getLogger().info("Deleting player preferences for " + preferences.internalUuid + " (Minecraft " + preferences.minecraftUuid + " and Discord " + preferences.discordId + ")");
+        String debugMessage = "Deleting player preferences for " + preferences.internalUuid + " (Minecraft " + preferences.minecraftUuid + " and Discord " + preferences.discordId + ")";
+        RedCraftChat.getInstance().getLogger().info(debugMessage);
 
         getPlayerProvider().deletePlayerPreferences(preferences);
 
@@ -255,7 +282,8 @@ public class PlayerPreferencesManager {
         try {
             String detectedLocale = player.getLocale().getLanguage() + "-" + player.getLocale().getCountry();
             if (LocaleManager.isSupportedLocale(detectedLocale)) {
-                RedCraftChat.getInstance().getLogger().info("Detected language for " + player.getName() + ": " + detectedLocale);
+                String debugMessage = "Detected language for " + player.getName() + ": " + detectedLocale;
+                RedCraftChat.getInstance().getLogger().info(debugMessage);
                 return detectedLocale;
             }
         } catch (NullPointerException e) {

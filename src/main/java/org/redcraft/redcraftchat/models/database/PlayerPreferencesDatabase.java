@@ -37,7 +37,4 @@ public class PlayerPreferencesDatabase extends DatabaseModel {
 
     @Column(name = "command_spy_enabled", nullable = false)
     public boolean commandSpyEnabled = false;
-
-    public PlayerPreferencesDatabase() {
-    }
 }

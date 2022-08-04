@@ -18,6 +18,10 @@ import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 public class AccountLinkManager {
 
+    private AccountLinkManager() {
+        throw new IllegalStateException("This class should not be instantiated");
+    }
+
     public static AccountLinkCode getLinkCode(ProxiedPlayer player) {
         String uniqueId = player.getUniqueId().toString();
         AccountLinkCode code = getLinkCode(uniqueId);
@@ -74,13 +78,22 @@ public class AccountLinkManager {
             user = DiscordClient.getUser(code.discordId);
         }
 
-        PlayerPreferences discordPreferences = null;
-        if (user != null) {
-            discordPreferences = PlayerPreferencesManager.getPlayerPreferences(user);
-        }
-        if (discordPreferences == null) {
-            discordPreferences = (PlayerPreferences) CacheManager.get(CacheCategory.PLAYER_PREFERENCES, code.discordId, PlayerPreferences.class);
-        }
+        PlayerPreferences discordPreferences = getDiscordPlayerPreferences(user, code);
+
+        mergeAccounts(preferences, discordPreferences, user, code);
+
+        // void the link code so it can't be used maliciously if update fails and code was intercepted
+        AccountLinkManager.voidLinkCode(code);
+        PlayerPreferencesManager.updatePlayerPreferences(preferences);
+        DiscordUsersSynchronizerTask.syncDiscordUser(user);
+
+        String debugMessage = "Linked accounts for " + preferences.minecraftUuid + " and " + preferences.discordId;
+        RedCraftChat.getInstance().getLogger().info(debugMessage);
+
+        return true;
+    }
+
+    private static void mergeAccounts(PlayerPreferences preferences, PlayerPreferences discordPreferences, User user, AccountLinkCode code) throws IOException, InterruptedException {
         if (discordPreferences != null) {
             // Merge settings
             if (!discordPreferences.mainLanguage.equals(Config.defaultLocale) && preferences.mainLanguage.equals(Config.defaultLocale)) {
@@ -98,19 +111,23 @@ public class AccountLinkManager {
         if (code.discordId != null) {
             preferences.discordId = code.discordId;
             preferences.lastKnownDiscordName = code.discordName;
-        } else {
+        } else if (user != null) {
             preferences.discordId = user.getId();
             preferences.lastKnownDiscordName = user.getName();
         }
+    }
 
-        // void the link code so it can't be used maliciously if update fails and code was intercepted
-        AccountLinkManager.voidLinkCode(code);
-        PlayerPreferencesManager.updatePlayerPreferences(preferences);
-        DiscordUsersSynchronizerTask.syncDiscordUser(user);
+    private static PlayerPreferences getDiscordPlayerPreferences(User user, AccountLinkCode code) throws IOException, InterruptedException {
+        PlayerPreferences discordPreferences = null;
 
-        RedCraftChat.getInstance().getLogger().info("Linked accounts for " + preferences.minecraftUuid + " and " + preferences.discordId);
+        if (user != null) {
+            discordPreferences = PlayerPreferencesManager.getPlayerPreferences(user);
+        }
+        if (discordPreferences == null) {
+            discordPreferences = (PlayerPreferences) CacheManager.get(CacheCategory.PLAYER_PREFERENCES, code.discordId, PlayerPreferences.class);
+        }
 
-        return true;
+        return discordPreferences;
     }
 
     public static void unLinkAccounts(PlayerPreferences preferences) throws IOException, InterruptedException {
@@ -132,7 +149,8 @@ public class AccountLinkManager {
 
         DiscordUsersSynchronizerTask.syncDiscordUser(DiscordClient.getUser(discordId));
 
-        RedCraftChat.getInstance().getLogger().info("Unlinked accounts for " + minecraftUuid + " and " + discordId);
+        String debugMessage = "Unlinked accounts for " + minecraftUuid + " and " + discordId;
+        RedCraftChat.getInstance().getLogger().info(debugMessage);
     }
 
     public static void voidLinkCode(AccountLinkCode code) {

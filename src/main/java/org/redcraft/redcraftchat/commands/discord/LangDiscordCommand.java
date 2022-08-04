@@ -212,13 +212,12 @@ public class LangDiscordCommand extends ListenerAdapter {
                 if (isMain) {
                     PlayerPreferencesManager.setMainPlayerLocale(preferences, locale);
                 } else {
-                    try {
-                        PlayerPreferencesManager.togglePlayerLocale(preferences, locale);
-                    } catch (IllegalArgumentException | IllegalStateException e) {
-                        return BasicMessageFormatter.generateDiscordError(user, e.getMessage());
+                    MessageEmbed error = togglePlayerLocale(preferences, locale, user);
+                    if (error != null) {
+                        return error;
                     }
                 }
-                preferences = PlayerPreferencesManager.getPlayerPreferences(user);
+                PlayerPreferencesManager.getPlayerPreferences(user);
 
                 if (event == null) {
                     return BasicMessageFormatter.generateDiscordMessage(user, "Success", "Preferences updated!", 0x00FF00);
@@ -233,5 +232,14 @@ public class LangDiscordCommand extends ListenerAdapter {
             e.printStackTrace();
         }
         return BasicMessageFormatter.generateDiscordError(user, "An error occurred while trying to load or change languages, please try again later");
+    }
+
+    private MessageEmbed togglePlayerLocale(PlayerPreferences preferences, String locale, User user) {
+        try {
+            PlayerPreferencesManager.togglePlayerLocale(preferences, locale);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return BasicMessageFormatter.generateDiscordError(user, e.getMessage());
+        }
+        return null;
     }
 }

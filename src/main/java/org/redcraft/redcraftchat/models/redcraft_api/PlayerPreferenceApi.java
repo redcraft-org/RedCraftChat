@@ -18,10 +18,10 @@ public class PlayerPreferenceApi extends SerializableModel {
 
     public List<String> languages;
 
-    public List<PlayerProvider> providers;
+    public List<PlayerProviderApi> providers;
 
     public PlayerPreferenceApi() {
         languages = new ArrayList<String>();
-        providers = new ArrayList<PlayerProvider>();
+        providers = new ArrayList<PlayerProviderApi>();
     }
 }

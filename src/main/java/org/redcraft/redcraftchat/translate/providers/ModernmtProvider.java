@@ -11,21 +11,21 @@ import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.caching.CacheManager;
 import org.redcraft.redcraftchat.models.caching.CacheCategory;
 
-public class ModernmtProvider {
+public class ModernmtProvider implements TranslationProvider {
 
-    private static ModernMT mmt = new ModernMT(Config.modernMtToken);
+    private ModernMT mmt;
 
-    private ModernmtProvider() {
-        throw new IllegalStateException("This class should not be instantiated");
+    public ModernmtProvider() {
+        mmt = new ModernMT(Config.modernMtToken);
     }
 
-    public static Translation translate(String text, String sourceLanguageId, String targetLanguageId) throws IllegalStateException, URISyntaxException, IOException, InterruptedException {
+    public String translate(String text, String sourceLanguageId, String targetLanguageId) throws IllegalStateException, URISyntaxException, IOException, InterruptedException {
         String sourceLangId = sourceLanguageId.toLowerCase().split("-")[0];
         String targetLangId = targetLanguageId.toLowerCase().split("-")[0];
 
         String cacheKey = String.format("%s;%s;%s", sourceLangId, targetLangId, text);
 
-        Translation cachedModernmtResponse = (Translation) CacheManager.get(CacheCategory.MODERNMT_TRANSLATED_MESSAGE, cacheKey, Translation.class);
+        String cachedModernmtResponse = (String) CacheManager.get(CacheCategory.MODERNMT_TRANSLATED_MESSAGE, cacheKey, String.class);
 
         if (cachedModernmtResponse != null) {
             return cachedModernmtResponse;
@@ -33,11 +33,14 @@ public class ModernmtProvider {
 
         Translation modernmtResponse = mmt.translate(sourceLangId, targetLangId, text);
 
-        CacheManager.put(CacheCategory.MODERNMT_TRANSLATED_MESSAGE, cacheKey, modernmtResponse);
-
         // TODO remove debug
-        RedCraftChat.getInstance().getLogger().info("Used " + modernmtResponse.getBilledCharacters() + " ModernMT PAID chars to translate to " + targetLangId);
+        String debugMessage = "Used " + modernmtResponse.getBilledCharacters() + " ModernMT PAID chars to translate to " + targetLangId;
+        RedCraftChat.getInstance().getLogger().info(debugMessage);
 
-        return modernmtResponse;
+        String translated = modernmtResponse.getTranslation().replaceAll("§( )+", "§");
+
+        CacheManager.put(CacheCategory.MODERNMT_TRANSLATED_MESSAGE, cacheKey, translated);
+
+        return translated;
     }
 }

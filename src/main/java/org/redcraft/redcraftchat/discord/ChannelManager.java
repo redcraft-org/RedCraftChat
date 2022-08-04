@@ -216,17 +216,21 @@ public class ChannelManager {
             for (Category category : matchingCategories) {
                 List<GuildChannel> categoryChannels = category.getChannels();
                 for (String channelName : channelNames) {
-                    if (!channelExistsInCategory(categoryChannels, channelName, channelType)) {
-                        String logMessage = String.format("Creating missing Discord %s channel %s in category %s",
-                                channelType.toString().toLowerCase(), channelName, categoryName);
-                        RedCraftChat.getInstance().getLogger().info(logMessage);
-                        if (channelType.equals(ChannelType.TEXT)) {
-                            category.createTextChannel(channelName).complete();
-                        } else if (channelType.equals(ChannelType.VOICE)) {
-                            category.createVoiceChannel(channelName).complete();
-                        }
-                    }
+                    ensureChannelExists(categoryChannels, channelName, categoryName, category, channelType);
                 }
+            }
+        }
+    }
+
+    public void ensureChannelExists(List<GuildChannel> categoryChannels, String channelName, String categoryName, Category category, ChannelType channelType) {
+        if (!channelExistsInCategory(categoryChannels, channelName, channelType)) {
+            String logMessage = String.format("Creating missing Discord %s channel %s in category %s",
+                    channelType.toString().toLowerCase(), channelName, categoryName);
+            RedCraftChat.getInstance().getLogger().info(logMessage);
+            if (channelType.equals(ChannelType.TEXT)) {
+                category.createTextChannel(channelName).complete();
+            } else if (channelType.equals(ChannelType.VOICE)) {
+                category.createVoiceChannel(channelName).complete();
             }
         }
     }

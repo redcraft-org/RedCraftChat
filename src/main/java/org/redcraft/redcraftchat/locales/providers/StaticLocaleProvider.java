@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.redcraft.redcraftchat.models.locales.SupportedLocale;
 
-public class StaticLocaleProvider implements LocaleProviderInterface {
+public class StaticLocaleProvider implements LocaleProvider {
 
     @Override
     public List<SupportedLocale> getSupportedLocales() throws IOException, InterruptedException {

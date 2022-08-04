@@ -71,6 +71,10 @@ public class TokenizerManager {
         Pattern slashCommandPattern = Pattern.compile("/([/a-z]+)\\b");
         patterns.add(slashCommandPattern);
 
+        // Tokenize %placeholders%
+        Pattern placeholderPattern = Pattern.compile("%([a-z_]*)%");
+        patterns.add(placeholderPattern);
+
         // Tokenize emojis
         tokenizedMessage = EmojiParser.parseToAliases(tokenizedMessage, FitzpatrickAction.PARSE);
         Pattern emojiPattern = Pattern.compile(":((\\w|)*):");

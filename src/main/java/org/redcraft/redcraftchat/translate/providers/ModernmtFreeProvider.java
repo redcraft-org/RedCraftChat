@@ -14,21 +14,21 @@ import org.redcraft.redcraftchat.caching.CacheManager;
 import org.redcraft.redcraftchat.models.caching.CacheCategory;
 import org.redcraft.redcraftchat.models.modernmt.ModernmtResponse;
 
-public class ModernmtFreeProvider {
+public class ModernmtFreeProvider implements TranslationProvider {
 
-    private static HttpClient httpClient = HttpClient.newHttpClient();
+    private HttpClient httpClient;
 
-    private ModernmtFreeProvider() {
-        throw new IllegalStateException("This class should not be instantiated");
+    public ModernmtFreeProvider() {
+        httpClient = HttpClient.newHttpClient();
     }
 
-    public static ModernmtResponse translate(String text, String sourceLanguageId, String targetLanguageId) throws IllegalStateException, URISyntaxException, IOException, InterruptedException {
+    public String translate(String text, String sourceLanguageId, String targetLanguageId) throws IllegalStateException, URISyntaxException, IOException, InterruptedException {
         String sourceLangId = sourceLanguageId.toLowerCase().split("-")[0];
         String targetLangId = targetLanguageId.toLowerCase().split("-")[0];
 
         String cacheKey = String.format("%s;%s;%s", sourceLangId, targetLangId, text);
 
-        ModernmtResponse cachedModernmtResponse = (ModernmtResponse) CacheManager.get(CacheCategory.MODERNMT_FREE_TRANSLATED_MESSAGE, cacheKey, ModernmtResponse.class);
+        String cachedModernmtResponse = (String) CacheManager.get(CacheCategory.MODERNMT_FREE_TRANSLATED_MESSAGE, cacheKey, String.class);
 
         if (cachedModernmtResponse != null) {
             return cachedModernmtResponse;
@@ -55,11 +55,14 @@ public class ModernmtFreeProvider {
         modernmtResponse.data.translation = modernmtResponse.data.translation.replace("&lt;", "<");
         modernmtResponse.data.translation = modernmtResponse.data.translation.replace("&gt;", ">");
 
-        CacheManager.put(CacheCategory.MODERNMT_FREE_TRANSLATED_MESSAGE, cacheKey, modernmtResponse);
-
         // TODO remove debug
-        RedCraftChat.getInstance().getLogger().info("Used " + text.length() + " ModernMT FREE chars to translate to " + targetLangId);
+        String debugMessage = "Used " + text.length() + " ModernMT FREE chars to translate to " + targetLangId;
+        RedCraftChat.getInstance().getLogger().info(debugMessage);
 
-        return modernmtResponse;
+        String translated = modernmtResponse.data.translation.replaceAll("§( )+", "§");
+
+        CacheManager.put(CacheCategory.MODERNMT_FREE_TRANSLATED_MESSAGE, cacheKey, translated);
+
+        return translated;
     }
 }

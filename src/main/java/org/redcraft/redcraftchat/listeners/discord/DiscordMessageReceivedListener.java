@@ -66,31 +66,10 @@ public class DiscordMessageReceivedListener extends ListenerAdapter {
         // Map Discord to Minecraft channel
         if (sourceChannel != null && ChannelManager.getMinecraftBridgeChannels().contains(sourceChannel)) {
             // If the user is banned or muted, delete the message and don't send it to Minecraft
-            if (RedCraftChat.getInstance().getProxy().getPluginManager().getPlugin("LiteBans") != null) {
-                try {
-                    PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(member.getUser());
-
-                    if (preferences.minecraftUuid != null) {
-                        Database database = Database.get();
-                        if (database.isPlayerBanned(preferences.minecraftUuid, null)
-                                || database.isPlayerMuted(preferences.minecraftUuid, null)) {
-                            RedCraftChat.getInstance().getLogger().info("Deleting Discord message from "
-                                    + member.getUser().getName() + " because they are banned or muted");
-                            message.delete().queue();
-                            member.getUser().openPrivateChannel().queue(channel -> {
-                                String errorMessage = "You cannot post to the Minecraft channel because you are sanctioned on the Minecraft server";
-                                channel.sendMessage(
-                                        PlayerPreferencesManager.localizeMessageForPlayer(preferences, errorMessage))
-                                        .queue();
-                            });
-                            return;
-                        }
-                    }
-                } catch (IOException | InterruptedException e) {
-                    // Leave as is
-                    e.printStackTrace();
-                }
+            if (checkPlayerSanctions(member, message)) {
+                return;
             }
+
             List<String> targetLanguages = TranslationManager.getTargetLanguages(sourceChannel.languageId);
 
             Component parsedMessage = MinecraftSerializer.INSTANCE.serialize(message.getContentDisplay());
@@ -122,6 +101,36 @@ public class DiscordMessageReceivedListener extends ListenerAdapter {
                 e.printStackTrace();
             }
         }
+    }
+
+    private boolean checkPlayerSanctions(Member member, Message message) {
+        if (RedCraftChat.getInstance().getProxy().getPluginManager().getPlugin("LiteBans") != null) {
+            try {
+                PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(member.getUser());
+
+                if (preferences.minecraftUuid != null) {
+                    Database database = Database.get();
+                    if (database.isPlayerBanned(preferences.minecraftUuid, null)
+                            || database.isPlayerMuted(preferences.minecraftUuid, null)) {
+                        RedCraftChat.getInstance().getLogger().info("Deleting Discord message from "
+                                + member.getUser().getName() + " because they are banned or muted");
+                        message.delete().queue();
+                        member.getUser().openPrivateChannel().queue(channel -> {
+                            String errorMessage = "You cannot post to the Minecraft channel because you are sanctioned on the Minecraft server";
+                            channel.sendMessage(
+                                    PlayerPreferencesManager.localizeMessageForPlayer(preferences, errorMessage))
+                                    .queue();
+                        });
+                        return true;
+                    }
+                }
+            } catch (IOException | InterruptedException e) {
+                // Leave as is
+                e.printStackTrace();
+            }
+        }
+
+        return false;
     }
 
     private TranslatedChannel getTranslatedChannelFromId(Map<TranslatedChannel, List<TranslatedChannel>> translatedChannelsMappings, String channelId) {

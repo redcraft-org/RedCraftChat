@@ -5,6 +5,6 @@ import java.util.List;
 
 import org.redcraft.redcraftchat.models.locales.SupportedLocale;
 
-interface LocaleProviderInterface {
+public interface LocaleProvider {
     public List<SupportedLocale> getSupportedLocales() throws IOException, InterruptedException;
 }

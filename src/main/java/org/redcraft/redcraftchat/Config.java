@@ -51,11 +51,14 @@ public class Config {
 
 	public static String playerProvider = "database";
 	public static String playerApiUrl = "https://redcraft.org/api/v1/player";
+
+	public static String mailProvider = "database";
+
 	public static String databaseUri = "jdbc:sqlite:%plugin_config_path%/plugins/RedCraftChat/database.db";
 	public static String databaseUsername = "";
 	public static String databasePassword = "";
 
-	public static boolean redisEnabled = false;
+	public static String cacheProvider = "memory";
 	public static String redisUri = "";
 	public static String redisKeyPrefix = "rcc";
 
@@ -63,7 +66,7 @@ public class Config {
         throw new IllegalStateException("This class should not be instantiated");
     }
 
-	public static void readConfig(Plugin plugin) {
+	public static void readConfig(Plugin plugin) throws IOException {
 		Configuration config = getConfig(plugin);
 
 		if (config == null) {
@@ -104,30 +107,29 @@ public class Config {
 
 		playerProvider = config.getString("player-provider");
 		playerApiUrl = config.getString("player-api-url");
+
+		mailProvider = config.getString("mail-provider");
+
 		databaseUri = config.getString("database-uri");
 		databaseUsername = config.getString("database-username");
 		databasePassword = config.getString("database-password");
 
-		redisEnabled = config.getBoolean("redis-enabled");
+		cacheProvider = config.getString("cache-provider");
 		redisUri = config.getString("redis-uri");
 		redisKeyPrefix = config.getString("redis-key-prefix");
 	}
 
-	public static Configuration getConfig(Plugin plugin) {
+	public static Configuration getConfig(Plugin plugin) throws IOException {
 		if (!plugin.getDataFolder().exists()) {
 			plugin.getDataFolder().mkdir();
 		}
 
 		File configFile = new File(plugin.getDataFolder(), "config.yml");
 		if (!configFile.exists()) {
-			try {
-				configFile.createNewFile();
-				try (InputStream is = plugin.getResourceAsStream("config.yml");
-					OutputStream os = new FileOutputStream(configFile)) {
-					ByteStreams.copy(is, os);
-				}
-			} catch (IOException e) {
-				throw new RuntimeException("Unable to create configuration file", e);
+			configFile.createNewFile();
+			try (InputStream is = plugin.getResourceAsStream("config.yml");
+				OutputStream os = new FileOutputStream(configFile)) {
+				ByteStreams.copy(is, os);
 			}
 		}
 

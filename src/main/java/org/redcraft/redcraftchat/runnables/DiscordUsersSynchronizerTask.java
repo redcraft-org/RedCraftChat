@@ -61,7 +61,8 @@ public class DiscordUsersSynchronizerTask implements Runnable {
                 lpUser = lp.getUserManager().loadUser(player.minecraftUuid).join();
             }
             if (lpUser == null) {
-                RedCraftChat.getInstance().getLogger().severe("Could not find LuckPerms user for " + member.getUser().getName() + " (" + player.minecraftUuid + ")");
+                String debugMessage = "Could not find LuckPerms user for " + member.getUser().getName() + " (" + player.minecraftUuid + ")";
+                RedCraftChat.getInstance().getLogger().warning(debugMessage);
                 return false;
             }
 
@@ -94,7 +95,8 @@ public class DiscordUsersSynchronizerTask implements Runnable {
         if (!rolesToAdd.isEmpty() || !rolesToRemove.isEmpty()) {
             try {
                 member.getGuild().modifyMemberRoles(member, rolesToAdd, rolesToRemove).queue();
-                RedCraftChat.getInstance().getLogger().info("Updating Discord user " + member.getUser().getName() + " roles (adding " + rolesToAdd + " and removing " + rolesToRemove + ")");
+                String debugMessage = "Updating Discord user " + member.getUser().getName() + " roles (adding " + rolesToAdd + " and removing " + rolesToRemove + ")";
+                RedCraftChat.getInstance().getLogger().info(debugMessage);
                 updated = true;
             } catch (HierarchyException e) {
                 // We can't edit, probably server owner
@@ -149,10 +151,8 @@ public class DiscordUsersSynchronizerTask implements Runnable {
             lp.getGroupManager().getLoadedGroups().forEach(group -> {
                 group.getCachedData().getPermissionData().getPermissionMap().forEach((permission, value) -> {
                     Role discordRole = getDiscordRoleFromPermission(permission);
-                    if (discordRole != null && value) {
-                        if (!updatedDiscordLpRoles.contains(discordRole.getId())) {
-                            updatedDiscordLpRoles.add(discordRole.getId());
-                        }
+                    if (discordRole != null && value && !updatedDiscordLpRoles.contains(discordRole.getId())) {
+                        updatedDiscordLpRoles.add(discordRole.getId());
                     }
                 });
             });

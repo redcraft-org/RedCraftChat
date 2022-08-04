@@ -12,7 +12,7 @@ import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.models.redcraft_api.RedCraftUrlShortenerRequest;
 import org.redcraft.redcraftchat.models.redcraft_api.RedCraftUrlShortenerResponse;
 
-public class RedCraftApiUrlShortenerProvider implements UrlShortenerProviderInterface {
+public class RedCraftApiUrlShortenerProvider implements UrlShortenerProvider {
 
     private HttpClient httpClient = HttpClient.newHttpClient();
 

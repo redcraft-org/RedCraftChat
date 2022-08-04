@@ -36,20 +36,7 @@ public class MinecraftChatListener implements Listener {
         ProxiedPlayer player = (ProxiedPlayer) event.getSender();
 
         if (event.isProxyCommand() || event.isCommand()) {
-            for (ProxiedPlayer potentialStaffMember : ProxyServer.getInstance().getPlayers()) {
-                if (!player.equals(potentialStaffMember) && potentialStaffMember.hasPermission("redcraftchat.moderation.commandspy")) {
-                    PlayerPreferences playerPreferences;
-                    try {
-                        playerPreferences = PlayerPreferencesManager.getPlayerPreferences(potentialStaffMember);
-                        if (playerPreferences.commandSpyEnabled) {
-                            BaseComponent[] formattedMessage = new ComponentBuilder("[CSPY][" + player.getDisplayName() + "] " + event.getMessage()).color(ChatColor.AQUA).create();
-                            potentialStaffMember.sendMessage(formattedMessage);
-                        }
-                    } catch (IOException | InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
+            handleCommandSpy(player, event.getMessage());
             return;
         }
 
@@ -72,5 +59,22 @@ public class MinecraftChatListener implements Listener {
         event.setCancelled(true);
 
         MinecraftDiscordBridge.getInstance().translateAndPostMessage(player, message);
+    }
+
+    public void handleCommandSpy(ProxiedPlayer player, String message) {
+        for (ProxiedPlayer potentialStaffMember : ProxyServer.getInstance().getPlayers()) {
+            if (!player.equals(potentialStaffMember) && potentialStaffMember.hasPermission("redcraftchat.moderation.commandspy")) {
+                PlayerPreferences playerPreferences;
+                try {
+                    playerPreferences = PlayerPreferencesManager.getPlayerPreferences(potentialStaffMember);
+                    if (playerPreferences.commandSpyEnabled) {
+                        BaseComponent[] formattedMessage = new ComponentBuilder("[CSPY][" + player.getDisplayName() + "] " + message).color(ChatColor.AQUA).create();
+                        potentialStaffMember.sendMessage(formattedMessage);
+                    }
+                } catch (IOException | InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 }

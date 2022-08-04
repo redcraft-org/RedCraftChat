@@ -1,6 +1,10 @@
 
+Refactor:
+  ☐ Create interface for translation providers
+
 In-game:
-  ☐ Mail command
+  ✔ Mail command @started(22-08-04 00:21) @done(22-08-04 04:07) @lasted(3h46m38s)
+  ☐ Mail warning on login and on mail receive
   ☐ Scheduled messages (tips, donations, etc...)
 
 Archive:

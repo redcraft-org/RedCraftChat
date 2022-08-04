@@ -14,7 +14,7 @@ import org.redcraft.redcraftchat.models.redcraft_api.SupportedLocaleApi;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
-public class RedCraftApiLocaleProvider extends DatabaseLocaleProvider {
+public class RedCraftApiLocaleProvider implements LocaleProvider {
 
     private HttpClient httpClient = HttpClient.newHttpClient();
 

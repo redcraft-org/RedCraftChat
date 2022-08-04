@@ -19,29 +19,41 @@ import org.redcraft.redcraftchat.models.deepl.DeeplResponse;
 import org.redcraft.redcraftchat.models.deepl.DeeplTranslation;
 import org.redcraft.redcraftchat.models.deepl.DeeplSupportedLanguage;
 
-public class DeeplProvider {
+public class DeeplProvider implements TranslationProvider {
 
-    private static HttpClient httpClient = HttpClient.newHttpClient();
-    private static HashMap<String, DeeplSupportedLanguage> supportedLanguages = new HashMap<>();
-    private static boolean supportedLanguagesInitialized = false;
+    private HttpClient httpClient;
+    private HashMap<String, DeeplSupportedLanguage> supportedLanguages;
 
-    private DeeplProvider() {
-        throw new IllegalStateException("This class should not be instantiated");
+    public DeeplProvider() {
+        httpClient = HttpClient.newHttpClient();
+
+        supportedLanguages = new HashMap<>();
+        supportedLanguages.put("EN", new DeeplSupportedLanguage("EN", false));
+        supportedLanguages.put("FR", new DeeplSupportedLanguage("FR", true));
+        supportedLanguages.put("DE", new DeeplSupportedLanguage("DE", true));
+        supportedLanguages.put("IT", new DeeplSupportedLanguage("IT", true));
+        supportedLanguages.put("JA", new DeeplSupportedLanguage("JA", false));
+        supportedLanguages.put("ES", new DeeplSupportedLanguage("ES", false));
+        supportedLanguages.put("NL", new DeeplSupportedLanguage("NL", true));
+        supportedLanguages.put("PL", new DeeplSupportedLanguage("PL", true));
+        supportedLanguages.put("PT", new DeeplSupportedLanguage("PT", true));
+        supportedLanguages.put("RU", new DeeplSupportedLanguage("RU", true));
+        supportedLanguages.put("ZH", new DeeplSupportedLanguage("ZH", false));
     }
 
-    public static DeeplResponse translate(String text, String sourceLanguageId, String targetLanguageId) throws IllegalStateException, URISyntaxException, IOException, InterruptedException {
+    public String translate(String text, String sourceLanguageId, String targetLanguageId) throws IllegalStateException, URISyntaxException, IOException, InterruptedException {
         String sourceLangId = sourceLanguageId.toLowerCase().split("-")[0];
         String targetLangId = targetLanguageId.toLowerCase().split("-")[0];
         String cacheKey = String.format("%s;%s;%s", sourceLangId, targetLangId, text);
 
-        DeeplResponse cachedDeeplResponse = (DeeplResponse) CacheManager.get(CacheCategory.DEEPL_TRANSLATED_MESSAGE, cacheKey, DeeplResponse.class);
+        String cachedDeeplResponse = (String) CacheManager.get(CacheCategory.DEEPL_TRANSLATED_MESSAGE, cacheKey, String.class);
 
         if (cachedDeeplResponse != null) {
             return cachedDeeplResponse;
         }
 
-        DeeplSupportedLanguage sourceLang = DeeplProvider.getLanguage(sourceLangId);
-        DeeplSupportedLanguage targetLang = DeeplProvider.getLanguage(targetLangId);
+        DeeplSupportedLanguage sourceLang = getLanguage(sourceLangId);
+        DeeplSupportedLanguage targetLang = getLanguage(targetLangId);
 
         if (sourceLang == null) {
             throw new IllegalStateException("The source language " + sourceLangId + " is not supported by Deepl");
@@ -72,41 +84,23 @@ public class DeeplProvider {
 
         DeeplResponse deeplResponse = new Gson().fromJson(response.body(), DeeplResponse.class);
 
-        CacheManager.put(CacheCategory.DEEPL_TRANSLATED_MESSAGE, cacheKey, deeplResponse);
-
         // TODO remove debug
-        RedCraftChat.getInstance().getLogger().info("Used " + text.length() + " Deepl chars to translate to " + targetLangId);
+        String debugMessage = "Used " + text.length() + " Deepl chars to translate to " + targetLangId;
+        RedCraftChat.getInstance().getLogger().info(debugMessage);
 
-        return deeplResponse;
-    }
-
-    public static String parseDeeplResponse(DeeplResponse dr) {
         ArrayList<String> translations = new ArrayList<String>();
-        for (DeeplTranslation translation : dr.translations) {
+        for (DeeplTranslation translation : deeplResponse.translations) {
             translations.add(translation.text);
         }
 
-        return String.join(" ", translations);
+        String translated = String.join(" ", translations);
+
+        CacheManager.put(CacheCategory.DEEPL_TRANSLATED_MESSAGE, cacheKey, translated);
+
+        return translated;
     }
 
-    public static DeeplSupportedLanguage getLanguage(String id) throws IllegalStateException {
-        if (!supportedLanguagesInitialized) {
-            supportedLanguagesInitialized = true;
-
-            // TODO put this in database
-            supportedLanguages.put("EN", new DeeplSupportedLanguage("EN", false));
-            supportedLanguages.put("FR", new DeeplSupportedLanguage("FR", true));
-            supportedLanguages.put("DE", new DeeplSupportedLanguage("DE", true));
-            supportedLanguages.put("IT", new DeeplSupportedLanguage("IT", true));
-            supportedLanguages.put("JA", new DeeplSupportedLanguage("JA", false));
-            supportedLanguages.put("ES", new DeeplSupportedLanguage("ES", false));
-            supportedLanguages.put("NL", new DeeplSupportedLanguage("NL", true));
-            supportedLanguages.put("PL", new DeeplSupportedLanguage("PL", true));
-            supportedLanguages.put("PT", new DeeplSupportedLanguage("PT", true));
-            supportedLanguages.put("RU", new DeeplSupportedLanguage("RU", true));
-            supportedLanguages.put("ZH", new DeeplSupportedLanguage("ZH", false));
-        }
-
+    private DeeplSupportedLanguage getLanguage(String id) throws IllegalStateException {
         try {
             return supportedLanguages.get(id.toUpperCase());
         } catch (Exception ex) {

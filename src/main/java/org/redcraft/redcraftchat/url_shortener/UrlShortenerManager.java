@@ -5,14 +5,15 @@ import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.tokenizer.UrlDetection;
 import org.redcraft.redcraftchat.tokenizer.UrlTransformer;
 import org.redcraft.redcraftchat.url_shortener.providers.RedCraftApiUrlShortenerProvider;
+import org.redcraft.redcraftchat.url_shortener.providers.UrlShortenerProvider;
 
 public class UrlShortenerManager extends UrlTransformer {
 
-    private static RedCraftApiUrlShortenerProvider shorteningProvider;
+    private static UrlShortenerProvider shorteningProvider;
 
     private static UrlShortenerManager instance = new UrlShortenerManager();
 
-    public static RedCraftApiUrlShortenerProvider getShorteningProvider() {
+    public static UrlShortenerProvider getShorteningProvider() {
         if (shorteningProvider == null) {
             switch (Config.urlShorteningProvider) {
                 case "redcraft":
