@@ -1,13 +1,14 @@
 
-Refactor:
-  ☐ Create interface for translation providers
 
 In-game:
-  ✔ Mail command @started(22-08-04 00:21) @done(22-08-04 04:07) @lasted(3h46m38s)
+  ☐ Implement API to fetch players from username when ready
+  ☐ Implement API for emails when ready
   ☐ Mail warning on login and on mail receive
   ☐ Scheduled messages (tips, donations, etc...)
 
 Archive:
+  ✔ Create interface for translation providers @done(22-08-04 04:11) @project(Refactor)
+  ✔ Mail command @started(22-08-04 00:21) @done(22-08-04 04:07) @lasted(3h46m38s) @project(In-game)
   ✔ Private messages @started(22-08-01 21:38) @done(22-08-02 02:58) @lasted(5h20m44s) @project(In-game)
   ✔ Check that people have the right username on Discord @started(22-07-31 20:06) @done(22-08-01 01:54) @lasted(5h48m41s) @project(Discord)
   ✔ LuckPerms support for ranks @started(22-07-31 19:38) @done(22-07-31 20:05) @lasted(27m14s) @project(Discord)
