@@ -50,6 +50,10 @@ permissions:
     description: Allows to use /broadcast to send an broadcast on Discord and Minecraft
   redcraftchat.command.me:
     description: Allows to use /me to send an action message
+  redcraftchat.command.msg:
+    description: Allows to use /msg to send private messages
+  redcraftchat.command.mail:
+    description: Allows to use /mail to send and receive mails
 
   redcraftchat.moderation.*:
     description: Allows access to all moderation tools

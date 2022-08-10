@@ -65,7 +65,7 @@ public class PlayersDiscordCommand extends ListenerAdapter {
             String description = "";
 
             for (ProxiedPlayer player : server.getPlayers()) {
-                description += "- " + player.getDisplayName() + "\n";
+                description += "- " + ChatColor.stripColor(player.getDisplayName()) + "\n";
             }
 
             int playerCount = server.getPlayers().size();

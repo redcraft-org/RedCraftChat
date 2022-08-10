@@ -2,6 +2,7 @@ package org.redcraft.redcraftchat.players;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Locale;
 import java.util.UUID;
 
 import org.redcraft.redcraftchat.Config;
@@ -279,19 +280,39 @@ public class PlayerPreferencesManager {
     }
 
     public static String extractPlayerLanguage(ProxiedPlayer player) {
-        try {
-            String detectedLocale = player.getLocale().getLanguage() + "-" + player.getLocale().getCountry();
+        Locale locale = getPlayerLocale(player, 5);
+        if (locale != null) {
+            String detectedLocale = locale.getLanguage() + "-" + locale.getCountry();
+            String debugMessage = "Detected language for " + player.getName() + ": " + detectedLocale;
+            RedCraftChat.getInstance().getLogger().info(debugMessage);
             if (LocaleManager.isSupportedLocale(detectedLocale)) {
-                String debugMessage = "Detected language for " + player.getName() + ": " + detectedLocale;
-                RedCraftChat.getInstance().getLogger().info(debugMessage);
                 return detectedLocale;
             }
-        } catch (NullPointerException e) {
+        } else {
             // TODO GeoIP test (User has a very old version of Minecraft or Minechat)
+            RedCraftChat.getInstance().getLogger().severe("Failed to detect language for " + player.getName() + ", falling back to default locale");
         }
 
         // Fallback
         return Config.defaultLocale;
+    }
+
+    private static Locale getPlayerLocale(ProxiedPlayer player, int maxTries) {
+        int tries = 0;
+        while (tries < maxTries) {
+            Locale locale = player.getLocale();
+            if (locale != null) {
+                return locale;
+            }
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            tries++;
+        }
+
+        return null;
     }
 
     public static boolean playerSpeaksLanguage(ProxiedPlayer player, String languageIsoCode) {

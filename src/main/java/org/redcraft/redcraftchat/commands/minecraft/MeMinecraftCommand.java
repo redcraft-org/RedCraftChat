@@ -1,5 +1,8 @@
 package org.redcraft.redcraftchat.commands.minecraft;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.bridge.MinecraftDiscordBridge;
 import org.redcraft.redcraftchat.helpers.BasicMessageFormatter;
@@ -39,10 +42,9 @@ public class MeMinecraftCommand extends Command {
             }
 
             String message = String.join(" ", args);
-            MinecraftDiscordBridge.getInstance().broadcastMessage(
-                    ChatColor.DARK_PURPLE + " * " +
-                    ChatColor.ITALIC + player.getDisplayName() + " " +
-                    ChatColor.LIGHT_PURPLE + ChatColor.ITALIC + message, player);
+            Map<String, String> replacements = new HashMap<>();
+            replacements.put("%player%", ChatColor.DARK_PURPLE + " * " + ChatColor.ITALIC + player.getDisplayName() + ChatColor.LIGHT_PURPLE + ChatColor.ITALIC);
+            MinecraftDiscordBridge.getInstance().broadcastMessage("%player% " + message, replacements, player);
         }
     }
 
