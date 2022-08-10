@@ -8,12 +8,29 @@ import io.lettuce.core.RedisClient;
 import io.lettuce.core.api.StatefulRedisConnection;
 
 public class RedisCache implements CacheProvider {
-    private RedisClient redisClient;
-    private StatefulRedisConnection<String, String> redisConnection;
+    private static RedisClient redisClient = null;
+    private static StatefulRedisConnection<String, String> redisConnection = null;
 
     public RedisCache() {
-        redisClient = RedisClient.create("redis://localhost:6379/0");
-        redisConnection = redisClient.connect();
+        connect();
+    }
+
+    public static void connect() {
+        if (redisClient == null) {
+            redisClient = RedisClient.create(Config.redisUri);
+        }
+        if (redisConnection == null || !redisConnection.isOpen()) {
+            redisConnection = redisClient.connect();
+        }
+    }
+
+    public static void close() {
+        if (redisConnection != null) {
+            redisConnection.close();
+        }
+        if (redisClient != null) {
+            redisClient.shutdown();
+        }
     }
 
     public boolean putRaw(String key, String serializedObject) {

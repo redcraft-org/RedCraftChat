@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import org.redcraft.redcraftchat.bridge.MinecraftDiscordBridge;
+import org.redcraft.redcraftchat.caching.providers.RedisCache;
 import org.redcraft.redcraftchat.commands.discord.LangDiscordCommand;
 import org.redcraft.redcraftchat.commands.discord.LinkMinecraftAccountDiscordCommand;
 import org.redcraft.redcraftchat.commands.discord.PlayersDiscordCommand;
@@ -54,6 +55,7 @@ public class RedCraftChat extends Plugin {
 			this.onDisable();
 			return;
 		}
+		// TODO: Check if database is needed
 		DatabaseManager.connect();
 
 		// Discord events
@@ -66,8 +68,6 @@ public class RedCraftChat extends Plugin {
 		discordClient.addEventListener(new PlayersDiscordCommand());
 		discordClient.addEventListener(new LangDiscordCommand());
 		discordClient.addEventListener(new LinkMinecraftAccountDiscordCommand());
-
-		getLogger().info("Discord events registered");
 
 		// Schedulers
 		TaskScheduler scheduler = getProxy().getScheduler();
@@ -103,6 +103,7 @@ public class RedCraftChat extends Plugin {
 		getProxy().getPluginManager().unregisterListeners(this);
 		getProxy().getPluginManager().unregisterCommands(this);
 		DiscordClient.getClient().shutdownNow();
+		RedisCache.close();
 	}
 
 	public static void setInstance(RedCraftChat instance) {

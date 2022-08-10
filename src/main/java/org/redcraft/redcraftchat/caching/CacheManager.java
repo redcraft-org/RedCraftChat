@@ -15,20 +15,28 @@ import org.redcraft.redcraftchat.models.caching.CacheCategory;
 
 public class CacheManager {
 
+    private static CacheProvider cacheProvider = null;
+
     private CacheManager() {
         throw new IllegalStateException("This class should not be instantiated");
     }
 
     public static CacheProvider getCacheProvider() {
-        switch (Config.cacheProvider) {
-            case "memory":
-                return new MemoryCache();
-            case "redis":
-                return new RedisCache();
+        if (cacheProvider == null) {
+            switch (Config.cacheProvider) {
+                case "memory":
+                    cacheProvider = new MemoryCache();
+                    break;
+                case "redis":
+                    cacheProvider = new RedisCache();
+                    break;
 
-            default:
-                throw new IllegalStateException("Unknown cache provider: " + Config.cacheProvider);
+                default:
+                    throw new IllegalStateException("Unknown cache provider: " + Config.cacheProvider);
+            }
         }
+
+        return cacheProvider;
     }
 
     public static Object get(String key, Class<?> classType) {
