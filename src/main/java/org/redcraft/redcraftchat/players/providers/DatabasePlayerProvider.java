@@ -52,7 +52,7 @@ public class DatabasePlayerProvider implements PlayerProvider {
     }
 
     public PlayerPreferences getPlayerPreferences(UUID player) throws IOException, InterruptedException {
-        PlayerPreferencesDatabase result = db.where("minecraft_uuid=?", player).first(PlayerPreferencesDatabase.class);
+        PlayerPreferencesDatabase result = db.where("minecraft_uuid=?", player.toString()).first(PlayerPreferencesDatabase.class);
 
         if (result == null) {
             return null;

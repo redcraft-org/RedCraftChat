@@ -6,8 +6,10 @@ import java.util.List;
 import java.util.UUID;
 
 import org.redcraft.redcraftchat.Config;
+import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.caching.CacheManager;
 import org.redcraft.redcraftchat.detection.DetectionManager;
+import org.redcraft.redcraftchat.helpers.BasicMessageFormatter;
 import org.redcraft.redcraftchat.messaging.mail.providers.DatabaseMailProvider;
 import org.redcraft.redcraftchat.messaging.mail.providers.MailProvider;
 import org.redcraft.redcraftchat.messaging.mail.providers.RedCraftApiMailProvider;
@@ -18,6 +20,7 @@ import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 
 import com.google.common.reflect.TypeToken;
 
+import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 public class MailMessagesManager {
@@ -64,6 +67,13 @@ public class MailMessagesManager {
         getMailProvider().sendMail(mail);
 
         voidCache(sender.getUniqueId());
+        voidCache(recipient);
+
+        ProxiedPlayer recipientPlayer = RedCraftChat.getInstance().getProxy().getPlayer(recipient);
+        if (recipientPlayer != null) {
+            String receivedMessage = "You just received a new mail, type the following command to see your mails:";
+            BasicMessageFormatter.sendInternalMessage(recipientPlayer, receivedMessage, ChatColor.GOLD + "/mail list", ChatColor.LIGHT_PURPLE);
+        }
     }
 
     public static void markMailAsRead(PlayerMail mail) {

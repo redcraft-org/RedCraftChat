@@ -17,7 +17,6 @@ import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.HoverEvent.Action;
 import net.md_5.bungee.api.chat.hover.content.Text;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
@@ -25,7 +24,7 @@ public class PrivateMessagesManager {
 
     private static TranslationManager translationManager = new TranslationManager(Config.chatTranslationProvider);
 
-    public PrivateMessagesManager() {
+    private PrivateMessagesManager() {
         throw new IllegalStateException("This class should not be instantiated");
     }
 
@@ -82,13 +81,13 @@ public class PrivateMessagesManager {
 
         messageBuilder.append(sender + ChatColor.RESET);
         if (!sender.equals(senderDisplayName)) {
-            messageBuilder.event(new HoverEvent(Action.SHOW_TEXT, new Text(senderDisplayName)));
+            messageBuilder.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(senderDisplayName)));
         }
         messageBuilder.append(" ➔ ");
 
         messageBuilder.append(receiver + ChatColor.RESET);
         if (!receiver.equals(receiverDisplayName)) {
-            messageBuilder.event(new HoverEvent(Action.SHOW_TEXT, new Text(receiverDisplayName)));
+            messageBuilder.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(receiverDisplayName)));
         }
 
         messageBuilder.append("] ");
@@ -101,12 +100,12 @@ public class PrivateMessagesManager {
         }
 
         if (replyTo != null) {
-            messageBuilder.event(new ClickEvent(net.md_5.bungee.api.chat.ClickEvent.Action.SUGGEST_COMMAND, "/msg " + replyTo + " "));
+            messageBuilder.event(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/msg " + replyTo + " "));
             tooltip.add(ChatColor.DARK_AQUA + PlayerPreferencesManager.localizeMessageForPlayer(player, "Click to reply"));
         }
 
-        if (tooltip.size() > 0) {
-            messageBuilder.event(new HoverEvent(Action.SHOW_TEXT, new Text(String.join("\n", tooltip))));
+        if (!tooltip.isEmpty()) {
+            messageBuilder.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(String.join("\n", tooltip))));
         }
 
         player.sendMessage(messageBuilder.create());

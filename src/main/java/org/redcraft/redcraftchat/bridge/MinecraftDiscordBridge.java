@@ -26,7 +26,6 @@ import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.HoverEvent.Action;
 import net.md_5.bungee.api.chat.hover.content.Text;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
@@ -150,7 +149,7 @@ public class MinecraftDiscordBridge {
             String originalMessage = TokenizerManager.replaceTokens(formattedMessage, tokens);
 
             receiver.sendMessage(new ComponentBuilder(targetMessage)
-                    .event(new HoverEvent(Action.SHOW_TEXT, new Text(originalMessage)))
+                    .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(originalMessage)))
                     .create());
         }
     }
@@ -205,7 +204,7 @@ public class MinecraftDiscordBridge {
                 .append(parsedTranslatedMessage);
 
         if (targetLanguage != null) {
-            messageBuilder.event(new HoverEvent(Action.SHOW_TEXT, new Text(originalMessage)));
+            messageBuilder.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(originalMessage)));
         }
 
         receiver.sendMessage(messageBuilder.create());

@@ -17,7 +17,6 @@ import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.HoverEvent.Action;
 import net.md_5.bungee.api.chat.hover.content.Text;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.plugin.Command;
@@ -96,45 +95,45 @@ public class LangMinecraftCommand extends Command {
 
         messages.add(new ComponentBuilder()
                 .append("---------- ").color(ChatColor.GREEN)
-                .append(headerText).color(ChatColor.GOLD).event(new HoverEvent(Action.SHOW_TEXT, new Text(originalHeaderText)))
+                .append(headerText).color(ChatColor.GOLD).event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(originalHeaderText)))
                 .append(" ----------").color(ChatColor.GREEN)
                 .create());
 
         messages.add(new ComponentBuilder()
-                .append(helpText).color(ChatColor.YELLOW).event(new HoverEvent(Action.SHOW_TEXT, new Text(originalHelpText)))
+                .append(helpText).color(ChatColor.YELLOW).event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(originalHelpText)))
                 .create());
 
         messages.add(new ComponentBuilder()
-                .append(captionText).color(ChatColor.GOLD).event(new HoverEvent(Action.SHOW_TEXT, new Text(originalCaptionText)))
+                .append(captionText).color(ChatColor.GOLD).event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(originalCaptionText)))
                 .append(" ")
-                .append(disabledText).color(ChatColor.GRAY).event(new HoverEvent(Action.SHOW_TEXT, new Text(originalDisabledText)))
+                .append(disabledText).color(ChatColor.GRAY).event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(originalDisabledText)))
                 .append(" ")
-                .append(enabledText).color(ChatColor.GREEN).event(new HoverEvent(Action.SHOW_TEXT, new Text(originalEnabledText)))
+                .append(enabledText).color(ChatColor.GREEN).event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(originalEnabledText)))
                 .create());
 
         for (SupportedLocale locale : LocaleManager.getSupportedLocales()) {
             ComponentBuilder formattedLocale = new ComponentBuilder();
             if (locale.code.equals(preferences.mainLanguage)) {
                 formattedLocale.append("[X] ").color(ChatColor.GREEN)
-                    .event(new HoverEvent(Action.SHOW_TEXT, new Text(ChatColor.RED + alreadyMainLanguage)));
+                    .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(ChatColor.RED + alreadyMainLanguage)));
             } else {
                 formattedLocale.append("[ ] ").color(ChatColor.DARK_GRAY)
-                    .event(new ClickEvent(net.md_5.bungee.api.chat.ClickEvent.Action.RUN_COMMAND, "/lang " + locale.code + " main"))
-                    .event(new HoverEvent(Action.SHOW_TEXT, new Text(ChatColor.GREEN + setAsMainLanguage)));
+                    .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/lang " + locale.code + " main"))
+                    .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(ChatColor.GREEN + setAsMainLanguage)));
             }
             formattedLocale.append(locale.name);
             if (preferences.languages.contains(locale.code)) {
                 formattedLocale.color(ChatColor.GREEN);
                 if (!locale.code.equals(preferences.mainLanguage)) {
-                    formattedLocale.event(new HoverEvent(Action.SHOW_TEXT, new Text(ChatColor.RED + removeFromLanguages)));
+                    formattedLocale.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(ChatColor.RED + removeFromLanguages)));
                 }
 
             } else {
                 formattedLocale.color(ChatColor.GRAY);
-                formattedLocale.event(new HoverEvent(Action.SHOW_TEXT, new Text(ChatColor.GREEN + addToLanguages)));
+                formattedLocale.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(ChatColor.GREEN + addToLanguages)));
             }
             if (!locale.code.equals(preferences.mainLanguage)) {
-                formattedLocale.event(new ClickEvent(net.md_5.bungee.api.chat.ClickEvent.Action.RUN_COMMAND, "/lang " + locale.code));
+                formattedLocale.event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/lang " + locale.code));
             }
             messages.add(formattedLocale.create());
         }

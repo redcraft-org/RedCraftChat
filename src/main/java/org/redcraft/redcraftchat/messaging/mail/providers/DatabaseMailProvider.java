@@ -21,10 +21,11 @@ public class DatabaseMailProvider implements MailProvider {
     }
 
     public List<PlayerMail> getMails(UUID recipientUuid, boolean unreadOnly) {
-        Query query = db.where("recipient_uuid=?", recipientUuid.toString());
+        String where = "recipient_uuid=?";
         if (unreadOnly) {
-            query = query.where("read_at is null");
+            where += " and read_at is null";
         }
+        Query query = db.where(where, recipientUuid.toString());
         return transform(query.results(PlayerMailDatabase.class));
     }
 

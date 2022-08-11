@@ -18,7 +18,6 @@ import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.HoverEvent.Action;
 import net.md_5.bungee.api.chat.hover.content.Text;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.plugin.Command;
@@ -163,7 +162,7 @@ public class MailMinecraftCommand extends Command {
             String originalHeaderText = "MAIL INBOX";
             String originalNoMailsText = "You have no mails.";
             if (unreadOnly) {
-                originalNoMailsText += "\nTip: run %command% to see messages you already read";
+                originalNoMailsText += ChatColor.DARK_PURPLE + "\n\nTip: run the command %command% to see messages you already read";
             }
 
             String headerText = PlayerPreferencesManager.localizeMessageForPlayer(preferences, originalHeaderText);
@@ -178,7 +177,7 @@ public class MailMinecraftCommand extends Command {
 
             messages.add(new ComponentBuilder()
                     .append("---------- ").color(ChatColor.GREEN)
-                    .append(headerText).color(ChatColor.GOLD).event(new HoverEvent(Action.SHOW_TEXT, new Text(originalHeaderText)))
+                    .append(headerText).color(ChatColor.GOLD).event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(originalHeaderText)))
                     .append(" ----------").color(ChatColor.GREEN)
                     .create());
 
@@ -189,7 +188,7 @@ public class MailMinecraftCommand extends Command {
                 messages.add(new ComponentBuilder("").create());
                 messages.add(new ComponentBuilder()
                         .append(noMailsText).color(ChatColor.RED)
-                        .event(new HoverEvent(Action.SHOW_TEXT, new Text(originalNoMailsText)))
+                        .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(originalNoMailsText.replace("%command%", "/mail listall"))))
                         .create());
                 messages.add(new ComponentBuilder("").create());
                 messages.add(new ComponentBuilder("").create());
@@ -221,13 +220,13 @@ public class MailMinecraftCommand extends Command {
                 mailMessage
                         .append("[NEW] ")
                         .color(ChatColor.GREEN)
-                        .event(new HoverEvent(Action.SHOW_TEXT, new Text(markAsReadText)))
-                        .event(new ClickEvent(net.md_5.bungee.api.chat.ClickEvent.Action.RUN_COMMAND, "/mail read " + mail.internalId));
+                        .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(markAsReadText)))
+                        .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mail read " + mail.internalId));
             } else {
                 mailMessage
                         .append("[OLD] ")
                         .color(ChatColor.GRAY)
-                        .event(new HoverEvent(Action.SHOW_TEXT, new Text(alreadyMarkedAsReadText)));
+                        .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(alreadyMarkedAsReadText)));
             }
 
             String senderDisplayName = MailMessagesManager.getMailSenderDisplayName(mail);
@@ -252,8 +251,8 @@ public class MailMinecraftCommand extends Command {
 
             mailMessage.append(messagePreview).color(ChatColor.WHITE);
 
-            mailMessage.event(new HoverEvent(Action.SHOW_TEXT, new Text(fullMessage)));
-            mailMessage.event(new ClickEvent(net.md_5.bungee.api.chat.ClickEvent.Action.SUGGEST_COMMAND, "/mail send " + senderDisplayName + " "));
+            mailMessage.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(fullMessage)));
+            mailMessage.event(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/mail send " + senderDisplayName + " "));
 
             return mailMessage.create();
         }
@@ -274,8 +273,8 @@ public class MailMinecraftCommand extends Command {
             ComponentBuilder pageNavigation = new ComponentBuilder();
             pageNavigation.append("[" + previousText + "]");
             if (page > 1) {
-                pageNavigation.event(new HoverEvent(Action.SHOW_TEXT, new Text(previousTooltipText)));
-                pageNavigation.event(new ClickEvent(net.md_5.bungee.api.chat.ClickEvent.Action.RUN_COMMAND, "/mail " + subCommand + " " + (page - 1)));
+                pageNavigation.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(previousTooltipText)));
+                pageNavigation.event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mail " + subCommand + " " + (page - 1)));
             } else {
                 pageNavigation.color(ChatColor.GRAY);
             }
@@ -285,8 +284,8 @@ public class MailMinecraftCommand extends Command {
 
             pageNavigation.append("[" + nextText + "]");
             if (page < totalPages) {
-                pageNavigation.event(new HoverEvent(Action.SHOW_TEXT, new Text(nextTooltipText)));
-                pageNavigation.event(new ClickEvent(net.md_5.bungee.api.chat.ClickEvent.Action.RUN_COMMAND, "/mail "
+                pageNavigation.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(nextTooltipText)));
+                pageNavigation.event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mail "
                         + subCommand + " " + (page + 1)));
             } else {
                 pageNavigation.color(ChatColor.GRAY);

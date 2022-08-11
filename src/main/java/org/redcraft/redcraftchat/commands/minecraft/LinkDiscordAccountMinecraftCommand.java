@@ -13,7 +13,6 @@ import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.ClickEvent.Action;
 import net.md_5.bungee.api.chat.hover.content.Text;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.plugin.Command;
@@ -70,8 +69,8 @@ public class LinkDiscordAccountMinecraftCommand extends Command {
                     BaseComponent[] button = new ComponentBuilder()
                             .append(ChatColor.BOLD + unlink)
                             .color(ChatColor.DARK_RED)
-                            .event(new ClickEvent(Action.RUN_COMMAND, command))
-                            .event(new HoverEvent(net.md_5.bungee.api.chat.HoverEvent.Action.SHOW_TEXT, new Text(ChatColor.RED + tooltip)))
+                            .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, command))
+                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(ChatColor.RED + tooltip)))
                             .create();
 
                     player.sendMessage(formattedMessage);
@@ -100,8 +99,8 @@ public class LinkDiscordAccountMinecraftCommand extends Command {
                         .color(ChatColor.GREEN)
                         .append(command)
                         .color(ChatColor.GOLD)
-                        .event(new ClickEvent(Action.COPY_TO_CLIPBOARD, command))
-                        .event(new HoverEvent(net.md_5.bungee.api.chat.HoverEvent.Action.SHOW_TEXT, new Text(ChatColor.GREEN + copyToClipboard)))
+                        .event(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, command))
+                        .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(ChatColor.GREEN + copyToClipboard)))
                         .create();
 
                 player.sendMessage(formattedMessage);

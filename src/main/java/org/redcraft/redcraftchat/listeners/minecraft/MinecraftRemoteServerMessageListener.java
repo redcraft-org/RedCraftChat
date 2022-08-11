@@ -24,7 +24,6 @@ import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.chat.TranslatableComponent;
-import net.md_5.bungee.api.chat.HoverEvent.Action;
 import net.md_5.bungee.api.chat.hover.content.Text;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.connection.Server;
@@ -135,7 +134,7 @@ public class MinecraftRemoteServerMessageListener implements Listener {
             }
 
             Text hover = new Text(message.toLegacyText());
-            HoverEvent hoverEvent = new HoverEvent(Action.SHOW_TEXT, hover);
+            HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, hover);
 
             for (BaseComponent translatedMessageComponent : new ComponentBuilder(translatedMessage).event(hoverEvent).create()) {
                 translatedMessageComponents.add(translatedMessageComponent);

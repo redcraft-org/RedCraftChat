@@ -10,7 +10,6 @@ import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.HoverEvent.Action;
 import net.md_5.bungee.api.chat.hover.content.Text;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
@@ -21,7 +20,7 @@ public class BasicMessageFormatter {
     }
 
     public static void sendInternalMessage(CommandSender target, String message, String extra, ChatColor color) {
-        HoverEvent hoverEvent = new HoverEvent(Action.SHOW_TEXT, new Text(color + message));
+        HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(color + message));
 
         String translatedMessage = message;
         if (target instanceof ProxiedPlayer) {
