@@ -65,7 +65,7 @@ public class MinecraftConnectDisconnectMessageListener implements Listener {
             String message = ChatColor.YELLOW + "%player% left the server";
 
             Map<String, String> replacements = new HashMap<String, String>();
-            replacements.put("%player%", event.getPlayer().getName());
+            replacements.put("%player%", event.getPlayer().getDisplayName());
 
             MinecraftDiscordBridge.getInstance().broadcastMessage(message, replacements);
         }
