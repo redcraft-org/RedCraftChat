@@ -121,7 +121,7 @@ public class MinecraftDiscordBridge {
                 try {
                     targetMessage = translationManager.translate(targetMessage, originalLanguage, channel.languageId);
                 } catch (IllegalStateException | URISyntaxException | IOException | InterruptedException e) {
-                    // TODO Auto-generated catch block
+                    RedCraftChat.getInstance().getLogger().severe("Failed to translate message from " + originalLanguage + " to " + channel.languageId);
                     e.printStackTrace();
                 }
             }
