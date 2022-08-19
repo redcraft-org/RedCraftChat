@@ -2,9 +2,10 @@
 In-game:
   ☐ Implement API to fetch players from username when ready
   ☐ Implement API for emails when ready
-  ☐ Scheduled messages (tips, donations, etc...)
+  ☐ Implement API for scheduled messages when ready
 
 Archive:
+  ✔ Scheduled messages (tips, donations, etc...) @started(22-08-19 18:10) @done(22-08-19 19:15) @lasted(1h5m39s) @project(In-game)
   ✔ Mail warning on login and on mail receive @started(22-08-10 23:01) @done(22-08-10 23:14) @lasted(13m49s) @project(In-game)
   ✔ Create interface for translation providers @done(22-08-04 04:11) @project(Refactor)
   ✔ Mail command @started(22-08-04 00:21) @done(22-08-04 04:07) @lasted(3h46m38s) @project(In-game)

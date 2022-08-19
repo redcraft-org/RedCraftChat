@@ -38,6 +38,7 @@ import org.redcraft.redcraftchat.runnables.DiscordChannelSynchronizerTask;
 import org.redcraft.redcraftchat.runnables.DiscordUsersSynchronizerTask;
 import org.redcraft.redcraftchat.runnables.LuckPermsSynchronizerTask;
 import org.redcraft.redcraftchat.runnables.MinecraftServerStatusWatcherTask;
+import org.redcraft.redcraftchat.runnables.ScheduledAnnouncementsTask;
 
 public class RedCraftChat extends Plugin {
 
@@ -76,6 +77,7 @@ public class RedCraftChat extends Plugin {
 		scheduler.schedule(this, new DiscordUsersSynchronizerTask(), 3, 60, TimeUnit.SECONDS);
 		scheduler.schedule(this, new LuckPermsSynchronizerTask(), 10, 30, TimeUnit.SECONDS);
 		scheduler.schedule(this, new MinecraftServerStatusWatcherTask(), 5, 5, TimeUnit.SECONDS);
+		scheduler.schedule(this, new ScheduledAnnouncementsTask(), Config.scheduledAnnouncementsInterval, Config.scheduledAnnouncementsInterval, TimeUnit.SECONDS);
 
 		// Game listeners
 		PluginManager pluginManager = this.getProxy().getPluginManager();

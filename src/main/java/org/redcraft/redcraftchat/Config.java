@@ -54,6 +54,9 @@ public class Config {
 
 	public static String mailProvider = "database";
 
+	public static String scheduledAnnouncementsProvider = "database";
+	public static long scheduledAnnouncementsInterval = 900;
+
 	public static String databaseUri = "jdbc:sqlite:%plugin_config_path%/plugins/RedCraftChat/database.db";
 	public static String databaseUsername = "";
 	public static String databasePassword = "";
@@ -109,6 +112,9 @@ public class Config {
 		playerApiUrl = config.getString("player-api-url");
 
 		mailProvider = config.getString("mail-provider");
+
+		scheduledAnnouncementsProvider = config.getString("scheduled-announcements-provider");
+		scheduledAnnouncementsInterval = config.getLong("scheduled-announcements-interval");
 
 		databaseUri = config.getString("database-uri");
 		databaseUsername = config.getString("database-username");

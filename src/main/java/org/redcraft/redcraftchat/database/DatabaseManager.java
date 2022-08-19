@@ -11,6 +11,7 @@ import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.models.database.PlayerMailDatabase;
 import org.redcraft.redcraftchat.models.database.PlayerPreferencesDatabase;
+import org.redcraft.redcraftchat.models.database.ScheduledAnnouncementDatabase;
 import org.redcraft.redcraftchat.models.database.SupportedLocaleDatabase;
 
 public class DatabaseManager {
@@ -30,6 +31,7 @@ public class DatabaseManager {
         List<Class<?>> classes = new ArrayList<Class<?>>();
         classes.add(PlayerPreferencesDatabase.class);
         classes.add(PlayerMailDatabase.class);
+        classes.add(ScheduledAnnouncementDatabase.class);
         classes.add(SupportedLocaleDatabase.class);
         createStructure(classes);
 
