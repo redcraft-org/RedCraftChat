@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
@@ -15,6 +16,7 @@ import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import org.redcraft.redcraftchat.players.providers.DatabasePlayerProvider;
 import org.redcraft.redcraftchat.players.providers.PlayerProvider;
 import org.redcraft.redcraftchat.players.providers.RedCraftApiPlayerProvider;
+import org.redcraft.redcraftchat.runnables.DiscordUsersSynchronizerTask;
 import org.redcraft.redcraftchat.translate.TranslationManager;
 
 import net.dv8tion.jda.api.entities.User;
@@ -240,6 +242,7 @@ public class PlayerPreferencesManager {
 
         try {
             updatePlayerPreferences(preferences);
+            triggerDiscordSync();
         } catch (IOException | InterruptedException e) {
             RedCraftChat.getInstance().getLogger().severe("Failed to update player preferences");
             e.printStackTrace();
@@ -260,6 +263,7 @@ public class PlayerPreferencesManager {
 
         try {
             updatePlayerPreferences(preferences);
+            triggerDiscordSync();
         } catch (IOException | InterruptedException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -387,6 +391,11 @@ public class PlayerPreferencesManager {
 
     public static String localizeMessageForPlayer(User user, String message) {
         return localizeMessageForPlayer(user, message, null);
+    }
+
+    public static void triggerDiscordSync() {
+        RedCraftChat instance = RedCraftChat.getInstance();
+        instance.getProxy().getScheduler().schedule(instance, new DiscordUsersSynchronizerTask(), 10, TimeUnit.MILLISECONDS);
     }
 
 }

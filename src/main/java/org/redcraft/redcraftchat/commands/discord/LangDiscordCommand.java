@@ -192,7 +192,7 @@ public class LangDiscordCommand extends ListenerAdapter {
             buttons.add(button);
         }
 
-        if (buttons.size() > 0) {
+        if (!buttons.isEmpty()) {
             actionRows.add(ActionRow.of(buttons));
             buttons.clear();
         }

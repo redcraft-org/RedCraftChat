@@ -1,6 +1,7 @@
 package org.redcraft.redcraftchat.discord;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -13,21 +14,25 @@ import java.util.regex.Pattern;
 import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.caching.CacheManager;
+import org.redcraft.redcraftchat.locales.LocaleManager;
 import org.redcraft.redcraftchat.models.caching.CacheCategory;
 import org.redcraft.redcraftchat.models.discord.TranslatedChannel;
 import org.redcraft.redcraftchat.models.discord.UserMessageMapping;
 import org.redcraft.redcraftchat.models.discord.WebhookAsUser;
 import org.redcraft.redcraftchat.models.discord.WebhookMessageMapping;
+import org.redcraft.redcraftchat.models.locales.SupportedLocale;
 import org.redcraft.redcraftchat.translate.TranslationManager;
 
 import club.minnced.discord.webhook.receive.ReadonlyMessage;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Category;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.GuildChannel;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.TextChannel;
 
 public class ChannelManager {
@@ -39,6 +44,19 @@ public class ChannelManager {
 
     private static List<TranslatedChannel> minecraftBridgeChannels = new ArrayList<>();
     private static ReadWriteLock minecraftBridgeChannelsLock = new ReentrantReadWriteLock();
+
+    public void syncLocaleRoles() {
+        JDA discordClient = DiscordClient.getClient();
+
+        // Create a role per locale
+        for (Guild guild : discordClient.getGuilds()) {
+            for (SupportedLocale locale : LocaleManager.getSupportedLocales()) {
+                if (guild.getRolesByName(locale.code, true).isEmpty()) {
+                    guild.createRole().setName(locale.code).complete();
+                }
+            }
+        }
+    }
 
     public void syncChannelCategories() {
         JDA discordClient = DiscordClient.getClient();
@@ -66,7 +84,20 @@ public class ChannelManager {
                     if (matchingCategories.isEmpty()) {
                         String logMessage = String.format("Creating missing Discord category %s", categoryName);
                         RedCraftChat.getInstance().getLogger().info(logMessage);
-                        guild.createCategory(categoryName).complete();
+                        Category category = guild.createCategory(categoryName).complete();
+                        Role role = null;
+                        for (Role guildRole : guild.getRoles()) {
+                            if (language.toLowerCase().startsWith(guildRole.getName())) {
+                                role = guildRole;
+                                break;
+                            }
+                        }
+                        if (role != null) {
+                            category.getManager()
+                                .putPermissionOverride(role, EnumSet.of(Permission.VIEW_CHANNEL), null)
+                                .putPermissionOverride(guild.getPublicRole(), null, EnumSet.of(Permission.VIEW_CHANNEL))
+                                .complete();
+                        }
                     }
 
                     for (Category category : matchingCategories) {

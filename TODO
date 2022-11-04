@@ -4,11 +4,11 @@ In-game:
   ☐ Implement API for emails when ready
   ☐ Implement API for scheduled messages when ready
   ☐ Add logging
-  ☐ Give Discord users a tag per localization
   ☐ Translate holograms
   ☐ Translate signs
 
 Archive:
+  ✔ Give Discord users a tag per localization @done(22-11-04 02:01) @project(In-game)
   ✔ Fix bug where logout messages are sent even if the player is not logged in @done(22-10-30 15:30) @project(In-game)
   ✔ Scheduled messages (tips, donations, etc...) @started(22-08-19 18:10) @done(22-08-19 19:15) @lasted(1h5m39s) @project(In-game)
   ✔ Mail warning on login and on mail receive @started(22-08-10 23:01) @done(22-08-10 23:14) @lasted(13m49s) @project(In-game)

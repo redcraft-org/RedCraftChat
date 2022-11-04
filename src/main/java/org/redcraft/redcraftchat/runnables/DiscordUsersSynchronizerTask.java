@@ -6,6 +6,8 @@ import java.util.List;
 
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.discord.DiscordClient;
+import org.redcraft.redcraftchat.locales.LocaleManager;
+import org.redcraft.redcraftchat.models.locales.SupportedLocale;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 
@@ -20,6 +22,7 @@ import net.luckperms.api.LuckPermsProvider;
 public class DiscordUsersSynchronizerTask implements Runnable {
 
     private static List<String> discordLpRoles = new ArrayList<String>();
+    private static List<String> discordLocaleRoles = new ArrayList<String>();
     private static boolean warnedAboutRoleHierarchy = false;
     private static boolean warnedAboutNickHierarchy = false;
 
@@ -72,6 +75,13 @@ public class DiscordUsersSynchronizerTask implements Runnable {
                     discordRolesForPlayer.add(discordRole);
                 }
             });
+
+            for (String locale : player.languages) {
+                Role discordRole = getDiscordRoleFromLocale(locale);
+                if (discordRole != null) {
+                    discordRolesForPlayer.add(discordRole);
+                }
+            }
         }
 
         boolean updated = false;
@@ -87,7 +97,8 @@ public class DiscordUsersSynchronizerTask implements Runnable {
         // Add roles that the user should not have
         List<Role> rolesToRemove = new ArrayList<Role>();
         for (Role role : member.getRoles()) {
-            if (getDiscordLpRoles().contains(role.getId()) && !discordRolesForPlayer.contains(role)) {
+            if ((getDiscordLpRoles().contains(role.getId()) && !discordRolesForPlayer.contains(role)) ||
+                (player != null && getDiscordLocaleRoles().contains(role.getId()) && !player.languages.contains(role.getName()))) {
                 rolesToRemove.add(role);
             }
         }
@@ -107,7 +118,7 @@ public class DiscordUsersSynchronizerTask implements Runnable {
             }
         }
 
-        if (player.lastKnownMinecraftName != null && !member.getEffectiveName().equals(player.lastKnownMinecraftName)) {
+        if (player != null && player.lastKnownMinecraftName != null && !member.getEffectiveName().equals(player.lastKnownMinecraftName)) {
             try {
                 member.modifyNickname(player.lastKnownMinecraftName).queue();
                 updated = true;
@@ -129,7 +140,7 @@ public class DiscordUsersSynchronizerTask implements Runnable {
         if (permission.startsWith(permissionPrefix)) {
             String roleName = permission.substring(permissionPrefix.length());
             List<Role> matchingRoles = DiscordClient.getClient().getRolesByName(roleName, true);
-            if (matchingRoles.size() > 0) {
+            if (!matchingRoles.isEmpty()) {
                 return matchingRoles.get(0);
             }
         }
@@ -137,8 +148,17 @@ public class DiscordUsersSynchronizerTask implements Runnable {
         return null;
     }
 
+    public static Role getDiscordRoleFromLocale(String locale) {
+        List<Role> matchingRoles = DiscordClient.getClient().getRolesByName(locale, true);
+        if (!matchingRoles.isEmpty()) {
+            return matchingRoles.get(0);
+        }
+
+        return null;
+    }
+
     public static List<String> getDiscordLpRoles() {
-        if (discordLpRoles.size() == 0) {
+        if (!discordLpRoles.isEmpty()) {
             buildDiscordLpRoles();
         }
         return discordLpRoles;
@@ -162,6 +182,36 @@ public class DiscordUsersSynchronizerTask implements Runnable {
                     RedCraftChat.getInstance().getLogger().info(" - " + role);
                 });
                 discordLpRoles = updatedDiscordLpRoles;
+            }
+        } catch (IllegalStateException e) {
+            // LuckPerms not installed
+        }
+    }
+
+    public static List<String> getDiscordLocaleRoles() {
+        if (discordLocaleRoles.isEmpty()) {
+            buildDiscordLocaleRoles();
+        }
+        return discordLocaleRoles;
+    }
+
+    public static void buildDiscordLocaleRoles() {
+        try {
+            List<String> updatedDiscordLocaleRoles = new ArrayList<String>();
+
+            for (SupportedLocale locale : LocaleManager.getSupportedLocales()) {
+                Role discordRole = getDiscordRoleFromLocale(locale.code);
+                if (discordRole != null && !updatedDiscordLocaleRoles.contains(discordRole.getId())) {
+                    updatedDiscordLocaleRoles.add(discordRole.getId());
+                }
+            }
+
+            if (discordLocaleRoles.size() != updatedDiscordLocaleRoles.size()) {
+                RedCraftChat.getInstance().getLogger().info("Discord Locale groups updated. New detected linked roles: ");
+                updatedDiscordLocaleRoles.forEach(role -> {
+                    RedCraftChat.getInstance().getLogger().info(" - " + role);
+                });
+                discordLocaleRoles = updatedDiscordLocaleRoles;
             }
         } catch (IllegalStateException e) {
             // LuckPerms not installed
