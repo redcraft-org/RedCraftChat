@@ -8,6 +8,7 @@ In-game:
   ☐ Translate signs
 
 Archive:
+  ✔ Fix issue with wrong going offline server messages @done(22-11-06 03:52) @project(In-game)
   ✔ Give Discord users a tag per localization @done(22-11-04 02:01) @project(In-game)
   ✔ Fix bug where logout messages are sent even if the player is not logged in @done(22-10-30 15:30) @project(In-game)
   ✔ Scheduled messages (tips, donations, etc...) @started(22-08-19 18:10) @done(22-08-19 19:15) @lasted(1h5m39s) @project(In-game)

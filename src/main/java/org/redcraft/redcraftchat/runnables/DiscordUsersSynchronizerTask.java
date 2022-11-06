@@ -177,9 +177,9 @@ public class DiscordUsersSynchronizerTask implements Runnable {
                 });
             });
             if (discordLpRoles.size() != updatedDiscordLpRoles.size()) {
-                RedCraftChat.getInstance().getLogger().info("Discord LP groups updated. New detected linked roles: ");
+                RedCraftChat.getInstance().getLogger().fine("Discord LP groups updated. New detected linked roles: ");
                 updatedDiscordLpRoles.forEach(role -> {
-                    RedCraftChat.getInstance().getLogger().info(" - " + role);
+                    RedCraftChat.getInstance().getLogger().fine(" - " + role);
                 });
                 discordLpRoles = updatedDiscordLpRoles;
             }
@@ -207,9 +207,9 @@ public class DiscordUsersSynchronizerTask implements Runnable {
             }
 
             if (discordLocaleRoles.size() != updatedDiscordLocaleRoles.size()) {
-                RedCraftChat.getInstance().getLogger().info("Discord Locale groups updated. New detected linked roles: ");
+                RedCraftChat.getInstance().getLogger().fine("Discord Locale groups updated. New detected linked roles: ");
                 updatedDiscordLocaleRoles.forEach(role -> {
-                    RedCraftChat.getInstance().getLogger().info(" - " + role);
+                    RedCraftChat.getInstance().getLogger().fine(" - " + role);
                 });
                 discordLocaleRoles = updatedDiscordLocaleRoles;
             }

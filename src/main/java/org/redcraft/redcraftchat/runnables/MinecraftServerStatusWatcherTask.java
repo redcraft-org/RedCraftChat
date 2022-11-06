@@ -17,7 +17,7 @@ import net.md_5.bungee.api.config.ServerInfo;
 public class MinecraftServerStatusWatcherTask implements Runnable {
 
     List<String> onlineServers = new ArrayList<String>();
-    List<String> offlineServers = new ArrayList<String>();
+    Map<String, Boolean> offlineServers = new HashMap<String, Boolean>();
 
     public boolean isServerOnline(ServerInfo server) {
         try (
@@ -54,8 +54,10 @@ public class MinecraftServerStatusWatcherTask implements Runnable {
                     handleServerStatusChange(server.getValue(), true);
                 }
             } else {
-                if (!offlineServers.contains(server.getKey())) {
-                    offlineServers.add(server.getKey());
+                if (!offlineServers.containsKey(server.getKey())) {
+                    offlineServers.put(server.getKey(), false);
+                } else if (!offlineServers.get(server.getKey())) {
+                    offlineServers.put(server.getKey(), true);
                     onlineServers.remove(server.getKey());
                     handleServerStatusChange(server.getValue(), false);
                 }
