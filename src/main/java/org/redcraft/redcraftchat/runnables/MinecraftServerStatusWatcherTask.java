@@ -16,8 +16,10 @@ import net.md_5.bungee.api.config.ServerInfo;
 
 public class MinecraftServerStatusWatcherTask implements Runnable {
 
+    final int SCANS_COUNT = 3;
+
     List<String> onlineServers = new ArrayList<String>();
-    Map<String, Boolean> offlineServers = new HashMap<String, Boolean>();
+    Map<String, Integer> offlineServers = new HashMap<String, Integer>();
 
     public boolean isServerOnline(ServerInfo server) {
         try (
@@ -49,15 +51,18 @@ public class MinecraftServerStatusWatcherTask implements Runnable {
         for (Entry<String, ServerInfo> server : RedCraftChat.getInstance().getProxy().getServers().entrySet()) {
             if (isServerOnline(server.getValue())) {
                 if (!onlineServers.contains(server.getKey())) {
+                    RedCraftChat.getInstance().getProxy().getLogger().info("Server " + server.getKey() + " is marked as online");
                     onlineServers.add(server.getKey());
                     offlineServers.remove(server.getKey());
                     handleServerStatusChange(server.getValue(), true);
                 }
             } else {
-                if (!offlineServers.containsKey(server.getKey())) {
-                    offlineServers.put(server.getKey(), false);
-                } else if (!offlineServers.get(server.getKey())) {
-                    offlineServers.put(server.getKey(), true);
+                int failedScans = offlineServers.getOrDefault(server.getKey(), 0) + 1;
+                offlineServers.put(server.getKey(), failedScans);
+                if (failedScans < SCANS_COUNT + 1) {
+                    RedCraftChat.getInstance().getProxy().getLogger().warning("Server " + server.getKey() + " seems to be offline. Failed scans: " + failedScans);
+                } else if (onlineServers.contains(server.getKey())) {
+                    RedCraftChat.getInstance().getProxy().getLogger().warning("Server " + server.getKey() + " is marked as offline");
                     onlineServers.remove(server.getKey());
                     handleServerStatusChange(server.getValue(), false);
                 }
