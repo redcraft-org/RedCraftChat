@@ -1,0 +1,51 @@
+
+In-game:
+  ☐ Implement API for emails when ready
+  ☐ Implement API for scheduled messages when ready
+  ☐ Add logging
+  ☐ Translate holograms
+  ☐ Translate signs
+
+Archive:
+  ✔ Implement API to fetch players from username when ready @done(22-11-07 04:44) @project(In-game)
+  ✔ Fix issue with wrong going offline server messages @done(22-11-06 03:52) @project(In-game)
+  ✔ Give Discord users a tag per localization @done(22-11-04 02:01) @project(In-game)
+  ✔ Fix bug where logout messages are sent even if the player is not logged in @done(22-10-30 15:30) @project(In-game)
+  ✔ Scheduled messages (tips, donations, etc...) @started(22-08-19 18:10) @done(22-08-19 19:15) @lasted(1h5m39s) @project(In-game)
+  ✔ Mail warning on login and on mail receive @started(22-08-10 23:01) @done(22-08-10 23:14) @lasted(13m49s) @project(In-game)
+  ✔ Create interface for translation providers @done(22-08-04 04:11) @project(Refactor)
+  ✔ Mail command @started(22-08-04 00:21) @done(22-08-04 04:07) @lasted(3h46m38s) @project(In-game)
+  ✔ Private messages @started(22-08-01 21:38) @done(22-08-02 02:58) @lasted(5h20m44s) @project(In-game)
+  ✔ Check that people have the right username on Discord @started(22-07-31 20:06) @done(22-08-01 01:54) @lasted(5h48m41s) @project(Discord)
+  ✔ LuckPerms support for ranks @started(22-07-31 19:38) @done(22-07-31 20:05) @lasted(27m14s) @project(Discord)
+  ✔ Detect servers going up/down @started(22-07-31 15:31) @done(22-07-31 16:24) @lasted(53m49s) @project(In-game)
+  ✔ /me command @started(22-07-31 02:50) @done(22-07-31 03:35) @lasted(45m8s) @project(In-game)
+  ✔ Broadcast command @started(22-07-31 01:47) @done(22-07-31 02:44) @lasted(57m57s) @project(In-game)
+  ✔ Join message @started(22-07-30 18:13) @done(22-07-30 21:59) @lasted(3h46m46s) @project(In-game)
+  ✔ Add Markdown <> Minecraft formatting with https://github.com/Vankka/MCDiscordReserializer @started(22-07-30 14:50) @done(22-07-30 15:56) @lasted(1h6m30s) @project(Discord)
+  ✔ Language selector @done(22-07-27 00:20) @project(Discord)
+  ✔ Add nickname change detection @done(22-07-30 02:06) @project(Discord)
+  ✔ Check if we can copy minecraft link command to clipboard from Discord -> no we can't @done(22-07-30 02:06) @project(Discord)
+  ✔ Account sync @done(22-07-24 20:48) @project(Discord)
+  ✔ Forget sync command @done(22-07-24 20:53) @project(Discord)
+  ✔ Merge accounts if Discord and Minecraft accounts are linked @done(22-07-28 03:41) @project(Discord)
+  ✔ Language selector @started(22-07-25 21:05) @done(22-07-26 02:08) @lasted(5h3m26s) @project(In-game)
+  ✔ Litebans support for muted players @started(22-07-30 01:00) @done(22-07-30 01:58) @lasted(58m7s) @project(In-game)
+  ✔ Database models and migrations @project(General)
+  ✔ Channel sync @project(General)
+  ✔ CommandSpy perms check @project(General)
+  ✔ Language detection? @project(General)
+  ✔ URL shortner support @project(General)
+  ✔ Live translation Discord to Discord @project(Discord)
+  ✔ Player list command @project(Discord)
+  ✔ Mentions bugs @project(Discord)
+  ✔ Message edit scaffholding @project(Discord)
+  ✔ Message edit https://support.discord.com/hc/en-us/community/posts/360034557771/comments/360013401954 @project(Discord)
+  ✔ Deleted messages @project(Discord)
+  ✔ Translated emojis bug @project(Discord)
+  ✔ Multi unicode char Emoji bugs (Fitzpatrick) @project(Discord)
+  ✔ Discord to MC @project(Discord)
+  ✔ Live translation from upstream servers @project(In-game)
+  ✔ Commandspy @project(In-game)
+  ✔ Fix bed/advancements message bug @project(In-game)
+  ✔ MC to Discord @project(In-game)
