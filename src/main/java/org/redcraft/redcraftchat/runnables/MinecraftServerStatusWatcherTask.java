@@ -51,7 +51,7 @@ public class MinecraftServerStatusWatcherTask implements Runnable {
         for (Entry<String, ServerInfo> server : RedCraftChat.getInstance().getProxy().getServers().entrySet()) {
             if (isServerOnline(server.getValue())) {
                 if (!onlineServers.contains(server.getKey())) {
-                    RedCraftChat.getInstance().getProxy().getLogger().info("Server " + server.getKey() + " is marked as online");
+                    RedCraftChat.getInstance().getLogger().info("Server " + server.getKey() + " is marked as online");
                     onlineServers.add(server.getKey());
                     offlineServers.remove(server.getKey());
                     handleServerStatusChange(server.getValue(), true);
@@ -60,9 +60,9 @@ public class MinecraftServerStatusWatcherTask implements Runnable {
                 int failedScans = offlineServers.getOrDefault(server.getKey(), 0) + 1;
                 offlineServers.put(server.getKey(), failedScans);
                 if (failedScans < SCANS_COUNT + 1) {
-                    RedCraftChat.getInstance().getProxy().getLogger().warning("Server " + server.getKey() + " seems to be offline. Failed scans: " + failedScans);
+                    RedCraftChat.getInstance().getLogger().warning("Server " + server.getKey() + " seems to be offline. Failed scans: " + failedScans);
                 } else if (onlineServers.contains(server.getKey())) {
-                    RedCraftChat.getInstance().getProxy().getLogger().warning("Server " + server.getKey() + " is marked as offline");
+                    RedCraftChat.getInstance().getLogger().warning("Server " + server.getKey() + " is marked as offline");
                     onlineServers.remove(server.getKey());
                     handleServerStatusChange(server.getValue(), false);
                 }

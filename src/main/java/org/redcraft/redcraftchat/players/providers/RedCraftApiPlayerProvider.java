@@ -10,6 +10,7 @@ import java.util.UUID;
 import com.google.gson.Gson;
 
 import org.redcraft.redcraftchat.Config;
+import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import org.redcraft.redcraftchat.models.redcraft_api.PlayerPreferenceApi;
 import org.redcraft.redcraftchat.models.redcraft_api.PlayerProviderApi;
@@ -95,8 +96,24 @@ public class RedCraftApiPlayerProvider implements PlayerProvider {
     }
 
     public PlayerPreferences getPlayerPreferences(String username, boolean searchMinecraft, boolean searchDiscord) throws IOException, InterruptedException {
-        // TODO IMPLEMENT GET PLAYER PREFERENCES FROM USERNAME
-        return null;
+        String url = Config.playerApiUrl.replace("/player", "/minecraft-username") + "/" + username + "/uuid";
+
+        HttpRequest request = HttpRequest.newBuilder(
+                URI.create(url))
+                .header("accept", "application/json")
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() == 404) {
+            return null;
+        }
+
+        if (response.statusCode() != 200) {
+            throw new IOException("Failed to get player preferences: " + response.statusCode() + " - " + response.body());
+        }
+
+        return transform(new Gson().fromJson(response.body(), PlayerPreferenceApi.class));
     }
 
     public void deletePlayerPreferences(PlayerPreferences playerPreferences) throws IOException, InterruptedException {
