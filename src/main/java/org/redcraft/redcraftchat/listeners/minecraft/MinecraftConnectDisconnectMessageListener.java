@@ -66,7 +66,7 @@ public class MinecraftConnectDisconnectMessageListener implements Listener {
             }
             previousServers.remove(playerUniqueId);
 
-            String message = ChatColor.YELLOW + "%player% left the server";
+            String message = ChatColor.YELLOW + "%player% " + ChatColor.YELLOW + "left the server";
 
             Map<String, String> replacements = new HashMap<String, String>();
             replacements.put("%player%", event.getPlayer().getDisplayName());
