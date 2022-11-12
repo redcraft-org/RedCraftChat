@@ -68,7 +68,7 @@ public class MinecraftChatListener implements Listener {
                 try {
                     playerPreferences = PlayerPreferencesManager.getPlayerPreferences(potentialStaffMember);
                     if (playerPreferences.commandSpyEnabled) {
-                        BaseComponent[] formattedMessage = new ComponentBuilder("[CSPY][" + player.getDisplayName() + "] " + message).color(ChatColor.AQUA).create();
+                        BaseComponent[] formattedMessage = new ComponentBuilder("[CSPY][" + player.getDisplayName() + ChatColor.AQUA + "] " + message).color(ChatColor.AQUA).create();
                         potentialStaffMember.sendMessage(formattedMessage);
                     }
                 } catch (IOException | InterruptedException e) {
