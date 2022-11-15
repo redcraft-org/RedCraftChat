@@ -7,6 +7,7 @@ import java.util.ConcurrentModificationException;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
@@ -152,13 +153,14 @@ public class MinecraftRemoteServerMessageListener implements Listener {
     private static void waitForPreviousMessages(long chatPacketTimestamp) throws InterruptedException {
         // TODO redo this to use less CPU cycles while waiting our turn
         boolean waitingForPreviousMessage = true;
+        long timeoutTimestamp = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
         while (waitingForPreviousMessage) {
             try {
                 waitingForPreviousMessage = false;
                 Iterator<Long> it = pendingChatPackets.parallelStream().iterator();
                 while (it.hasNext()) {
                     long pendingPacketTimestamp = it.next();
-                    if (pendingPacketTimestamp < chatPacketTimestamp) {
+                    if (pendingPacketTimestamp < chatPacketTimestamp && chatPacketTimestamp < timeoutTimestamp) {
                         waitingForPreviousMessage = true;
                         break;
                     }
@@ -167,6 +169,7 @@ public class MinecraftRemoteServerMessageListener implements Listener {
                 Thread.sleep(1L);
             } catch (ConcurrentModificationException ex) {
                 // This shouldn't be required but it's not a massive issue
+                break;
             }
         }
     }
