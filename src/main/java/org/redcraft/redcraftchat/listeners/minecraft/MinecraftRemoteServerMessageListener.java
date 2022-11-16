@@ -154,13 +154,13 @@ public class MinecraftRemoteServerMessageListener implements Listener {
         // TODO redo this to use less CPU cycles while waiting our turn
         boolean waitingForPreviousMessage = true;
         long timeoutTimestamp = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
-        while (waitingForPreviousMessage) {
+        while (waitingForPreviousMessage && System.nanoTime() < timeoutTimestamp) {
             try {
                 waitingForPreviousMessage = false;
                 Iterator<Long> it = pendingChatPackets.parallelStream().iterator();
                 while (it.hasNext()) {
                     long pendingPacketTimestamp = it.next();
-                    if (pendingPacketTimestamp < chatPacketTimestamp && chatPacketTimestamp < timeoutTimestamp) {
+                    if (pendingPacketTimestamp < chatPacketTimestamp) {
                         waitingForPreviousMessage = true;
                         break;
                     }
