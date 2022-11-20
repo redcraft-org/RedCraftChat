@@ -28,6 +28,8 @@ import net.dv8tion.jda.api.entities.Activity.ActivityType;
 import net.dv8tion.jda.api.entities.Message.Attachment;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.requests.RestAction;
+import net.dv8tion.jda.api.utils.ChunkingFilter;
+import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
@@ -55,10 +57,17 @@ public class DiscordClient {
         builder.enableIntents(
                 GatewayIntent.getIntents(GatewayIntent.ALL_INTENTS));
 
+        builder.setChunkingFilter(ChunkingFilter.ALL);
+
+        builder.setMemberCachePolicy(MemberCachePolicy.ALL);
+
         try {
             jdaClient = builder.build();
 
             RedCraftChat.getInstance().getLogger().info("Connected to Discord!");
+            for (Guild guild : jdaClient.getGuilds()) {
+                RedCraftChat.getInstance().getLogger().info("Connected to guild: " + guild.getName() + " with " + guild.getMembers().size() + " members");
+            }
         } catch (LoginException e) {
             jdaCrashed = true;
             RedCraftChat.getInstance().getLogger().warning("Could not connect to Discord, check console");
