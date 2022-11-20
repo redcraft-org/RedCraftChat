@@ -142,7 +142,8 @@ public class MinecraftRemoteServerMessageListener implements Listener {
             }
         }
 
-        waitForPreviousMessages(chatPacketTimestamp);
+        // TODO re-enable
+        // waitForPreviousMessages(chatPacketTimestamp);
 
         pendingChatPackets.remove(chatPacketTimestamp);
 
@@ -154,13 +155,13 @@ public class MinecraftRemoteServerMessageListener implements Listener {
         // TODO redo this to use less CPU cycles while waiting our turn
         boolean waitingForPreviousMessage = true;
         long timeoutTimestamp = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
-        while (waitingForPreviousMessage && System.nanoTime() < timeoutTimestamp) {
+        while (waitingForPreviousMessage) {
             try {
                 waitingForPreviousMessage = false;
                 Iterator<Long> it = pendingChatPackets.parallelStream().iterator();
                 while (it.hasNext()) {
                     long pendingPacketTimestamp = it.next();
-                    if (pendingPacketTimestamp < chatPacketTimestamp) {
+                    if (pendingPacketTimestamp < chatPacketTimestamp && chatPacketTimestamp < timeoutTimestamp) {
                         waitingForPreviousMessage = true;
                         break;
                     }

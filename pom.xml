@@ -6,7 +6,7 @@
 
 	<groupId>org.redcraft.redcraftchat</groupId>
 	<artifactId>RedCraftChat</artifactId>
-	<version>0.0.7-SNAPSHOT</version>
+	<version>0.0.8-SNAPSHOT</version>
 
 	<repositories>
 		<repository>

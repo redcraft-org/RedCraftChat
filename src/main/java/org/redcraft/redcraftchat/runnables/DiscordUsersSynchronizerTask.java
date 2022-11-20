@@ -29,8 +29,6 @@ public class DiscordUsersSynchronizerTask implements Runnable {
     public static boolean syncDiscordUser(Member member) {
         try {
             return syncDiscordUser(member, LuckPermsProvider.get());
-        } catch (IllegalStateException e) {
-            // LuckPerms not installed
         } catch (Exception e) {
             RedCraftChat.getInstance().getLogger().severe("Error while syncing Discord user " + member.getUser().getName());
             e.printStackTrace();
@@ -185,6 +183,8 @@ public class DiscordUsersSynchronizerTask implements Runnable {
             }
         } catch (IllegalStateException e) {
             // LuckPerms not installed
+            RedCraftChat.getInstance().getLogger().severe("Error while building Discord LP roles");
+            e.printStackTrace();
         }
     }
 
@@ -215,11 +215,14 @@ public class DiscordUsersSynchronizerTask implements Runnable {
             }
         } catch (IllegalStateException e) {
             // LuckPerms not installed
+            RedCraftChat.getInstance().getLogger().severe("Error while building Discord locale roles");
+            e.printStackTrace();
         }
     }
 
     public void run() {
         buildDiscordLpRoles();
+        buildDiscordLocaleRoles();
         DiscordClient.getClient().getGuilds().forEach(guild -> {
             guild.getMembers().forEach(member -> {
                 if (member.getUser().isBot()) {
