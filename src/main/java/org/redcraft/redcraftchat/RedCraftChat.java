@@ -86,7 +86,9 @@ public class RedCraftChat extends Plugin {
 		pluginManager.registerListener(this, new MinecraftConnectMailListener());
 		pluginManager.registerListener(this, new MinecraftRemoteServerMessageListener());
 		pluginManager.registerListener(this, new MinecraftPlayerPreferencesListener());
-		pluginManager.registerListener(this, new MinecraftTabCompleteListener());
+		if (Config.enableTabCompletion) {
+			pluginManager.registerListener(this, new MinecraftTabCompleteListener());
+		}
 
 		// Game commands
 		pluginManager.registerCommand(this, new BroadcastMinecraftCommand());

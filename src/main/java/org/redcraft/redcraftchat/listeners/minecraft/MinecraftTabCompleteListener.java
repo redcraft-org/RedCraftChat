@@ -23,10 +23,22 @@ public class MinecraftTabCompleteListener implements Listener {
     }
 
     private void addPlayerNameSuggestions(List<String> suggestions) {
+        boolean isPlayerNameSuggestion = false;
+
+        // Check if it contains at least one player in the suggestions
         for (ProxiedPlayer player : ProxyServer.getInstance().getPlayers()) {
-            String playerName = player.getName();
-            if (!suggestions.contains(playerName)) {
-                suggestions.add(playerName);
+            if (suggestions.contains(player.getName())) {
+                isPlayerNameSuggestion = true;
+                break;
+            }
+        }
+
+        if (isPlayerNameSuggestion) {
+            for (ProxiedPlayer player : ProxyServer.getInstance().getPlayers()) {
+                String playerName = player.getName();
+                if (!suggestions.contains(playerName)) {
+                    suggestions.add(playerName);
+                }
             }
         }
     }

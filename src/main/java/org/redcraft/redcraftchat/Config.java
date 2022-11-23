@@ -34,6 +34,8 @@ public class Config {
 	public static String supportedLocalesApiUrl = "https://redcraft.org/api/v1/language/list";
 	public static String defaultLocale = "en-US";
 
+	public static boolean enableTabCompletion = true;
+
 	public static String deeplToken = "";
 	public static String deeplEndpoint = "https://api.deepl.com/v2/translate";
 	public static String deeplFormality = "normal";
@@ -92,6 +94,8 @@ public class Config {
 		supportedLocalesProvider = config.getString("supported-locales-provider");
 		supportedLocalesApiUrl = config.getString("supported-locales-api-url");
 		defaultLocale = config.getString("default-locale");
+
+		enableTabCompletion = config.getBoolean("enable-tab-completion");
 
 		deeplToken = config.getString("deepl-token");
 		deeplEndpoint = config.getString("deepl-endpoint");
