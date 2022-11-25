@@ -2,6 +2,7 @@ package org.redcraft.redcraftchat.runnables;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.HashMap;
 
 import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
@@ -43,9 +44,10 @@ public class ScheduledAnnouncementsTask implements Runnable {
             return;
         }
 
-        String message = ChatColor.GREEN + "[Auto announcement] " + ChatColor.GREEN + messages.pop();
+        String message = ChatColor.GREEN + "[Auto announcement] " + ChatColor.GREEN + ChatColor.translateAlternateColorCodes('&', messages.pop());
 
-        MinecraftDiscordBridge.getInstance().broadcastMessage(message);
+        MinecraftDiscordBridge.getInstance().broadcastMinecraft(message, new HashMap<String, String>());
+
     }
 
 }
