@@ -77,6 +77,7 @@ public class DeeplProvider implements TranslationProvider {
         HttpRequest request = HttpRequest.newBuilder(url.build())
                 .header("accept", "application/json")
                 .header("content-type", "application/json")
+                .header("Autorization", "DeepL-Auth-Key " + Config.deeplToken)
                 .GET()
                 .build();
 
