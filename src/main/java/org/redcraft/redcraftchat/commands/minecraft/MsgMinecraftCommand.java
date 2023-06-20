@@ -15,7 +15,7 @@ import net.md_5.bungee.api.plugin.Command;
 public class MsgMinecraftCommand extends Command {
 
     public MsgMinecraftCommand() {
-        super("msg", "redcraftchat.command.msg", "minecraft:tell", "tell", "m");
+        super("msg", "redcraftchat.command.msg", "minecraft:tell", "tell", "m", "w");
     }
 
     public class MsgMinecraftCommandHandler implements Runnable {
