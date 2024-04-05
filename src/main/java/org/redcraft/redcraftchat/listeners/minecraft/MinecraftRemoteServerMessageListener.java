@@ -60,17 +60,12 @@ public class MinecraftRemoteServerMessageListener implements Listener {
             ProxiedPlayer player = event.getPlayer();
 
             try {
-                String rawJson = chatPacket.getMessage();
-
-                BaseComponent[] messages = ComponentSerializer.parse(rawJson);
-
-                for (BaseComponent message : messages) {
-                    if (message instanceof TranslatableComponent) {
-                        TranslatableComponent component = (TranslatableComponent) message;
-                        String[] nonBroadcastableMessages = {"multiplayer.player.joined", "multiplayer.player.left"};
-                        if (Arrays.asList(nonBroadcastableMessages).contains(component.getTranslate())) {
-                            return;
-                        }
+                BaseComponent message = chatPacket.getMessage();
+                if (message instanceof TranslatableComponent) {
+                    TranslatableComponent component = (TranslatableComponent) message;
+                    String[] nonBroadcastableMessages = { "multiplayer.player.joined", "multiplayer.player.left" };
+                    if (Arrays.asList(nonBroadcastableMessages).contains(component.getTranslate())) {
+                        return;
                     }
                 }
 
@@ -82,13 +77,16 @@ public class MinecraftRemoteServerMessageListener implements Listener {
                     messageType = ChatMessageType.CHAT;
                 }
 
-                MinecraftRemoteServerMessageListener.handleChatPacket(chatPacketTime, event.getServer(), event.getPlayer(), messages, messageType);
+                MinecraftRemoteServerMessageListener.handleChatPacket(chatPacketTime, event.getServer(),
+                        event.getPlayer(), message, messageType);
             } catch (Exception e) {
                 String messageTemplate = "Encountered an exception while parsing incoming message from server %s to player %s: %s";
-                String errorMessage = String.format(messageTemplate, server.getInfo().getName(), player.getName(), e.getMessage());
+                String errorMessage = String.format(messageTemplate, server.getInfo().getName(), player.getName(),
+                        e.getMessage());
                 RedCraftChat.getInstance().getLogger().severe(errorMessage);
                 e.printStackTrace();
-                pendingChatPackets.clear(); // might send some pending chat packets in the wrong order but better than breaking the whole thing
+                pendingChatPackets.clear(); // might send some pending chat packets in the wrong order but better than
+                                            // breaking the whole thing
             }
         }
     }
@@ -102,16 +100,16 @@ public class MinecraftRemoteServerMessageListener implements Listener {
         channel.pipeline().addBefore("inbound-boss", "redcraft-chat", getPacketInterceptor(event));
     }
 
-    public static void handleChatPacket(long chatPacketTimestamp, Server server, ProxiedPlayer player, BaseComponent[] messages, ChatMessageType position) throws InterruptedException {
+    public static void handleChatPacket(long chatPacketTimestamp, Server server, ProxiedPlayer player,
+            BaseComponent message, ChatMessageType position) throws InterruptedException {
         pendingChatPackets.add(chatPacketTimestamp);
 
         List<BaseComponent> translatedMessageComponents = new ArrayList<BaseComponent>();
-        for (BaseComponent message : messages) {
-            if (!(message instanceof TextComponent)) {
-                // Not translatable, we consider the original message translated
-                translatedMessageComponents.add(message);
-                continue;
-            }
+
+        if (!(message instanceof TextComponent)) {
+            // Not translatable, we consider the original message translated
+            translatedMessageComponents.add(message);
+        } else {
             String translatedMessage = message.toLegacyText();
 
             try {
@@ -120,24 +118,26 @@ public class MinecraftRemoteServerMessageListener implements Listener {
                 if (PlayerPreferencesManager.playerSpeaksLanguage(player, sourceLanguage)) {
                     // Do not translate, player speaks the language of the message
                     translatedMessageComponents.add(message);
-                    continue;
-                }
-
-                String targetLanguage = PlayerPreferencesManager.getMainPlayerLanguage(player);
-                if (sourceLanguage != null && !sourceLanguage.equalsIgnoreCase(targetLanguage)) {
-                    translatedMessage = translationManager.translate(translatedMessage, sourceLanguage, targetLanguage);
+                } else {
+                    String targetLanguage = PlayerPreferencesManager.getMainPlayerLanguage(player);
+                    if (sourceLanguage != null && !sourceLanguage.equalsIgnoreCase(targetLanguage)) {
+                        translatedMessage = translationManager.translate(translatedMessage, sourceLanguage,
+                                targetLanguage);
+                    }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
                 String messageTemplate = "Error while translating message [%s -> %s] %s";
-                String debugMessage = String.format(messageTemplate, server.getInfo().getName(), player.getName(), message.toLegacyText());
+                String debugMessage = String.format(messageTemplate, server.getInfo().getName(), player.getName(),
+                        message.toLegacyText());
                 RedCraftChat.getInstance().getLogger().severe(debugMessage);
             }
 
             Text hover = new Text(message.toLegacyText());
             HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, hover);
 
-            for (BaseComponent translatedMessageComponent : new ComponentBuilder(translatedMessage).event(hoverEvent).create()) {
+            for (BaseComponent translatedMessageComponent : new ComponentBuilder(translatedMessage).event(hoverEvent)
+                    .create()) {
                 translatedMessageComponents.add(translatedMessageComponent);
             }
         }
