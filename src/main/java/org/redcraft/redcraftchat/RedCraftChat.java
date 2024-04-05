@@ -1,10 +1,9 @@
 package org.redcraft.redcraftchat;
 
 import net.dv8tion.jda.api.JDA;
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.plugin.Plugin;
-import net.md_5.bungee.api.plugin.PluginManager;
-import net.md_5.bungee.api.scheduler.TaskScheduler;
+import com.google.inject.Inject;
+import com.velocitypowered.api.plugin.Plugin;
+import com.velocitypowered.api.proxy.ProxyServer;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -40,12 +39,14 @@ import org.redcraft.redcraftchat.runnables.LuckPermsSynchronizerTask;
 import org.redcraft.redcraftchat.runnables.MinecraftServerStatusWatcherTask;
 import org.redcraft.redcraftchat.runnables.ScheduledAnnouncementsTask;
 
-public class RedCraftChat extends Plugin {
+@Plugin(id = "redcraftchat", name = "RedCraftChat", version = "0.1.0-SNAPSHOT", url = "https://redcraft.org", description = "I did it!", authors = {
+		"RedCraft", "lululombard" })
+public class RedCraftChat {
 
 	private static RedCraftChat instance;
 
-	@Override
-	public void onEnable() {
+	@Inject
+	public RedCraftChat() {
 		setInstance(this);
 
 		// Setup
@@ -77,7 +78,8 @@ public class RedCraftChat extends Plugin {
 		scheduler.schedule(this, new DiscordUsersSynchronizerTask(), 3, 60, TimeUnit.SECONDS);
 		scheduler.schedule(this, new LuckPermsSynchronizerTask(), 10, 30, TimeUnit.SECONDS);
 		scheduler.schedule(this, new MinecraftServerStatusWatcherTask(), 5, 5, TimeUnit.SECONDS);
-		scheduler.schedule(this, new ScheduledAnnouncementsTask(), Config.scheduledAnnouncementsInterval, Config.scheduledAnnouncementsInterval, TimeUnit.SECONDS);
+		scheduler.schedule(this, new ScheduledAnnouncementsTask(), Config.scheduledAnnouncementsInterval,
+				Config.scheduledAnnouncementsInterval, TimeUnit.SECONDS);
 
 		// Game listeners
 		PluginManager pluginManager = this.getProxy().getPluginManager();
@@ -104,7 +106,8 @@ public class RedCraftChat extends Plugin {
 
 	@Override
 	public void onDisable() {
-		MinecraftDiscordBridge.getInstance().broadcastMessage(ChatColor.RED + "" + ChatColor.BOLD + "Server is shutting down!");
+		MinecraftDiscordBridge.getInstance()
+				.broadcastMessage(ChatColor.RED + "" + ChatColor.BOLD + "Server is shutting down!");
 		getProxy().getScheduler().cancel(this);
 		getProxy().getPluginManager().unregisterListeners(this);
 		getProxy().getPluginManager().unregisterCommands(this);
