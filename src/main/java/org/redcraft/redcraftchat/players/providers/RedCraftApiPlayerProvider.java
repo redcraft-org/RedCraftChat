@@ -10,7 +10,6 @@ import java.util.UUID;
 import com.google.gson.Gson;
 
 import org.redcraft.redcraftchat.Config;
-import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import org.redcraft.redcraftchat.models.redcraft_api.PlayerPreferenceApi;
 import org.redcraft.redcraftchat.models.redcraft_api.PlayerProviderApi;
@@ -22,7 +21,8 @@ public class RedCraftApiPlayerProvider implements PlayerProvider {
 
     static HttpClient httpClient = HttpClient.newHttpClient();
 
-    public PlayerPreferences getPlayerPreferences(ProxiedPlayer player, boolean createIfNotFound) throws IOException, InterruptedException {
+    public PlayerPreferences getPlayerPreferences(ProxiedPlayer player, boolean createIfNotFound)
+            throws IOException, InterruptedException {
         String url = Config.playerApiUrl + "/" + player.getUniqueId().toString() + "?isProvider=true";
 
         HttpRequest request = HttpRequest.newBuilder(
@@ -42,13 +42,15 @@ public class RedCraftApiPlayerProvider implements PlayerProvider {
         }
 
         if (response.statusCode() != 200) {
-            throw new IOException("Failed to get player preferences: " + response.statusCode() + " - " + response.body());
+            throw new IOException(
+                    "Failed to get player preferences: " + response.statusCode() + " - " + response.body());
         }
 
         return transform(new Gson().fromJson(response.body(), PlayerPreferenceApi.class));
     }
 
-    public PlayerPreferences getPlayerPreferences(User user, boolean createIfNotFound) throws IOException, InterruptedException {
+    public PlayerPreferences getPlayerPreferences(User user, boolean createIfNotFound)
+            throws IOException, InterruptedException {
         String url = Config.playerApiUrl + "/" + user.getId() + "?isProvider=true";
 
         HttpRequest request = HttpRequest.newBuilder(
@@ -68,7 +70,8 @@ public class RedCraftApiPlayerProvider implements PlayerProvider {
         }
 
         if (response.statusCode() != 200) {
-            throw new IOException("Failed to get player preferences: " + response.statusCode() + " - " + response.body());
+            throw new IOException(
+                    "Failed to get player preferences: " + response.statusCode() + " - " + response.body());
         }
 
         return transform(new Gson().fromJson(response.body(), PlayerPreferenceApi.class));
@@ -89,13 +92,15 @@ public class RedCraftApiPlayerProvider implements PlayerProvider {
         }
 
         if (response.statusCode() != 200) {
-            throw new IOException("Failed to get player preferences: " + response.statusCode() + " - " + response.body());
+            throw new IOException(
+                    "Failed to get player preferences: " + response.statusCode() + " - " + response.body());
         }
 
         return transform(new Gson().fromJson(response.body(), PlayerPreferenceApi.class));
     }
 
-    public PlayerPreferences getPlayerPreferences(String username, boolean searchMinecraft, boolean searchDiscord) throws IOException, InterruptedException {
+    public PlayerPreferences getPlayerPreferences(String username, boolean searchMinecraft, boolean searchDiscord)
+            throws IOException, InterruptedException {
         String url = Config.playerApiUrl.replace("/player", "/minecraft-username") + "/" + username + "/uuid";
 
         HttpRequest request = HttpRequest.newBuilder(
@@ -110,7 +115,8 @@ public class RedCraftApiPlayerProvider implements PlayerProvider {
         }
 
         if (response.statusCode() != 200) {
-            throw new IOException("Failed to get player preferences: " + response.statusCode() + " - " + response.body());
+            throw new IOException(
+                    "Failed to get player preferences: " + response.statusCode() + " - " + response.body());
         }
 
         return transform(new Gson().fromJson(response.body(), PlayerPreferenceApi.class));
@@ -128,7 +134,8 @@ public class RedCraftApiPlayerProvider implements PlayerProvider {
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() != 200) {
-            throw new IOException("Failed to delete player preferences: " + response.statusCode() + " - " + response.body());
+            throw new IOException(
+                    "Failed to delete player preferences: " + response.statusCode() + " - " + response.body());
         }
     }
 
@@ -145,7 +152,8 @@ public class RedCraftApiPlayerProvider implements PlayerProvider {
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() != 200 && response.statusCode() != 201) {
-            throw new IOException("Failed to create player preferences: " + response.statusCode() + " - " + response.body());
+            throw new IOException(
+                    "Failed to create player preferences: " + response.statusCode() + " - " + response.body());
         }
     }
 
@@ -164,7 +172,8 @@ public class RedCraftApiPlayerProvider implements PlayerProvider {
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() != 200) {
-            throw new IOException("Failed to update player preferences: " + response.statusCode() + " - " + response.body());
+            throw new IOException(
+                    "Failed to update player preferences: " + response.statusCode() + " - " + response.body());
         }
     }
 
@@ -206,11 +215,13 @@ public class RedCraftApiPlayerProvider implements PlayerProvider {
         playerPreferences.id = preferences.internalUuid;
 
         if (preferences.minecraftUuid != null) {
-            playerPreferences.providers.add(new PlayerProviderApi("minecraft", preferences.minecraftUuid.toString(), preferences.lastKnownMinecraftName, preferences.previousKnownMinecraftName));
+            playerPreferences.providers.add(new PlayerProviderApi("minecraft", preferences.minecraftUuid.toString(),
+                    preferences.lastKnownMinecraftName, preferences.previousKnownMinecraftName));
         }
 
         if (preferences.discordId != null) {
-            playerPreferences.providers.add(new PlayerProviderApi("discord", preferences.discordId, preferences.lastKnownDiscordName, preferences.previousKnownDiscordName));
+            playerPreferences.providers.add(new PlayerProviderApi("discord", preferences.discordId,
+                    preferences.lastKnownDiscordName, preferences.previousKnownDiscordName));
         }
 
         playerPreferences.languages = preferences.languages;

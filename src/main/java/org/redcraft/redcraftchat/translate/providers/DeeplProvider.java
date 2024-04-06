@@ -2,7 +2,6 @@ package org.redcraft.redcraftchat.translate.providers;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.text.Normalizer.Form;
 
 import com.deepl.api.DeepLException;
 import com.deepl.api.Formality;
@@ -23,15 +22,17 @@ public class DeeplProvider implements TranslationProvider {
         this.translator = new Translator(Config.deeplToken);
     }
 
-    public String translate(String text, String sourceLanguageId, String targetLanguageId) throws IllegalStateException, URISyntaxException, IOException, InterruptedException {
+    public String translate(String text, String sourceLanguageId, String targetLanguageId)
+            throws IllegalStateException, URISyntaxException, IOException, InterruptedException {
         String sourceLangId = sourceLanguageId.toLowerCase().split("-")[0];
-        String targetLangId = targetLanguageId.toLowerCase();
+        String targetLangId = targetLanguageId.toLowerCase().split("-")[0];
         if (targetLangId.equals("en")) {
             targetLangId = "en-US";
         }
         String cacheKey = String.format("%s;%s;%s", sourceLangId, targetLangId, text);
 
-        String cachedDeeplResponse = (String) CacheManager.get(CacheCategory.DEEPL_TRANSLATED_MESSAGE, cacheKey, String.class);
+        String cachedDeeplResponse = (String) CacheManager.get(CacheCategory.DEEPL_TRANSLATED_MESSAGE, cacheKey,
+                String.class);
 
         if (cachedDeeplResponse != null) {
             return cachedDeeplResponse;
@@ -59,7 +60,8 @@ public class DeeplProvider implements TranslationProvider {
             result = translator.translateText(text, sourceLangId, targetLangId, translationOptions);
         } catch (DeepLException e) {
             e.printStackTrace();
-            throw new IllegalStateException("Could not translate text from " + sourceLangId + " to "  + targetLangId + " with Deepl: " + e.getMessage());
+            throw new IllegalStateException("Could not translate text from " + sourceLangId + " to " + targetLangId
+                    + " with Deepl: " + e.getMessage());
         }
 
         // TODO remove debug

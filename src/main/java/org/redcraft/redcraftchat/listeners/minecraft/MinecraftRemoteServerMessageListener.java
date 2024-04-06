@@ -1,13 +1,6 @@
 package org.redcraft.redcraftchat.listeners.minecraft;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.ConcurrentModificationException;
-import java.util.Deque;
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
@@ -31,7 +24,6 @@ import net.md_5.bungee.api.connection.Server;
 
 import net.md_5.bungee.api.event.ServerConnectedEvent;
 import net.md_5.bungee.api.plugin.Listener;
-import net.md_5.bungee.chat.ComponentSerializer;
 import net.md_5.bungee.event.EventHandler;
 import net.md_5.bungee.event.EventPriority;
 import net.md_5.bungee.protocol.PacketWrapper;
@@ -40,8 +32,6 @@ import net.md_5.bungee.protocol.packet.SystemChat;
 public class MinecraftRemoteServerMessageListener implements Listener {
 
     static TranslationManager translationManager = new TranslationManager(Config.upstreamTranslationProvider);
-
-    private static Deque<Long> pendingChatPackets = new ArrayDeque<>();
 
     public class AsyncChatParser implements Runnable {
         ServerConnectedEvent event;
@@ -85,8 +75,6 @@ public class MinecraftRemoteServerMessageListener implements Listener {
                         e.getMessage());
                 RedCraftChat.getInstance().getLogger().severe(errorMessage);
                 e.printStackTrace();
-                pendingChatPackets.clear(); // might send some pending chat packets in the wrong order but better than
-                                            // breaking the whole thing
             }
         }
     }
@@ -102,27 +90,24 @@ public class MinecraftRemoteServerMessageListener implements Listener {
 
     public static void handleChatPacket(long chatPacketTimestamp, Server server, ProxiedPlayer player,
             BaseComponent message, ChatMessageType position) throws InterruptedException {
-        pendingChatPackets.add(chatPacketTimestamp);
 
-        List<BaseComponent> translatedMessageComponents = new ArrayList<BaseComponent>();
+        BaseComponent translatedMessageComponent = message;
 
-        if (!(message instanceof TextComponent)) {
-            // Not translatable, we consider the original message translated
-            translatedMessageComponents.add(message);
-        } else {
+        if (message instanceof TextComponent) {
             String translatedMessage = message.toLegacyText();
 
             try {
                 String sourceLanguage = DetectionManager.getLanguage(translatedMessage);
 
-                if (PlayerPreferencesManager.playerSpeaksLanguage(player, sourceLanguage)) {
-                    // Do not translate, player speaks the language of the message
-                    translatedMessageComponents.add(message);
-                } else {
+                if (!PlayerPreferencesManager.playerSpeaksLanguage(player, sourceLanguage)) {
                     String targetLanguage = PlayerPreferencesManager.getMainPlayerLanguage(player);
                     if (sourceLanguage != null && !sourceLanguage.equalsIgnoreCase(targetLanguage)) {
                         translatedMessage = translationManager.translate(translatedMessage, sourceLanguage,
                                 targetLanguage);
+                        Text hover = new Text(message.toLegacyText());
+                        HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, hover);
+                        translatedMessageComponent = new ComponentBuilder(translatedMessage).event(hoverEvent)
+                                .create()[0];
                     }
                 }
             } catch (Exception e) {
@@ -132,47 +117,10 @@ public class MinecraftRemoteServerMessageListener implements Listener {
                         message.toLegacyText());
                 RedCraftChat.getInstance().getLogger().severe(debugMessage);
             }
-
-            Text hover = new Text(message.toLegacyText());
-            HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, hover);
-
-            for (BaseComponent translatedMessageComponent : new ComponentBuilder(translatedMessage).event(hoverEvent)
-                    .create()) {
-                translatedMessageComponents.add(translatedMessageComponent);
-            }
         }
-
-        // TODO re-enable
-        // waitForPreviousMessages(chatPacketTimestamp);
-
-        pendingChatPackets.remove(chatPacketTimestamp);
 
         // Send messages
-        player.sendMessage(position, translatedMessageComponents.toArray(BaseComponent[]::new));
-    }
-
-    private static void waitForPreviousMessages(long chatPacketTimestamp) throws InterruptedException {
-        // TODO redo this to use less CPU cycles while waiting our turn
-        boolean waitingForPreviousMessage = true;
-        long timeoutTimestamp = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
-        while (waitingForPreviousMessage) {
-            try {
-                waitingForPreviousMessage = false;
-                Iterator<Long> it = pendingChatPackets.parallelStream().iterator();
-                while (it.hasNext()) {
-                    long pendingPacketTimestamp = it.next();
-                    if (pendingPacketTimestamp < chatPacketTimestamp && chatPacketTimestamp < timeoutTimestamp) {
-                        waitingForPreviousMessage = true;
-                        break;
-                    }
-                }
-                // Wait for our turn
-                Thread.sleep(1L);
-            } catch (ConcurrentModificationException ex) {
-                // This shouldn't be required but it's not a massive issue
-                break;
-            }
-        }
+        player.sendMessage(position, translatedMessageComponent);
     }
 
     private ChannelDuplexHandler getPacketInterceptor(ServerConnectedEvent event) {
