@@ -141,8 +141,11 @@ public class MailMinecraftCommand implements SimpleCommand {
             int totalPages = (int) Math.ceil(mails.size() / (double) elementsPerPage);
 
             // BungeeCord never checked the upper bound and threw out of the async
-            // task, leaving the player without a menu and without an explanation
-            if (totalPages > 0 && page > totalPages) {
+            // task, leaving the player without a menu and without an explanation.
+            // An empty inbox has no pages but still renders its page 1 menu, so the
+            // bound is never below 1, otherwise "/mail list 3" on an empty inbox
+            // walks past the end of the list and throws again.
+            if (page > Math.max(totalPages, 1)) {
                 BasicMessageFormatter.sendInternalError(player, "Invalid page number");
                 return;
             }
