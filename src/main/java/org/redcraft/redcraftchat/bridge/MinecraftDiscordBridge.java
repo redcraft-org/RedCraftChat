@@ -207,18 +207,19 @@ public class MinecraftDiscordBridge {
 
         String parsedTranslatedMessage = EmojiParser.parseToAliases(translatedMessage);
 
-        String formattedMessage = "[" + languagePrefix + "]"
+        String formattedPrefixes = "[" + languagePrefix + "]"
                 + "[" + serverPrefix + "]"
-                + "[" + senderPrefix + "] "
-                + parsedTranslatedMessage;
+                + "[" + senderPrefix + "] ";
 
-        Component message = LegacyComponentSerializer.legacySection().deserialize(formattedMessage);
+        Component prefixes = LegacyComponentSerializer.legacySection().deserialize(formattedPrefixes);
+        Component body = LegacyComponentSerializer.legacySection().deserialize(parsedTranslatedMessage);
 
+        // The original text hovers over the message itself, not over the prefixes
         if (targetLanguage != null) {
-            message = message.hoverEvent(HoverEvent.showText(LegacyComponentSerializer.legacySection().deserialize(originalMessage)));
+            body = body.hoverEvent(HoverEvent.showText(LegacyComponentSerializer.legacySection().deserialize(originalMessage)));
         }
 
-        receiver.sendMessage(message);
+        receiver.sendMessage(Component.empty().append(prefixes).append(body));
     }
 
     public void translateAndPostMessage(Player sender, String message) {

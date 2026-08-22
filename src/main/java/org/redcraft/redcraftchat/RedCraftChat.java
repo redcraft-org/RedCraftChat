@@ -28,6 +28,7 @@ import org.redcraft.redcraftchat.commands.discord.LinkMinecraftAccountDiscordCom
 import org.redcraft.redcraftchat.database.DatabaseManager;
 import org.redcraft.redcraftchat.discord.DiscordClient;
 import org.redcraft.redcraftchat.helpers.LegacyText;
+import org.redcraft.redcraftchat.listeners.minecraft.MinecraftChatListener;
 import org.redcraft.redcraftchat.listeners.minecraft.MinecraftDisplayNameListener;
 import org.redcraft.redcraftchat.listeners.packets.ChatSignatureStripper;
 import org.redcraft.redcraftchat.runnables.DiscordChannelSynchronizerTask;
@@ -113,8 +114,8 @@ public class RedCraftChat {
 
 		// Game listeners
 		proxy.getEventManager().register(this, new MinecraftDisplayNameListener());
-		// TODO wave 2: register the chat bridge listeners once the packet layer is ported to PacketEvents
-		// proxy.getEventManager().register(this, new MinecraftChatListener());
+		proxy.getEventManager().register(this, new MinecraftChatListener());
+		// TODO wave 2: register the remaining bridge listeners
 		// proxy.getEventManager().register(this, new MinecraftConnectDisconnectMessageListener());
 		// proxy.getEventManager().register(this, new MinecraftConnectMailListener());
 		// proxy.getEventManager().register(this, new MinecraftRemoteServerMessageListener());

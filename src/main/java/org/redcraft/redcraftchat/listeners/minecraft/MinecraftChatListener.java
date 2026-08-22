@@ -4,13 +4,16 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import org.redcraft.redcraftchat.RedCraftChat;
+import org.redcraft.redcraftchat.bridge.MinecraftDiscordBridge;
 import org.redcraft.redcraftchat.helpers.LegacyText;
 import org.redcraft.redcraftchat.players.DisplayNameManager;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 
-import com.velocitypowered.api.event.PostOrder;
+import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.event.command.CommandExecuteEvent;
 import com.velocitypowered.api.event.player.PlayerChatEvent;
 import com.velocitypowered.api.proxy.Player;
 
@@ -25,14 +28,41 @@ public class MinecraftChatListener {
         LegacyText.UNDERLINE
     );
 
-    @Subscribe(order = PostOrder.NORMAL)
+    @Subscribe
     public void onChatEvent(PlayerChatEvent event) {
-        // TODO wave 2: port the chat pipeline. On Velocity, cancelling and reposting
-        // player chat conflicts with signed messages, and commands do not go through
-        // PlayerChatEvent (command spy will move to CommandExecuteEvent).
-        // The BungeeCord version stripped unauthorized formatting with the
-        // redcraftchat.formatting.* permissions then called
-        // MinecraftDiscordBridge.getInstance().translateAndPostMessage(player, message)
+        if (!event.getResult().isAllowed()) {
+            return;
+        }
+
+        Player player = event.getPlayer();
+
+        String message = stripUnauthorizedFormatting(player, event.getMessage());
+
+        // The message never reaches the backend, the proxy re-emits a translated
+        // copy to every recipient itself
+        event.setResult(PlayerChatEvent.ChatResult.denied());
+
+        MinecraftDiscordBridge.getInstance().translateAndPostMessage(player, message);
+    }
+
+    /**
+     * BungeeCord fired a single event for chat and commands alike, Velocity does
+     * not, so the command spy half of the original listener lives here. The
+     * command comes without its leading slash, it is added back so the spy output
+     * keeps showing what the player actually typed.
+     */
+    @Subscribe
+    public void onCommandExecute(CommandExecuteEvent event) {
+        if (!event.getResult().isAllowed()) {
+            return;
+        }
+
+        CommandSource source = event.getCommandSource();
+        if (!(source instanceof Player)) {
+            return;
+        }
+
+        handleCommandSpy((Player) source, "/" + event.getCommand());
     }
 
     public String stripUnauthorizedFormatting(Player player, String rawMessage) {
@@ -56,7 +86,7 @@ public class MinecraftChatListener {
     }
 
     public void handleCommandSpy(Player player, String message) {
-        for (Player potentialStaffMember : org.redcraft.redcraftchat.RedCraftChat.getInstance().getProxy().getAllPlayers()) {
+        for (Player potentialStaffMember : RedCraftChat.getInstance().getProxy().getAllPlayers()) {
             if (!player.equals(potentialStaffMember) && potentialStaffMember.hasPermission("redcraftchat.moderation.commandspy")) {
                 PlayerPreferences playerPreferences;
                 try {
