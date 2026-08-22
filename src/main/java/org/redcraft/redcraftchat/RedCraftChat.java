@@ -143,14 +143,19 @@ public class RedCraftChat {
 		}
 
 		// Game commands
+		// BungeeCord also claimed the namespaced minecraft:me and minecraft:tell
+		// aliases so the backend copies could not be used to sidestep the proxy.
+		// Velocity lowercases aliases without documenting what characters it accepts,
+		// and a rejected alias aborts the rest of this method, so they are left out
+		// until someone confirms them against a running proxy.
 		CommandManager commandManager = proxy.getCommandManager();
 		commandManager.register(commandManager.metaBuilder("broadcast").aliases("bc", "alert").plugin(this).build(), new BroadcastMinecraftCommand());
 		commandManager.register(commandManager.metaBuilder("commandspy").aliases("cspy").plugin(this).build(), new CommandSpyMinecraftCommand());
 		commandManager.register(commandManager.metaBuilder("lang").aliases("languages").plugin(this).build(), new LangMinecraftCommand());
 		commandManager.register(commandManager.metaBuilder("discord-link").plugin(this).build(), new LinkDiscordAccountMinecraftCommand());
 		commandManager.register(commandManager.metaBuilder("mail").plugin(this).build(), new MailMinecraftCommand());
-		commandManager.register(commandManager.metaBuilder("msg").aliases("minecraft:tell", "tell", "m", "w").plugin(this).build(), new MsgMinecraftCommand());
-		commandManager.register(commandManager.metaBuilder("me").aliases("minecraft:me").plugin(this).build(), new MeMinecraftCommand());
+		commandManager.register(commandManager.metaBuilder("msg").aliases("tell", "m", "w").plugin(this).build(), new MsgMinecraftCommand());
+		commandManager.register(commandManager.metaBuilder("me").plugin(this).build(), new MeMinecraftCommand());
 		commandManager.register(commandManager.metaBuilder("player-settings").plugin(this).build(), new PlayerSettingsMinecraftCommand());
 		commandManager.register(commandManager.metaBuilder("reply").aliases("r").plugin(this).build(), new ReplyMinecraftCommand());
 	}
