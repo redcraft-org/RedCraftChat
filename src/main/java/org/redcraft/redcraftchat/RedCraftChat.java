@@ -31,6 +31,7 @@ import org.redcraft.redcraftchat.helpers.LegacyText;
 import org.redcraft.redcraftchat.listeners.minecraft.MinecraftChatListener;
 import org.redcraft.redcraftchat.listeners.minecraft.MinecraftDisplayNameListener;
 import org.redcraft.redcraftchat.listeners.packets.ChatSignatureStripper;
+import org.redcraft.redcraftchat.listeners.packets.SystemChatInterceptor;
 import org.redcraft.redcraftchat.runnables.DiscordChannelSynchronizerTask;
 import org.redcraft.redcraftchat.runnables.DiscordUsersSynchronizerTask;
 import org.redcraft.redcraftchat.runnables.LuckPermsSynchronizerTask;
@@ -110,6 +111,7 @@ public class RedCraftChat {
 		if (Config.stripChatSignatures) {
 			PacketEvents.getAPI().getEventManager().registerListener(new ChatSignatureStripper());
 		}
+		PacketEvents.getAPI().getEventManager().registerListener(new SystemChatInterceptor());
 		PacketEvents.getAPI().init();
 
 		// Game listeners
@@ -118,7 +120,6 @@ public class RedCraftChat {
 		// TODO wave 2: register the remaining bridge listeners
 		// proxy.getEventManager().register(this, new MinecraftConnectDisconnectMessageListener());
 		// proxy.getEventManager().register(this, new MinecraftConnectMailListener());
-		// proxy.getEventManager().register(this, new MinecraftRemoteServerMessageListener());
 		// proxy.getEventManager().register(this, new MinecraftPlayerPreferencesListener());
 		// if (Config.enableTabCompletion) {
 		// 	proxy.getEventManager().register(this, new MinecraftTabCompleteListener());

@@ -39,7 +39,9 @@ public class MinecraftChatListener {
         String message = stripUnauthorizedFormatting(player, event.getMessage());
 
         // The message never reaches the backend, the proxy re-emits a translated
-        // copy to every recipient itself
+        // copy to every recipient itself. Velocity marks setResult deprecated
+        // without offering another way to deny a message, and denying is only
+        // lawful because the signature was stripped off the packet beforehand.
         event.setResult(PlayerChatEvent.ChatResult.denied());
 
         MinecraftDiscordBridge.getInstance().translateAndPostMessage(player, message);
