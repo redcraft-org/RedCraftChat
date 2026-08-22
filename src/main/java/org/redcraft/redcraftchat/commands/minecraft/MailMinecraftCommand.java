@@ -274,7 +274,10 @@ public class MailMinecraftCommand implements SimpleCommand {
 
             fullMessage += "\n\n" + LegacyText.GREEN + clickToReplyText;
 
-            Component preview = Component.text(messagePreview, NamedTextColor.WHITE)
+            // Mail bodies carry the sender's own colour codes, BungeeCord left them
+            // literal in the component text and let the client sort them out
+            Component preview = BasicMessageFormatter.deserialize(messagePreview)
+                    .colorIfAbsent(NamedTextColor.WHITE)
                     .hoverEvent(showText(fullMessage))
                     .clickEvent(ClickEvent.suggestCommand("/mail send " + senderDisplayName + " "));
 
