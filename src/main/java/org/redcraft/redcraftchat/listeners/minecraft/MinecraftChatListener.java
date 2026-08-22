@@ -4,72 +4,66 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import org.redcraft.redcraftchat.bridge.MinecraftDiscordBridge;
+import org.redcraft.redcraftchat.helpers.LegacyText;
+import org.redcraft.redcraftchat.players.DisplayNameManager;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.ProxyServer;
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.ComponentBuilder;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
-import net.md_5.bungee.api.event.ChatEvent;
-import net.md_5.bungee.api.plugin.Listener;
-import net.md_5.bungee.event.EventHandler;
-import net.md_5.bungee.event.EventPriority;
+import com.velocitypowered.api.event.PostOrder;
+import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.event.player.PlayerChatEvent;
+import com.velocitypowered.api.proxy.Player;
 
-public class MinecraftChatListener implements Listener {
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
-    private List<ChatColor> stylingCodes = Arrays.asList(
-        ChatColor.BOLD,
-        ChatColor.ITALIC,
-        ChatColor.STRIKETHROUGH,
-        ChatColor.UNDERLINE
+public class MinecraftChatListener {
+
+    private List<String> stylingCodes = Arrays.asList(
+        LegacyText.BOLD,
+        LegacyText.ITALIC,
+        LegacyText.STRIKETHROUGH,
+        LegacyText.UNDERLINE
     );
 
-    @EventHandler(priority = EventPriority.NORMAL)
-    public void onChatEvent(ChatEvent event) {
-        if (!(event.getSender() instanceof ProxiedPlayer) || event.isCancelled()) {
-            return;
-        }
+    @Subscribe(order = PostOrder.NORMAL)
+    public void onChatEvent(PlayerChatEvent event) {
+        // TODO wave 2: port the chat pipeline. On Velocity, cancelling and reposting
+        // player chat conflicts with signed messages, and commands do not go through
+        // PlayerChatEvent (command spy will move to CommandExecuteEvent).
+        // The BungeeCord version stripped unauthorized formatting with the
+        // redcraftchat.formatting.* permissions then called
+        // MinecraftDiscordBridge.getInstance().translateAndPostMessage(player, message)
+    }
 
-        ProxiedPlayer player = (ProxiedPlayer) event.getSender();
-
-        if (event.isProxyCommand() || event.isCommand()) {
-            handleCommandSpy(player, event.getMessage());
-            return;
-        }
-
-        String message = ChatColor.translateAlternateColorCodes('&', event.getMessage());
+    public String stripUnauthorizedFormatting(Player player, String rawMessage) {
+        String message = LegacyText.translateAlternateColorCodes('&', rawMessage);
 
         if (!player.hasPermission("redcraftchat.formatting.colors")) {
-            message = ChatColor.stripColor(message);
+            message = LegacyText.stripColor(message);
         }
 
         if (!player.hasPermission("redcraftchat.formatting.styling")) {
-            for (ChatColor bannedCode : stylingCodes) {
-                message = message.replace(bannedCode.toString(), "");
+            for (String bannedCode : stylingCodes) {
+                message = message.replace(bannedCode, "");
             }
         }
 
         if (!player.hasPermission("redcraftchat.formatting.magic")) {
-            message = message.replace(ChatColor.MAGIC.toString(), "");
+            message = message.replace(LegacyText.MAGIC, "");
         }
 
-        event.setCancelled(true);
-
-        MinecraftDiscordBridge.getInstance().translateAndPostMessage(player, message);
+        return message;
     }
 
-    public void handleCommandSpy(ProxiedPlayer player, String message) {
-        for (ProxiedPlayer potentialStaffMember : ProxyServer.getInstance().getPlayers()) {
+    public void handleCommandSpy(Player player, String message) {
+        for (Player potentialStaffMember : org.redcraft.redcraftchat.RedCraftChat.getInstance().getProxy().getAllPlayers()) {
             if (!player.equals(potentialStaffMember) && potentialStaffMember.hasPermission("redcraftchat.moderation.commandspy")) {
                 PlayerPreferences playerPreferences;
                 try {
                     playerPreferences = PlayerPreferencesManager.getPlayerPreferences(potentialStaffMember);
                     if (playerPreferences.commandSpyEnabled) {
-                        BaseComponent[] formattedMessage = new ComponentBuilder("[CSPY][" + player.getDisplayName() + ChatColor.AQUA + "] " + message).color(ChatColor.AQUA).create();
-                        potentialStaffMember.sendMessage(formattedMessage);
+                        String formattedMessage = LegacyText.AQUA + "[CSPY][" + DisplayNameManager.getDisplayName(player) + LegacyText.AQUA + "] " + message;
+                        potentialStaffMember.sendMessage(LegacyComponentSerializer.legacySection().deserialize(formattedMessage));
                     }
                 } catch (IOException | InterruptedException e) {
                     e.printStackTrace();

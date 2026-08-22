@@ -4,28 +4,24 @@ import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.helpers.BasicMessageFormatter;
 import org.redcraft.redcraftchat.messaging.PrivateMessagesManager;
 
-import net.md_5.bungee.api.CommandSender;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
-import net.md_5.bungee.api.plugin.Command;
+import com.velocitypowered.api.command.CommandSource;
+import com.velocitypowered.api.command.SimpleCommand;
+import com.velocitypowered.api.proxy.Player;
 
-public class ReplyMinecraftCommand extends Command {
-
-    public ReplyMinecraftCommand() {
-        super("reply", "redcraftchat.command.msg", "r");
-    }
+public class ReplyMinecraftCommand implements SimpleCommand {
 
     public class ReplyMinecraftCommandHandler implements Runnable {
-        CommandSender sender;
+        CommandSource sender;
         String[] args;
 
-        public ReplyMinecraftCommandHandler(CommandSender sender, String[] args) {
+        public ReplyMinecraftCommandHandler(CommandSource sender, String[] args) {
             this.sender = sender;
             this.args = args;
         }
 
         @Override
         public void run() {
-            if (!(sender instanceof ProxiedPlayer)) {
+            if (!(sender instanceof Player)) {
                 BasicMessageFormatter.sendInternalError(sender, "You must be a player to use this command");
                 return;
             }
@@ -36,15 +32,20 @@ public class ReplyMinecraftCommand extends Command {
             }
 
             String message =  String.join(" ", args);
-            if (!PrivateMessagesManager.handleReply((ProxiedPlayer) sender, message)) {
+            if (!PrivateMessagesManager.handleReply((Player) sender, message)) {
                 BasicMessageFormatter.sendInternalError(sender, "You do not have anyone to reply to");
             }
         }
     }
 
     @Override
-    public void execute(CommandSender sender, String[] args) {
-        var commandHandler = new ReplyMinecraftCommandHandler(sender, args);
-        RedCraftChat.getInstance().getProxy().getScheduler().runAsync(RedCraftChat.getInstance(), commandHandler);
+    public void execute(Invocation invocation) {
+        var commandHandler = new ReplyMinecraftCommandHandler(invocation.source(), invocation.arguments());
+        RedCraftChat.getInstance().getProxy().getScheduler().buildTask(RedCraftChat.getInstance(), commandHandler).schedule();
+    }
+
+    @Override
+    public boolean hasPermission(Invocation invocation) {
+        return invocation.source().hasPermission("redcraftchat.command.msg");
     }
 }

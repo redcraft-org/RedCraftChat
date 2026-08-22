@@ -3,22 +3,18 @@ package org.redcraft.redcraftchat.commands.minecraft;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.bridge.MinecraftDiscordBridge;
 import org.redcraft.redcraftchat.helpers.BasicMessageFormatter;
+import org.redcraft.redcraftchat.helpers.LegacyText;
 
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.CommandSender;
-import net.md_5.bungee.api.plugin.Command;
+import com.velocitypowered.api.command.CommandSource;
+import com.velocitypowered.api.command.SimpleCommand;
 
-public class BroadcastMinecraftCommand extends Command {
-
-    public BroadcastMinecraftCommand() {
-        super("broadcast", "redcraftchat.command.broadcast", "bc", "alert");
-    }
+public class BroadcastMinecraftCommand implements SimpleCommand {
 
     public class BroadcastMinecraftCommandHandler implements Runnable {
-        CommandSender sender;
+        CommandSource sender;
         String[] args;
 
-        public BroadcastMinecraftCommandHandler(CommandSender sender, String[] args) {
+        public BroadcastMinecraftCommandHandler(CommandSource sender, String[] args) {
             this.sender = sender;
             this.args = args;
         }
@@ -33,13 +29,18 @@ public class BroadcastMinecraftCommand extends Command {
             String message = String.join(" ", args);
 
             // TODO embeds
-            MinecraftDiscordBridge.getInstance().broadcastMessage(ChatColor.DARK_RED + "" + ChatColor.BOLD + "[Alert]" + ChatColor.RESET + " " + ChatColor.YELLOW + message);
+            MinecraftDiscordBridge.getInstance().broadcastMessage(LegacyText.DARK_RED + LegacyText.BOLD + "[Alert]" + LegacyText.RESET + " " + LegacyText.YELLOW + message);
         }
     }
 
     @Override
-    public void execute(CommandSender sender, String[] args) {
-        var commandHandler = new BroadcastMinecraftCommandHandler(sender, args);
-        RedCraftChat.getInstance().getProxy().getScheduler().runAsync(RedCraftChat.getInstance(), commandHandler);
+    public void execute(Invocation invocation) {
+        var commandHandler = new BroadcastMinecraftCommandHandler(invocation.source(), invocation.arguments());
+        RedCraftChat.getInstance().getProxy().getScheduler().buildTask(RedCraftChat.getInstance(), commandHandler).schedule();
+    }
+
+    @Override
+    public boolean hasPermission(Invocation invocation) {
+        return invocation.source().hasPermission("redcraftchat.command.broadcast");
     }
 }

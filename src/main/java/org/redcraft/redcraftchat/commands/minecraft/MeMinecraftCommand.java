@@ -6,35 +6,32 @@ import java.util.Map;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.bridge.MinecraftDiscordBridge;
 import org.redcraft.redcraftchat.helpers.BasicMessageFormatter;
+import org.redcraft.redcraftchat.helpers.LegacyText;
+import org.redcraft.redcraftchat.players.DisplayNameManager;
 
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.CommandSender;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
-import net.md_5.bungee.api.plugin.Command;
+import com.velocitypowered.api.command.CommandSource;
+import com.velocitypowered.api.command.SimpleCommand;
+import com.velocitypowered.api.proxy.Player;
 
-public class MeMinecraftCommand extends Command {
-
-    public MeMinecraftCommand() {
-        super("me", "redcraftchat.command.me", "minecraft:me");
-    }
+public class MeMinecraftCommand implements SimpleCommand {
 
     public class MeMinecraftCommandHandler implements Runnable {
-        CommandSender sender;
+        CommandSource sender;
         String[] args;
 
-        public MeMinecraftCommandHandler(CommandSender sender, String[] args) {
+        public MeMinecraftCommandHandler(CommandSource sender, String[] args) {
             this.sender = sender;
             this.args = args;
         }
 
         @Override
         public void run() {
-            if (!(sender instanceof ProxiedPlayer)) {
+            if (!(sender instanceof Player)) {
                 BasicMessageFormatter.sendInternalError(sender, "This command can only be used by players");
                 return;
             }
 
-            ProxiedPlayer player = (ProxiedPlayer) sender;
+            Player player = (Player) sender;
 
             if (args.length < 1) {
                 BasicMessageFormatter.sendInternalError(player, "You must specify a message");
@@ -43,14 +40,19 @@ public class MeMinecraftCommand extends Command {
 
             String message = String.join(" ", args);
             Map<String, String> replacements = new HashMap<>();
-            replacements.put("%player%", ChatColor.DARK_PURPLE + " * " + ChatColor.ITALIC + player.getDisplayName() + ChatColor.LIGHT_PURPLE + ChatColor.ITALIC);
+            replacements.put("%player%", LegacyText.DARK_PURPLE + " * " + LegacyText.ITALIC + DisplayNameManager.getDisplayName(player) + LegacyText.LIGHT_PURPLE + LegacyText.ITALIC);
             MinecraftDiscordBridge.getInstance().broadcastMessage("%player% " + message, replacements, player);
         }
     }
 
     @Override
-    public void execute(CommandSender sender, String[] args) {
-        var commandHandler = new MeMinecraftCommandHandler(sender, args);
-        RedCraftChat.getInstance().getProxy().getScheduler().runAsync(RedCraftChat.getInstance(), commandHandler);
+    public void execute(Invocation invocation) {
+        var commandHandler = new MeMinecraftCommandHandler(invocation.source(), invocation.arguments());
+        RedCraftChat.getInstance().getProxy().getScheduler().buildTask(RedCraftChat.getInstance(), commandHandler).schedule();
+    }
+
+    @Override
+    public boolean hasPermission(Invocation invocation) {
+        return invocation.source().hasPermission("redcraftchat.command.me");
     }
 }

@@ -7,16 +7,15 @@ import java.util.concurrent.TimeUnit;
 
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.bridge.MinecraftDiscordBridge;
+import org.redcraft.redcraftchat.helpers.LegacyText;
+import org.redcraft.redcraftchat.players.DisplayNameManager;
 import org.redcraft.redcraftchat.runnables.LuckPermsSynchronizerTask;
 
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.event.PlayerDisconnectEvent;
-import net.md_5.bungee.api.event.ServerConnectedEvent;
-import net.md_5.bungee.api.event.ServerDisconnectEvent;
-import net.md_5.bungee.api.plugin.Listener;
-import net.md_5.bungee.event.EventHandler;
+import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.event.connection.DisconnectEvent;
+import com.velocitypowered.api.event.player.ServerConnectedEvent;
 
-public class MinecraftConnectDisconnectMessageListener implements Listener {
+public class MinecraftConnectDisconnectMessageListener {
 
     private Map<UUID, String> previousServers = new HashMap<UUID, String>();
 
@@ -32,19 +31,19 @@ public class MinecraftConnectDisconnectMessageListener implements Listener {
             LuckPermsSynchronizerTask.updateUsername(event.getPlayer());
 
             String previousServer = previousServers.get(event.getPlayer().getUniqueId());
-            String currentServer = this.event.getServer().getInfo().getMotd();
+            String currentServer = this.event.getServer().getServerInfo().getName();
             previousServers.put(event.getPlayer().getUniqueId(), currentServer);
             String message;
             if (previousServer != null && !previousServer.equals(currentServer)) {
-                message = ChatColor.YELLOW + "%player% left the %previous_server% server and joined the %current_server% server";
+                message = LegacyText.YELLOW + "%player% left the %previous_server% server and joined the %current_server% server";
             } else {
-                message = ChatColor.YELLOW + "%player% joined the %current_server% server";
+                message = LegacyText.YELLOW + "%player% joined the %current_server% server";
             }
 
             Map<String, String> replacements = new HashMap<String, String>();
-            replacements.put("%player%", event.getPlayer().getDisplayName() + ChatColor.YELLOW);
-            replacements.put("%previous_server%", previousServer + ChatColor.YELLOW);
-            replacements.put("%current_server%", currentServer + ChatColor.YELLOW);
+            replacements.put("%player%", DisplayNameManager.getDisplayName(event.getPlayer()) + LegacyText.YELLOW);
+            replacements.put("%previous_server%", previousServer + LegacyText.YELLOW);
+            replacements.put("%current_server%", currentServer + LegacyText.YELLOW);
 
             // TODO make nice embeds
             MinecraftDiscordBridge.getInstance().broadcastMessage(message, replacements);
@@ -52,9 +51,9 @@ public class MinecraftConnectDisconnectMessageListener implements Listener {
     }
 
     public class AsyncPlayerLeaveHandler implements Runnable {
-        PlayerDisconnectEvent event;
+        DisconnectEvent event;
 
-        AsyncPlayerLeaveHandler(PlayerDisconnectEvent event) {
+        AsyncPlayerLeaveHandler(DisconnectEvent event) {
             this.event = event;
         }
 
@@ -66,28 +65,23 @@ public class MinecraftConnectDisconnectMessageListener implements Listener {
             }
             previousServers.remove(playerUniqueId);
 
-            String message = ChatColor.YELLOW + "%player% " + ChatColor.YELLOW + "left the server";
+            String message = LegacyText.YELLOW + "%player% " + LegacyText.YELLOW + "left the server";
 
             Map<String, String> replacements = new HashMap<String, String>();
-            replacements.put("%player%", event.getPlayer().getDisplayName());
+            replacements.put("%player%", DisplayNameManager.getDisplayName(event.getPlayer()));
 
             MinecraftDiscordBridge.getInstance().broadcastMessage(message, replacements);
         }
     }
 
-	@EventHandler
+	@Subscribe
 	public void onPlayerJoin(final ServerConnectedEvent e) {
         // Delay by a second to make sure we logged the player switch
-		RedCraftChat.getInstance().getProxy().getScheduler().schedule(RedCraftChat.getInstance(), new AsyncPlayerJoinHandler(e), 1, TimeUnit.SECONDS);
+		RedCraftChat.getInstance().getProxy().getScheduler().buildTask(RedCraftChat.getInstance(), new AsyncPlayerJoinHandler(e)).delay(1, TimeUnit.SECONDS).schedule();
 	}
 
-	@EventHandler
-	public void onPlayerSwitch(ServerDisconnectEvent e) {
-		previousServers.put(e.getPlayer().getUniqueId(), e.getTarget().getMotd());
-	}
-
-	@EventHandler
-	public void onPlayerLeave(PlayerDisconnectEvent e) {
-        RedCraftChat.getInstance().getProxy().getScheduler().runAsync(RedCraftChat.getInstance(), new AsyncPlayerLeaveHandler(e));
+	@Subscribe
+	public void onPlayerLeave(DisconnectEvent e) {
+        RedCraftChat.getInstance().getProxy().getScheduler().buildTask(RedCraftChat.getInstance(), new AsyncPlayerLeaveHandler(e)).schedule();
 	}
 }

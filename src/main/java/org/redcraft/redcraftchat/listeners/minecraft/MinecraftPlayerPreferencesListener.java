@@ -5,12 +5,11 @@ import java.io.IOException;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 
-import net.md_5.bungee.api.event.PostLoginEvent;
-import net.md_5.bungee.api.plugin.Listener;
-import net.md_5.bungee.event.EventHandler;
-import net.md_5.bungee.event.EventPriority;
+import com.velocitypowered.api.event.PostOrder;
+import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.event.connection.PostLoginEvent;
 
-public class MinecraftPlayerPreferencesListener implements Listener {
+public class MinecraftPlayerPreferencesListener {
 
     public class AsyncPostLoginEventParser implements Runnable {
         PostLoginEvent event;
@@ -31,11 +30,11 @@ public class MinecraftPlayerPreferencesListener implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.LOWEST)
+    @Subscribe(order = PostOrder.FIRST)
     public void onLogin(PostLoginEvent event) {
         AsyncPostLoginEventParser postLoginEventParser = new AsyncPostLoginEventParser(event);
 
         RedCraftChat pluginInstance = RedCraftChat.getInstance();
-        pluginInstance.getProxy().getScheduler().runAsync(pluginInstance, postLoginEventParser);
+        pluginInstance.getProxy().getScheduler().buildTask(pluginInstance, postLoginEventParser).schedule();
     }
 }

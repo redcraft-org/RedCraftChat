@@ -6,7 +6,11 @@ import java.util.List;
 import org.atteo.evo.inflector.English;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.discord.DiscordClient;
+import org.redcraft.redcraftchat.helpers.LegacyText;
+import org.redcraft.redcraftchat.players.DisplayNameManager;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
+
+import com.velocitypowered.api.proxy.server.RegisteredServer;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
@@ -15,9 +19,8 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.config.ServerInfo;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
+
+import com.velocitypowered.api.proxy.Player;
 
 public class PlayersDiscordCommand extends ListenerAdapter {
 
@@ -59,23 +62,23 @@ public class PlayersDiscordCommand extends ListenerAdapter {
     public List<MessageEmbed> handleCommand(User user) {
         List<MessageEmbed> serverMessageEmbeds = new ArrayList<>();
 
-        for (ServerInfo server : RedCraftChat.getInstance().getProxy().getServers().values()) {
+        for (RegisteredServer server : RedCraftChat.getInstance().getProxy().getAllServers()) {
 
             // TODO better formatting
             String description = "";
 
-            for (ProxiedPlayer player : server.getPlayers()) {
-                description += "- " + ChatColor.stripColor(player.getDisplayName()) + "\n";
+            for (Player player : server.getPlayersConnected()) {
+                description += "- " + LegacyText.stripColor(DisplayNameManager.getDisplayName(player)) + "\n";
             }
 
-            int playerCount = server.getPlayers().size();
+            int playerCount = server.getPlayersConnected().size();
 
             description += "\n*" + playerCount + " " + English.plural("player", playerCount) + " online*";
 
             description = PlayerPreferencesManager.localizeMessageForPlayer(user, description);
 
             MessageEmbed message = new EmbedBuilder()
-                    .setTitle(ChatColor.stripColor(server.getMotd()))
+                    .setTitle(LegacyText.stripColor(server.getServerInfo().getName()))
                     .setDescription(description)
                     .build();
 

@@ -51,7 +51,7 @@ public class DiscordMessageEditedListener extends ListenerAdapter {
                 } catch (Exception e) {
                     String messageTemplate = "Error while handling performing message edit from %s channel %s [%s] from user %s";
                     String warningMessage = String.format(messageTemplate, event.getGuild().getName(), event.getChannel().getName(), sourceChannel.languageId, member.getEffectiveName());
-                    RedCraftChat.getInstance().getLogger().warning(warningMessage);
+                    RedCraftChat.getInstance().getLogger().warn(warningMessage);
                     e.printStackTrace();
 
                     // keep original message mapping if we can't replace it

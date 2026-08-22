@@ -8,43 +8,38 @@ import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 
 import com.google.gson.Gson;
+import com.velocitypowered.api.command.CommandSource;
+import com.velocitypowered.api.command.SimpleCommand;
+import com.velocitypowered.api.proxy.Player;
 
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.CommandSender;
-import net.md_5.bungee.api.ProxyServer;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
-import net.md_5.bungee.api.plugin.Command;
+import net.kyori.adventure.text.format.NamedTextColor;
 
-public class PlayerSettingsMinecraftCommand extends Command {
-
-    public PlayerSettingsMinecraftCommand() {
-        super("player-settings", "redcraftchat.command.player-settings");
-    }
+public class PlayerSettingsMinecraftCommand implements SimpleCommand {
 
     public class PlayerSettingsMinecraftCommandHandler implements Runnable {
-        CommandSender sender;
+        CommandSource sender;
         String[] args;
 
-        public PlayerSettingsMinecraftCommandHandler(CommandSender sender, String[] args) {
+        public PlayerSettingsMinecraftCommandHandler(CommandSource sender, String[] args) {
             this.sender = sender;
             this.args = args;
         }
 
         @Override
         public void run() {
-            ProxiedPlayer player = null;
+            Player player = null;
 
             // If it's not a player we need an arg
-            if (!(sender instanceof ProxiedPlayer) && args.length < 1) {
+            if (!(sender instanceof Player) && args.length < 1) {
                 BasicMessageFormatter.sendInternalError(sender, "You need to specify a player name");
                 return;
             }
 
             // Get from arg
             if (args.length > 0 && sender.hasPermission("redcraftchat.command.player-settings.others")) {
-                player = ProxyServer.getInstance().getPlayer(args[0]);
+                player = RedCraftChat.getInstance().getProxy().getPlayer(args[0]).orElse(null);
             } else {
-                player = (ProxiedPlayer) sender;
+                player = (Player) sender;
             }
 
             if (player == null) {
@@ -54,7 +49,7 @@ public class PlayerSettingsMinecraftCommand extends Command {
 
             try {
                 PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);
-                BasicMessageFormatter.sendInternalMessage(sender, "Current settings: " + new Gson().toJson(preferences), ChatColor.GOLD);
+                BasicMessageFormatter.sendInternalMessage(sender, "Current settings: " + new Gson().toJson(preferences), NamedTextColor.GOLD);
             } catch (IOException | InterruptedException e) {
                 BasicMessageFormatter.sendInternalError(sender, "An error occured while trying to display player settings, check logs for more info");
                 e.printStackTrace();
@@ -63,8 +58,13 @@ public class PlayerSettingsMinecraftCommand extends Command {
     }
 
     @Override
-    public void execute(CommandSender sender, String[] args) {
-        var commandHandler = new PlayerSettingsMinecraftCommandHandler(sender, args);
-        RedCraftChat.getInstance().getProxy().getScheduler().runAsync(RedCraftChat.getInstance(), commandHandler);
+    public void execute(Invocation invocation) {
+        var commandHandler = new PlayerSettingsMinecraftCommandHandler(invocation.source(), invocation.arguments());
+        RedCraftChat.getInstance().getProxy().getScheduler().buildTask(RedCraftChat.getInstance(), commandHandler).schedule();
+    }
+
+    @Override
+    public boolean hasPermission(Invocation invocation) {
+        return invocation.source().hasPermission("redcraftchat.command.player-settings");
     }
 }

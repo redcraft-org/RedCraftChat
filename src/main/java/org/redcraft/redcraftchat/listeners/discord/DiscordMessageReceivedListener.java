@@ -1,6 +1,5 @@
 package org.redcraft.redcraftchat.listeners.discord;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -14,12 +13,9 @@ import org.redcraft.redcraftchat.models.caching.CacheCategory;
 import org.redcraft.redcraftchat.models.discord.TranslatedChannel;
 import org.redcraft.redcraftchat.models.discord.WebhookMessageMapping;
 import org.redcraft.redcraftchat.models.discord.WebhookMessageMappingList;
-import org.redcraft.redcraftchat.models.players.PlayerPreferences;
-import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 import org.redcraft.redcraftchat.translate.TranslationManager;
 
 import dev.vankka.mcdiscordreserializer.minecraft.MinecraftSerializer;
-import litebans.api.Database;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
@@ -97,39 +93,16 @@ public class DiscordMessageReceivedListener extends ListenerAdapter {
             } catch (Exception e) {
                 String messageTemplate = "Error while handling incoming message from server %s channel %s [%s] from user %s";
                 String errorMessage = String.format(messageTemplate, event.getGuild().getName(), event.getChannel().getName(), sourceChannel.languageId, member.getEffectiveName());
-                RedCraftChat.getInstance().getLogger().severe(errorMessage);
+                RedCraftChat.getInstance().getLogger().error(errorMessage);
                 e.printStackTrace();
             }
         }
     }
 
     private boolean checkPlayerSanctions(Member member, Message message) {
-        if (RedCraftChat.getInstance().getProxy().getPluginManager().getPlugin("LiteBans") != null) {
-            try {
-                PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(member.getUser());
-
-                if (preferences.minecraftUuid != null) {
-                    Database database = Database.get();
-                    if (database.isPlayerBanned(preferences.minecraftUuid, null)
-                            || database.isPlayerMuted(preferences.minecraftUuid, null)) {
-                        RedCraftChat.getInstance().getLogger().info("Deleting Discord message from "
-                                + member.getUser().getName() + " because they are banned or muted");
-                        message.delete().queue();
-                        member.getUser().openPrivateChannel().queue(channel -> {
-                            String errorMessage = "You cannot post to the Minecraft channel because you are sanctioned on the Minecraft server";
-                            channel.sendMessage(
-                                    PlayerPreferencesManager.localizeMessageForPlayer(preferences, errorMessage))
-                                    .queue();
-                        });
-                        return true;
-                    }
-                }
-            } catch (IOException | InterruptedException e) {
-                // Leave as is
-                e.printStackTrace();
-            }
-        }
-
+        // TODO restore the LiteBans check (delete the Discord message and warn the user
+        // in private when they are banned or muted on the Minecraft side) once the
+        // LiteBans API availability on Velocity is confirmed
         return false;
     }
 
