@@ -16,8 +16,11 @@ public class LuckPermsSynchronizerTask implements Runnable {
         try {
             updateUsername(player, LuckPermsProvider.get());
             return true;
-        } catch (IllegalStateException e) {
-            // LuckPerms not installed
+        } catch (IllegalStateException | NoClassDefFoundError e) {
+            // LuckPerms not installed. IllegalStateException means the API is on the
+            // classpath but no provider registered, NoClassDefFoundError means the
+            // plugin is absent altogether, which is an Error and so escaped the
+            // catch below and broke the whole login handler.
         } catch (Exception e) {
             RedCraftChat.getInstance().getLogger().error("Error updating username for " + player.getUsername());
             e.printStackTrace();
