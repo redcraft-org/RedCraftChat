@@ -30,6 +30,16 @@ default-locale: 'en-US'
 # This is to add missing players in tab completion
 enable-tab-completion: true
 
+# Chat is cancelled and re-emitted by the proxy, which a signed message forbids,
+# so the signature is stripped from incoming chat and commands before Velocity
+# reads them. Turning this off breaks chat on 1.19 and newer clients.
+strip-chat-signatures: true
+# Also drop the client's public profile key at login. Not needed to send chat,
+# stripping the per message signature is enough, and it requires
+# force-key-authentication = false in velocity.toml or 1.19 to 1.19.2 clients
+# get disconnected. Only turn this on if you want fully keyless players.
+strip-login-profile-key: false
+
 # These are the settings for Deepl live translation (if you use that provider)
 deepl-token: ''
 deepl-endpoint: 'https://api.deepl.com/v2/translate' # If you use a proxy or something

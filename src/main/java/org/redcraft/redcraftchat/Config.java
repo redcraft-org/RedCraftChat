@@ -32,6 +32,9 @@ public class Config {
 
 	public static boolean enableTabCompletion = true;
 
+	public static boolean stripChatSignatures = true;
+	public static boolean stripLoginProfileKey = false;
+
 	public static String deeplToken = "";
 	public static String deeplEndpoint = "https://api.deepl.com/v2/translate";
 	public static String deeplFormality = "normal";
@@ -93,6 +96,9 @@ public class Config {
 
 		enableTabCompletion = getBoolean(config, "enable-tab-completion");
 
+		stripChatSignatures = getBoolean(config, "strip-chat-signatures", true);
+		stripLoginProfileKey = getBoolean(config, "strip-login-profile-key", false);
+
 		deeplToken = getString(config, "deepl-token");
 		deeplEndpoint = getString(config, "deepl-endpoint");
 		deeplFormality = getString(config, "deepl-formality");
@@ -149,8 +155,12 @@ public class Config {
 	}
 
 	private static boolean getBoolean(Map<String, Object> config, String key) {
+		return getBoolean(config, key, false);
+	}
+
+	private static boolean getBoolean(Map<String, Object> config, String key, boolean defaultValue) {
 		Object value = config.get(key);
-		return value instanceof Boolean ? (Boolean) value : false;
+		return value instanceof Boolean ? (Boolean) value : defaultValue;
 	}
 
 	private static long getLong(Map<String, Object> config, String key) {

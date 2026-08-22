@@ -29,6 +29,7 @@ import org.redcraft.redcraftchat.database.DatabaseManager;
 import org.redcraft.redcraftchat.discord.DiscordClient;
 import org.redcraft.redcraftchat.helpers.LegacyText;
 import org.redcraft.redcraftchat.listeners.minecraft.MinecraftDisplayNameListener;
+import org.redcraft.redcraftchat.listeners.packets.ChatSignatureStripper;
 import org.redcraft.redcraftchat.runnables.DiscordChannelSynchronizerTask;
 import org.redcraft.redcraftchat.runnables.DiscordUsersSynchronizerTask;
 import org.redcraft.redcraftchat.runnables.LuckPermsSynchronizerTask;
@@ -105,6 +106,9 @@ public class RedCraftChat {
 		scheduler.buildTask(this, new ScheduledAnnouncementsTask()).delay(Config.scheduledAnnouncementsInterval, TimeUnit.SECONDS).repeat(Config.scheduledAnnouncementsInterval, TimeUnit.SECONDS).schedule();
 
 		// Packet listeners, they must be registered between load() and init()
+		if (Config.stripChatSignatures) {
+			PacketEvents.getAPI().getEventManager().registerListener(new ChatSignatureStripper());
+		}
 		PacketEvents.getAPI().init();
 
 		// Game listeners
