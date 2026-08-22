@@ -1,13 +1,19 @@
 package org.redcraft.redcraftchat;
 
+import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.PacketEventsAPI;
+import com.github.retrooper.packetevents.settings.PacketEventsSettings;
 import com.google.inject.Inject;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
 import com.velocitypowered.api.plugin.Plugin;
+import com.velocitypowered.api.plugin.PluginContainer;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.scheduler.Scheduler;
+
+import io.github.retrooper.packetevents.velocity.factory.VelocityPacketEventsBuilder;
 
 import net.dv8tion.jda.api.JDA;
 
@@ -44,12 +50,34 @@ public class RedCraftChat {
 	private final Path dataDirectory;
 
 	@Inject
-	public RedCraftChat(ProxyServer proxy, Logger logger, @DataDirectory Path dataDirectory) {
+	public RedCraftChat(ProxyServer proxy, PluginContainer container, Logger logger, @DataDirectory Path dataDirectory) {
 		this.proxy = proxy;
 		this.logger = logger;
 		this.dataDirectory = dataDirectory;
 
 		setInstance(this);
+
+		setupPacketEvents(container);
+	}
+
+	/**
+	 * PacketEvents is shaded in, so we drive its lifecycle ourselves instead of
+	 * depending on the standalone plugin. load() installs the internal listener
+	 * that tracks client versions and connection states, so it has to run before
+	 * any listener of ours is registered, and init() performs the netty pipeline
+	 * injection, so it has to run after.
+	 */
+	private void setupPacketEvents(PluginContainer container) {
+		PacketEventsSettings settings = new PacketEventsSettings()
+				.reEncodeByDefault(true)
+				.checkForUpdates(false)
+				.kickOnPacketException(true)
+				.kickIfTerminated(true)
+				.debug(false);
+
+		PacketEventsAPI<PluginContainer> api = VelocityPacketEventsBuilder.build(proxy, container, logger, dataDirectory, settings);
+		PacketEvents.setAPI(api);
+		api.load();
 	}
 
 	@Subscribe
@@ -75,6 +103,9 @@ public class RedCraftChat {
 		scheduler.buildTask(this, new LuckPermsSynchronizerTask()).delay(10, TimeUnit.SECONDS).repeat(30, TimeUnit.SECONDS).schedule();
 		scheduler.buildTask(this, new MinecraftServerStatusWatcherTask()).delay(5, TimeUnit.SECONDS).repeat(5, TimeUnit.SECONDS).schedule();
 		scheduler.buildTask(this, new ScheduledAnnouncementsTask()).delay(Config.scheduledAnnouncementsInterval, TimeUnit.SECONDS).repeat(Config.scheduledAnnouncementsInterval, TimeUnit.SECONDS).schedule();
+
+		// Packet listeners, they must be registered between load() and init()
+		PacketEvents.getAPI().init();
 
 		// Game listeners
 		proxy.getEventManager().register(this, new MinecraftDisplayNameListener());
@@ -142,6 +173,9 @@ public class RedCraftChat {
 			DiscordClient.getClient().shutdownNow();
 		}
 		RedisCache.close();
+		if (PacketEvents.getAPI() != null && PacketEvents.getAPI().isInitialized()) {
+			PacketEvents.getAPI().terminate();
+		}
 	}
 
 	public static void setInstance(RedCraftChat instance) {

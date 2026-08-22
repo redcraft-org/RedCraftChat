@@ -79,6 +79,21 @@
 										<include>**</include>
 									</includes>
 								</filter>
+								<!--
+									PacketEvents resolves packet wrappers, mappings and the netty
+									injector reflectively, so minimization only ever sees a handful
+									of entry points and strips the rest. Keep the whole thing, minus
+									its own plugin descriptor which would clash with ours.
+								-->
+								<filter>
+									<artifact>com.github.retrooper:*</artifact>
+									<includes>
+										<include>**</include>
+									</includes>
+									<excludes>
+										<exclude>velocity-plugin.json</exclude>
+									</excludes>
+								</filter>
 							</filters>
 						</configuration>
 					</execution>
