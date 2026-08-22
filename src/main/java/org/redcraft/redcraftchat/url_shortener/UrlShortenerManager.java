@@ -36,7 +36,7 @@ public class UrlShortenerManager extends UrlTransformer {
                 throw new IllegalStateException(String.format("Unknown URL shortener service \"%s\"", Config.urlShorteningProvider));
             }
         } catch (Exception ex) {
-            RedCraftChat.getInstance().getLogger().severe("Error while shortening URL");
+            RedCraftChat.getInstance().getLogger().error("Error while shortening URL");
             ex.printStackTrace();
         }
         return url;

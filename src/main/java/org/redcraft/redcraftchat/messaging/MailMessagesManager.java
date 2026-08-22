@@ -19,9 +19,11 @@ import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 
 import com.google.common.reflect.TypeToken;
+import com.velocitypowered.api.proxy.Player;
 
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
+import net.kyori.adventure.text.format.NamedTextColor;
+
+import org.redcraft.redcraftchat.helpers.LegacyText;
 
 public class MailMessagesManager {
 
@@ -30,7 +32,7 @@ public class MailMessagesManager {
     }
 
     @SuppressWarnings("unchecked")
-    public static List<PlayerMail> getPlayerMail(ProxiedPlayer player, boolean unreadOnly) {
+    public static List<PlayerMail> getPlayerMail(Player player, boolean unreadOnly) {
         String cacheKey = player.getUniqueId().toString() + ":" + unreadOnly;
 
         List<PlayerMail> mails = (List<PlayerMail>) CacheManager.get(CacheCategory.PLAYER_MAILS, cacheKey, new TypeToken<List<PlayerMail>>() {}.getType());
@@ -46,11 +48,11 @@ public class MailMessagesManager {
         return mails;
     }
 
-    public static List<PlayerMail> getPlayerMail(ProxiedPlayer player) {
+    public static List<PlayerMail> getPlayerMail(Player player) {
         return getPlayerMail(player, false);
     }
 
-    public static void sendMail(ProxiedPlayer sender, UUID recipient, String message) {
+    public static void sendMail(Player sender, UUID recipient, String message) {
         PlayerMail mail = new PlayerMail();
         mail.senderUuid = sender.getUniqueId();
         mail.recipientUuid = recipient;
@@ -69,10 +71,10 @@ public class MailMessagesManager {
         voidCache(sender.getUniqueId());
         voidCache(recipient);
 
-        ProxiedPlayer recipientPlayer = RedCraftChat.getInstance().getProxy().getPlayer(recipient);
+        Player recipientPlayer = RedCraftChat.getInstance().getProxy().getPlayer(recipient).orElse(null);
         if (recipientPlayer != null) {
             String receivedMessage = "You just received a new mail, type the following command to see your mails:";
-            BasicMessageFormatter.sendInternalMessage(recipientPlayer, receivedMessage, ChatColor.GOLD + "/mail list", ChatColor.LIGHT_PURPLE);
+            BasicMessageFormatter.sendInternalMessage(recipientPlayer, receivedMessage, LegacyText.GOLD + "/mail list", NamedTextColor.LIGHT_PURPLE);
         }
     }
 
@@ -83,7 +85,7 @@ public class MailMessagesManager {
         voidCache(mail.recipientUuid);
     }
 
-    public static void markAllMailAsRead(ProxiedPlayer player) {
+    public static void markAllMailAsRead(Player player) {
         for (PlayerMail mail : getPlayerMail(player, true)) {
             markMailAsRead(mail);
         }

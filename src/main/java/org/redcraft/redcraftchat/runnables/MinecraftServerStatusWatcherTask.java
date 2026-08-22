@@ -6,13 +6,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.bridge.MinecraftDiscordBridge;
+import org.redcraft.redcraftchat.helpers.LegacyText;
 
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.config.ServerInfo;
+import com.velocitypowered.api.proxy.server.RegisteredServer;
+import com.velocitypowered.api.proxy.server.ServerInfo;
 
 public class MinecraftServerStatusWatcherTask implements Runnable {
 
@@ -25,7 +25,7 @@ public class MinecraftServerStatusWatcherTask implements Runnable {
         try (
             Socket socket = new Socket();
         ) {
-            socket.connect(server.getSocketAddress(), 5);
+            socket.connect(server.getAddress(), 5);
             return true;
         } catch(IOException e) {
             return false;
@@ -33,38 +33,40 @@ public class MinecraftServerStatusWatcherTask implements Runnable {
     }
 
     public void handleServerStatusChange(ServerInfo serverInfo, boolean online) {
-        String message = ChatColor.GOLD + "[RedCraft] " + ChatColor.YELLOW  + "The Minecraft server %server% is now ";
+        String message = LegacyText.GOLD + "[RedCraft] " + LegacyText.YELLOW  + "The Minecraft server %server% is now ";
 
         if (online) {
-            message += ChatColor.GREEN + "" + ChatColor.BOLD + "available";
+            message += LegacyText.GREEN + LegacyText.BOLD + "available";
         } else {
-            message += ChatColor.RED + "" + ChatColor.BOLD + "unavailable";
+            message += LegacyText.RED + LegacyText.BOLD + "unavailable";
         }
 
         Map<String, String> replacements = new HashMap<String, String>();
-        replacements.put("%server%", serverInfo.getMotd() + ChatColor.YELLOW);
+        replacements.put("%server%", serverInfo.getName() + LegacyText.YELLOW);
 
         MinecraftDiscordBridge.getInstance().broadcastMessage(message, replacements);
     }
 
     public void run() {
-        for (Entry<String, ServerInfo> server : RedCraftChat.getInstance().getProxy().getServers().entrySet()) {
-            if (isServerOnline(server.getValue())) {
-                if (!onlineServers.contains(server.getKey())) {
-                    RedCraftChat.getInstance().getLogger().info("Server " + server.getKey() + " is marked as online");
-                    onlineServers.add(server.getKey());
-                    offlineServers.remove(server.getKey());
-                    handleServerStatusChange(server.getValue(), true);
+        for (RegisteredServer server : RedCraftChat.getInstance().getProxy().getAllServers()) {
+            ServerInfo serverInfo = server.getServerInfo();
+            String serverName = serverInfo.getName();
+            if (isServerOnline(serverInfo)) {
+                if (!onlineServers.contains(serverName)) {
+                    RedCraftChat.getInstance().getLogger().info("Server " + serverName + " is marked as online");
+                    onlineServers.add(serverName);
+                    offlineServers.remove(serverName);
+                    handleServerStatusChange(serverInfo, true);
                 }
             } else {
-                int failedScans = offlineServers.getOrDefault(server.getKey(), 0) + 1;
-                offlineServers.put(server.getKey(), failedScans);
+                int failedScans = offlineServers.getOrDefault(serverName, 0) + 1;
+                offlineServers.put(serverName, failedScans);
                 if (failedScans < SCANS_COUNT + 1) {
-                    RedCraftChat.getInstance().getLogger().warning("Server " + server.getKey() + " seems to be offline. Failed scans: " + failedScans);
-                } else if (onlineServers.contains(server.getKey())) {
-                    RedCraftChat.getInstance().getLogger().warning("Server " + server.getKey() + " is marked as offline");
-                    onlineServers.remove(server.getKey());
-                    handleServerStatusChange(server.getValue(), false);
+                    RedCraftChat.getInstance().getLogger().warn("Server " + serverName + " seems to be offline. Failed scans: " + failedScans);
+                } else if (onlineServers.contains(serverName)) {
+                    RedCraftChat.getInstance().getLogger().warn("Server " + serverName + " is marked as offline");
+                    onlineServers.remove(serverName);
+                    handleServerStatusChange(serverInfo, false);
                 }
             }
         }

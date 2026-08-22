@@ -3,15 +3,17 @@ package org.redcraft.redcraftchat.helpers;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 
+import com.velocitypowered.api.command.CommandSource;
+import com.velocitypowered.api.proxy.Player;
+
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.CommandSender;
-import net.md_5.bungee.api.chat.ComponentBuilder;
-import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.hover.content.Text;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 public class BasicMessageFormatter {
 
@@ -19,38 +21,42 @@ public class BasicMessageFormatter {
         throw new IllegalStateException("This class should not be instantiated");
     }
 
-    public static void sendInternalMessage(CommandSender target, String message, String extra, ChatColor color) {
-        HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(color + message));
-
+    public static void sendInternalMessage(CommandSource target, String message, String extra, NamedTextColor color) {
         String translatedMessage = message;
-        if (target instanceof ProxiedPlayer) {
-            translatedMessage = PlayerPreferencesManager.localizeMessageForPlayer((ProxiedPlayer) target, message);
+        if (target instanceof Player) {
+            translatedMessage = PlayerPreferencesManager.localizeMessageForPlayer((Player) target, message);
         }
 
-        ComponentBuilder messageBuilder = prepareInternalMessage().append(translatedMessage).color(color);
+        TextComponent.Builder messageBuilder = prepareInternalMessage()
+                .append(deserialize(translatedMessage).colorIfAbsent(color));
         if (!translatedMessage.equals(message)) {
-            messageBuilder.event(hoverEvent);
+            messageBuilder.hoverEvent(HoverEvent.showText(deserialize(message).colorIfAbsent(color)));
         }
         if (extra != null) {
-            messageBuilder.append(" " + extra);
+            messageBuilder.append(Component.text(" ")).append(deserialize(extra));
         }
-        target.sendMessage(messageBuilder.create());
+        target.sendMessage(messageBuilder.build());
     }
 
-    public static void sendInternalMessage(CommandSender target, String message, ChatColor color) {
+    public static void sendInternalMessage(CommandSource target, String message, NamedTextColor color) {
         sendInternalMessage(target, message, null, color);
     }
 
-    public static void sendInternalError(CommandSender target, String message) {
+    public static void sendInternalError(CommandSource target, String message) {
         sendInternalError(target, message, null);
     }
 
-    public static void sendInternalError(CommandSender target, String message, String extra) {
-        sendInternalMessage(target, message, extra, ChatColor.RED);
+    public static void sendInternalError(CommandSource target, String message, String extra) {
+        sendInternalMessage(target, message, extra, NamedTextColor.RED);
     }
 
-    public static ComponentBuilder prepareInternalMessage() {
-        return new ComponentBuilder("[" + RedCraftChat.getInstance().getDescription().getName() + "] ").color(ChatColor.GOLD);
+    public static TextComponent.Builder prepareInternalMessage() {
+        return Component.text()
+                .append(Component.text("[" + RedCraftChat.PLUGIN_NAME + "] ", NamedTextColor.GOLD));
+    }
+
+    public static Component deserialize(String legacyMessage) {
+        return LegacyComponentSerializer.legacySection().deserialize(legacyMessage);
     }
 
     public static MessageEmbed generateDiscordMessage(User target, String title, String message, int color) {

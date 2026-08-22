@@ -7,8 +7,9 @@ import java.util.UUID;
 import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 
+import com.velocitypowered.api.proxy.Player;
+
 import net.dv8tion.jda.api.entities.User;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 public class PlayerPreferences {
 
@@ -34,14 +35,14 @@ public class PlayerPreferences {
         languages = new ArrayList<String>();
     }
 
-    public PlayerPreferences(ProxiedPlayer player) {
+    public PlayerPreferences(Player player) {
         mainLanguage = PlayerPreferencesManager.extractPlayerLanguage(player);
 
         languages = new ArrayList<String>();
         languages.add(mainLanguage);
 
         minecraftUuid = player.getUniqueId();
-        lastKnownMinecraftName = player.getName();
+        lastKnownMinecraftName = player.getUsername();
     }
 
     public PlayerPreferences(User user) {

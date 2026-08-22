@@ -7,11 +7,14 @@ import java.util.List;
 import java.util.Map;
 
 import com.vdurmont.emoji.EmojiParser;
+import com.velocitypowered.api.proxy.Player;
 
 import dev.vankka.mcdiscordreserializer.discord.DiscordSerializer;
 
 import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
+import org.redcraft.redcraftchat.helpers.LegacyText;
+import org.redcraft.redcraftchat.players.DisplayNameManager;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 import org.redcraft.redcraftchat.tokenizer.TokenizerManager;
 import org.redcraft.redcraftchat.discord.ChannelManager;
@@ -20,14 +23,10 @@ import org.redcraft.redcraftchat.models.discord.TranslatedChannel;
 import org.redcraft.redcraftchat.translate.TranslationManager;
 
 import net.dv8tion.jda.api.entities.TextChannel;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.ProxyServer;
-import net.md_5.bungee.api.chat.ComponentBuilder;
-import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.hover.content.Text;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 public class MinecraftDiscordBridge {
 
@@ -36,10 +35,10 @@ public class MinecraftDiscordBridge {
     public class AsyncMinecraftMessageTranslator implements Runnable {
         TranslationManager translationManager = new TranslationManager(Config.chatTranslationProvider);
 
-        ProxiedPlayer sender;
+        Player sender;
         String message;
 
-        AsyncMinecraftMessageTranslator(ProxiedPlayer sender, String message) {
+        AsyncMinecraftMessageTranslator(Player sender, String message) {
             this.sender = sender;
             this.message = message;
         }
@@ -55,10 +54,10 @@ public class MinecraftDiscordBridge {
             // Translate
             Map<String, String> translatedLanguages = translationManager.translateBulk(message, sourceLanguage, targetLanguages);
 
-            String server = sender.getServer().getInfo().getMotd();
+            String server = getServerName(sender);
 
             // Send to players
-            MinecraftDiscordBridge.getInstance().sendMessageToPlayers(server, sender.getDisplayName(), sourceLanguage, message, translatedLanguages);
+            MinecraftDiscordBridge.getInstance().sendMessageToPlayers(server, DisplayNameManager.getDisplayName(sender), sourceLanguage, message, translatedLanguages);
 
             // Send to Discord
             MinecraftDiscordBridge.getInstance().sendMessageToDiscord(server, sender, sourceLanguage, message, translatedLanguages);
@@ -75,11 +74,15 @@ public class MinecraftDiscordBridge {
         return instance;
     }
 
+    public static String getServerName(Player player) {
+        return player.getCurrentServer().map(server -> server.getServerInfo().getName()).orElse("unknown");
+    }
+
     public void broadcastMessage(String message) {
         broadcastMessage(message, null, null);
     }
 
-    public void broadcastMessage(String message, ProxiedPlayer sender) {
+    public void broadcastMessage(String message, Player sender) {
         broadcastMessage(message, null, sender);
     }
 
@@ -87,8 +90,8 @@ public class MinecraftDiscordBridge {
         broadcastMessage(message, replacements, null);
     }
 
-    public void broadcastMessage(String message, Map<String, String> replacements, ProxiedPlayer sender) {
-        String formattedMessage = ChatColor.translateAlternateColorCodes('&', message);
+    public void broadcastMessage(String message, Map<String, String> replacements, Player sender) {
+        String formattedMessage = LegacyText.translateAlternateColorCodes('&', message);
 
         Map<String, String> tokens = new HashMap<String, String>();
 
@@ -104,7 +107,11 @@ public class MinecraftDiscordBridge {
         broadcastMinecraft(formattedMessage, tokens);
     }
 
-    public void broadcastDiscord(String formattedMessage, Map<String, String> tokens, ProxiedPlayer sender) {
+    public void broadcastDiscord(String formattedMessage, Map<String, String> tokens, Player sender) {
+        if (!DiscordClient.hasClient()) {
+            return;
+        }
+
         for (TranslatedChannel channel : ChannelManager.getMinecraftBridgeChannels()) {
             String targetMessage = formattedMessage;
             String originalLanguage = TranslationManager.getSourceLanguage(formattedMessage, null);
@@ -121,7 +128,7 @@ public class MinecraftDiscordBridge {
                 try {
                     targetMessage = translationManager.translate(targetMessage, originalLanguage, channel.languageId);
                 } catch (IllegalStateException | URISyntaxException | IOException | InterruptedException e) {
-                    RedCraftChat.getInstance().getLogger().severe("Failed to translate message from " + originalLanguage + " to " + channel.languageId);
+                    RedCraftChat.getInstance().getLogger().error("Failed to translate message from " + originalLanguage + " to " + channel.languageId);
                     e.printStackTrace();
                 }
             }
@@ -132,7 +139,7 @@ public class MinecraftDiscordBridge {
             String discordMessage = DiscordSerializer.INSTANCE.serialize(parsedMessage);
 
             if (sender != null) {
-                DiscordClient.postAsPlayer(channel.channelId, sender, discordMessage, "[" + sender.getServer().getInfo().getMotd() + "]");
+                DiscordClient.postAsPlayer(channel.channelId, sender, discordMessage, "[" + getServerName(sender) + "]");
             } else {
                 TextChannel discordChannel = DiscordClient.getClient().getTextChannelById(channel.channelId);
                 discordChannel.sendMessage(discordMessage).queue();
@@ -141,20 +148,23 @@ public class MinecraftDiscordBridge {
     }
 
     public void broadcastMinecraft(String formattedMessage, Map<String, String> tokens) {
-        for (ProxiedPlayer receiver : ProxyServer.getInstance().getPlayers()) {
+        for (Player receiver : RedCraftChat.getInstance().getProxy().getAllPlayers()) {
             String targetMessage = PlayerPreferencesManager.localizeMessageForPlayer(receiver, formattedMessage, Config.chatTranslationProvider);
 
             targetMessage = TokenizerManager.replaceTokens(targetMessage, tokens);
 
             String originalMessage = TokenizerManager.replaceTokens(formattedMessage, tokens);
 
-            receiver.sendMessage(new ComponentBuilder(targetMessage)
-                    .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(originalMessage)))
-                    .create());
+            receiver.sendMessage(LegacyComponentSerializer.legacySection().deserialize(targetMessage)
+                    .hoverEvent(HoverEvent.showText(LegacyComponentSerializer.legacySection().deserialize(originalMessage))));
         }
     }
 
-    public void sendMessageToDiscord(String server, ProxiedPlayer sender, String sourceLanguage, String originalMessage, Map<String, String> translatedLanguages) {
+    public void sendMessageToDiscord(String server, Player sender, String sourceLanguage, String originalMessage, Map<String, String> translatedLanguages) {
+        if (!DiscordClient.hasClient()) {
+            return;
+        }
+
         for (TranslatedChannel channel : ChannelManager.getMinecraftBridgeChannels()) {
             String translatedMessage = translatedLanguages.get(channel.languageId);
             if (translatedMessage == null) {
@@ -171,7 +181,7 @@ public class MinecraftDiscordBridge {
     }
 
     public void sendMessageToPlayers(String server, String sender, String sourceLanguage, String originalMessage, Map<String, String> translatedLanguages) {
-        for (ProxiedPlayer receiver : ProxyServer.getInstance().getPlayers()) {
+        for (Player receiver : RedCraftChat.getInstance().getProxy().getAllPlayers()) {
             String targetLanguage = sourceLanguage;
             if (!PlayerPreferencesManager.playerSpeaksLanguage(receiver, sourceLanguage)) {
                 targetLanguage = PlayerPreferencesManager.getMainPlayerLanguage(receiver).toLowerCase();
@@ -184,9 +194,9 @@ public class MinecraftDiscordBridge {
         }
     }
 
-    public void formatAndSendMessageToPlayer(String server, String sender, ProxiedPlayer receiver, String translatedMessage, String originalMessage, String sourceLanguage) {
-        String serverPrefix = server + ChatColor.RESET;
-        String senderPrefix = sender + ChatColor.RESET;
+    public void formatAndSendMessageToPlayer(String server, String sender, Player receiver, String translatedMessage, String originalMessage, String sourceLanguage) {
+        String serverPrefix = server + LegacyText.RESET;
+        String senderPrefix = sender + LegacyText.RESET;
 
         String targetLanguage = null;
         if (!PlayerPreferencesManager.playerSpeaksLanguage(receiver, sourceLanguage)) {
@@ -197,23 +207,24 @@ public class MinecraftDiscordBridge {
 
         String parsedTranslatedMessage = EmojiParser.parseToAliases(translatedMessage);
 
-        ComponentBuilder messageBuilder = new ComponentBuilder()
-                .append("[" + languagePrefix + "]")
-                .append("[" + serverPrefix + "]")
-                .append("[" + senderPrefix + "] ")
-                .append(parsedTranslatedMessage);
+        String formattedMessage = "[" + languagePrefix + "]"
+                + "[" + serverPrefix + "]"
+                + "[" + senderPrefix + "] "
+                + parsedTranslatedMessage;
+
+        Component message = LegacyComponentSerializer.legacySection().deserialize(formattedMessage);
 
         if (targetLanguage != null) {
-            messageBuilder.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(originalMessage)));
+            message = message.hoverEvent(HoverEvent.showText(LegacyComponentSerializer.legacySection().deserialize(originalMessage)));
         }
 
-        receiver.sendMessage(messageBuilder.create());
+        receiver.sendMessage(message);
     }
 
-    public void translateAndPostMessage(ProxiedPlayer sender, String message) {
+    public void translateAndPostMessage(Player sender, String message) {
         RedCraftChat pluginInstance = RedCraftChat.getInstance();
         AsyncMinecraftMessageTranslator minecraftMessageTranslator = new AsyncMinecraftMessageTranslator(sender, message);
 
-        pluginInstance.getProxy().getScheduler().runAsync(pluginInstance, minecraftMessageTranslator);
+        pluginInstance.getProxy().getScheduler().buildTask(pluginInstance, minecraftMessageTranslator).schedule();
     }
 }

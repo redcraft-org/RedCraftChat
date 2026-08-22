@@ -7,7 +7,9 @@ import javax.security.auth.login.LoginException;
 import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.caching.CacheManager;
+import org.redcraft.redcraftchat.helpers.LegacyText;
 import org.redcraft.redcraftchat.models.caching.CacheCategory;
+import org.redcraft.redcraftchat.players.DisplayNameManager;
 import org.redcraft.redcraftchat.models.discord.WebhookAsUser;
 import org.redcraft.redcraftchat.models.discord.WebhookMessageMappingList;
 
@@ -30,8 +32,7 @@ import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.requests.RestAction;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
+import com.velocitypowered.api.proxy.Player;
 
 public class DiscordClient {
     private static JDA jdaClient = null;
@@ -39,6 +40,10 @@ public class DiscordClient {
 
     private DiscordClient() {
         throw new IllegalStateException("This class should not be instantiated");
+    }
+
+    public static boolean hasClient() {
+        return jdaClient != null;
     }
 
     public static JDA getClient() {
@@ -70,7 +75,7 @@ public class DiscordClient {
             }
         } catch (LoginException e) {
             jdaCrashed = true;
-            RedCraftChat.getInstance().getLogger().warning("Could not connect to Discord, check console");
+            RedCraftChat.getInstance().getLogger().warn("Could not connect to Discord, check console");
             e.printStackTrace();
         }
         return jdaClient;
@@ -121,7 +126,7 @@ public class DiscordClient {
 
     @SuppressWarnings("deprecation")
     public static ReadonlyMessage postAsUser(TextChannel responseChannel, Member member, String content, List<Attachment> attachments, String suffix, String previousMessageId) {
-        String webhookName = RedCraftChat.getInstance().getDescription().getName();
+        String webhookName = RedCraftChat.PLUGIN_NAME;
 
         Webhook webhookDestination = DiscordClient.getOrCreateWebhook(responseChannel, webhookName);
 
@@ -157,9 +162,9 @@ public class DiscordClient {
         return webhookClient.send(builder.build()).join();
     }
 
-    public static ReadonlyMessage postAsPlayer(String responseChannelId, ProxiedPlayer player, String message, String suffix) {
+    public static ReadonlyMessage postAsPlayer(String responseChannelId, Player player, String message, String suffix) {
         TextChannel responseChannel = jdaClient.getTextChannelById(responseChannelId);
-        String webhookName = RedCraftChat.getInstance().getDescription().getName();
+        String webhookName = RedCraftChat.PLUGIN_NAME;
 
         Webhook webhookDestination = DiscordClient.getOrCreateWebhook(responseChannel, webhookName);
 
@@ -167,8 +172,8 @@ public class DiscordClient {
 
         // Change appearance of webhook message
         WebhookMessageBuilder builder = new WebhookMessageBuilder();
-        String username = ChatColor.stripColor(player.getDisplayName());
-        suffix = ChatColor.stripColor(suffix);
+        String username = LegacyText.stripColor(DisplayNameManager.getDisplayName(player));
+        suffix = LegacyText.stripColor(suffix);
 
         builder.setUsername(username + suffix);
 
@@ -179,7 +184,7 @@ public class DiscordClient {
                 break;
 
             case "name":
-                avatarUrl = avatarUrl.replace("%player%", player.getName());
+                avatarUrl = avatarUrl.replace("%player%", player.getUsername());
                 break;
 
             default:
@@ -188,7 +193,7 @@ public class DiscordClient {
 
         builder.setAvatarUrl(avatarUrl);
 
-        builder.setContent(ChatColor.stripColor(message));
+        builder.setContent(LegacyText.stripColor(message));
 
         AllowedMentions mentions = new AllowedMentions();
         mentions.withParseEveryone(false);
