@@ -4,6 +4,7 @@ import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.PacketEventsAPI;
 import com.github.retrooper.packetevents.settings.PacketEventsSettings;
 import com.google.inject.Inject;
+import com.velocitypowered.api.command.CommandManager;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
@@ -25,11 +26,28 @@ import org.redcraft.redcraftchat.bridge.MinecraftDiscordBridge;
 import org.redcraft.redcraftchat.caching.providers.RedisCache;
 import org.redcraft.redcraftchat.commands.discord.LangDiscordCommand;
 import org.redcraft.redcraftchat.commands.discord.LinkMinecraftAccountDiscordCommand;
+import org.redcraft.redcraftchat.commands.discord.PlayersDiscordCommand;
+import org.redcraft.redcraftchat.commands.minecraft.BroadcastMinecraftCommand;
+import org.redcraft.redcraftchat.commands.minecraft.CommandSpyMinecraftCommand;
+import org.redcraft.redcraftchat.commands.minecraft.LangMinecraftCommand;
+import org.redcraft.redcraftchat.commands.minecraft.LinkDiscordAccountMinecraftCommand;
+import org.redcraft.redcraftchat.commands.minecraft.MailMinecraftCommand;
+import org.redcraft.redcraftchat.commands.minecraft.MeMinecraftCommand;
+import org.redcraft.redcraftchat.commands.minecraft.MsgMinecraftCommand;
+import org.redcraft.redcraftchat.commands.minecraft.PlayerSettingsMinecraftCommand;
+import org.redcraft.redcraftchat.commands.minecraft.ReplyMinecraftCommand;
 import org.redcraft.redcraftchat.database.DatabaseManager;
 import org.redcraft.redcraftchat.discord.DiscordClient;
 import org.redcraft.redcraftchat.helpers.LegacyText;
+import org.redcraft.redcraftchat.listeners.discord.DiscordMessageDeletedListener;
+import org.redcraft.redcraftchat.listeners.discord.DiscordMessageEditedListener;
+import org.redcraft.redcraftchat.listeners.discord.DiscordMessageReceivedListener;
 import org.redcraft.redcraftchat.listeners.minecraft.MinecraftChatListener;
+import org.redcraft.redcraftchat.listeners.minecraft.MinecraftConnectDisconnectMessageListener;
+import org.redcraft.redcraftchat.listeners.minecraft.MinecraftConnectMailListener;
 import org.redcraft.redcraftchat.listeners.minecraft.MinecraftDisplayNameListener;
+import org.redcraft.redcraftchat.listeners.minecraft.MinecraftPlayerPreferencesListener;
+import org.redcraft.redcraftchat.listeners.minecraft.MinecraftTabCompleteListener;
 import org.redcraft.redcraftchat.listeners.packets.ChatSignatureStripper;
 import org.redcraft.redcraftchat.listeners.packets.SystemChatInterceptor;
 import org.redcraft.redcraftchat.runnables.DiscordChannelSynchronizerTask;
@@ -117,26 +135,24 @@ public class RedCraftChat {
 		// Game listeners
 		proxy.getEventManager().register(this, new MinecraftDisplayNameListener());
 		proxy.getEventManager().register(this, new MinecraftChatListener());
-		// TODO wave 2: register the remaining bridge listeners
-		// proxy.getEventManager().register(this, new MinecraftConnectDisconnectMessageListener());
-		// proxy.getEventManager().register(this, new MinecraftConnectMailListener());
-		// proxy.getEventManager().register(this, new MinecraftPlayerPreferencesListener());
-		// if (Config.enableTabCompletion) {
-		// 	proxy.getEventManager().register(this, new MinecraftTabCompleteListener());
-		// }
+		proxy.getEventManager().register(this, new MinecraftConnectDisconnectMessageListener());
+		proxy.getEventManager().register(this, new MinecraftConnectMailListener());
+		proxy.getEventManager().register(this, new MinecraftPlayerPreferencesListener());
+		if (Config.enableTabCompletion) {
+			proxy.getEventManager().register(this, new MinecraftTabCompleteListener());
+		}
 
 		// Game commands
-		// TODO wave 2: register game commands through the CommandManager
-		// CommandManager commandManager = proxy.getCommandManager();
-		// commandManager.register(commandManager.metaBuilder("broadcast").aliases("bc", "alert").plugin(this).build(), new BroadcastMinecraftCommand());
-		// commandManager.register(commandManager.metaBuilder("commandspy").aliases("cspy").plugin(this).build(), new CommandSpyMinecraftCommand());
-		// commandManager.register(commandManager.metaBuilder("lang").aliases("languages").plugin(this).build(), new LangMinecraftCommand());
-		// commandManager.register(commandManager.metaBuilder("discord-link").plugin(this).build(), new LinkDiscordAccountMinecraftCommand());
-		// commandManager.register(commandManager.metaBuilder("mail").plugin(this).build(), new MailMinecraftCommand());
-		// commandManager.register(commandManager.metaBuilder("msg").aliases("tell", "m", "w").plugin(this).build(), new MsgMinecraftCommand());
-		// commandManager.register(commandManager.metaBuilder("me").plugin(this).build(), new MeMinecraftCommand());
-		// commandManager.register(commandManager.metaBuilder("player-settings").plugin(this).build(), new PlayerSettingsMinecraftCommand());
-		// commandManager.register(commandManager.metaBuilder("reply").aliases("r").plugin(this).build(), new ReplyMinecraftCommand());
+		CommandManager commandManager = proxy.getCommandManager();
+		commandManager.register(commandManager.metaBuilder("broadcast").aliases("bc", "alert").plugin(this).build(), new BroadcastMinecraftCommand());
+		commandManager.register(commandManager.metaBuilder("commandspy").aliases("cspy").plugin(this).build(), new CommandSpyMinecraftCommand());
+		commandManager.register(commandManager.metaBuilder("lang").aliases("languages").plugin(this).build(), new LangMinecraftCommand());
+		commandManager.register(commandManager.metaBuilder("discord-link").plugin(this).build(), new LinkDiscordAccountMinecraftCommand());
+		commandManager.register(commandManager.metaBuilder("mail").plugin(this).build(), new MailMinecraftCommand());
+		commandManager.register(commandManager.metaBuilder("msg").aliases("minecraft:tell", "tell", "m", "w").plugin(this).build(), new MsgMinecraftCommand());
+		commandManager.register(commandManager.metaBuilder("me").aliases("minecraft:me").plugin(this).build(), new MeMinecraftCommand());
+		commandManager.register(commandManager.metaBuilder("player-settings").plugin(this).build(), new PlayerSettingsMinecraftCommand());
+		commandManager.register(commandManager.metaBuilder("reply").aliases("r").plugin(this).build(), new ReplyMinecraftCommand());
 	}
 
 	private boolean setupDiscord() {
@@ -158,14 +174,12 @@ public class RedCraftChat {
 		}
 
 		// Discord events
-		// TODO wave 2: register the message bridge listeners once the Minecraft side is ported
-		// discordClient.addEventListener(new DiscordMessageReceivedListener());
-		// discordClient.addEventListener(new DiscordMessageEditedListener());
-		// discordClient.addEventListener(new DiscordMessageDeletedListener());
+		discordClient.addEventListener(new DiscordMessageReceivedListener());
+		discordClient.addEventListener(new DiscordMessageEditedListener());
+		discordClient.addEventListener(new DiscordMessageDeletedListener());
 
 		// Discord commands
-		// TODO wave 2: PlayersDiscordCommand needs the display name service wiring on the embed side
-		// discordClient.addEventListener(new PlayersDiscordCommand());
+		discordClient.addEventListener(new PlayersDiscordCommand());
 		discordClient.addEventListener(new LangDiscordCommand());
 		discordClient.addEventListener(new LinkMinecraftAccountDiscordCommand());
 
