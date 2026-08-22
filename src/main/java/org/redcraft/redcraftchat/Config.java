@@ -1,19 +1,15 @@
 package org.redcraft.redcraftchat;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
-import com.google.common.io.ByteStreams;
-
-import net.md_5.bungee.api.plugin.Plugin;
-import net.md_5.bungee.config.Configuration;
-import net.md_5.bungee.config.ConfigurationProvider;
-import net.md_5.bungee.config.YamlConfiguration;
+import org.yaml.snakeyaml.Yaml;
 
 public class Config {
 
@@ -71,85 +67,103 @@ public class Config {
         throw new IllegalStateException("This class should not be instantiated");
     }
 
-	public static void readConfig(Plugin plugin) throws IOException {
-		Configuration config = getConfig(plugin);
+	public static void readConfig(RedCraftChat plugin) throws IOException {
+		Map<String, Object> config = getConfig(plugin);
 
 		if (config == null) {
 			throw new IllegalStateException("Config is null!");
 		}
 
-		discordEnabled = config.getBoolean("discord-enabled");
-		discordToken = config.getString("discord-token");
-		discordChannelMinecraft = config.getString("discord-channel-minecraft");
-		discordActivityEnabled = config.getBoolean("discord-activity-enabled");
-		discordActivityType = config.getString("discord-activity-type");
-		discordActivityValue = config.getString("discord-activity-value");
+		discordEnabled = getBoolean(config, "discord-enabled");
+		discordToken = getString(config, "discord-token");
+		discordChannelMinecraft = getString(config, "discord-channel-minecraft");
+		discordActivityEnabled = getBoolean(config, "discord-activity-enabled");
+		discordActivityType = getString(config, "discord-activity-type");
+		discordActivityValue = getString(config, "discord-activity-value");
 
-		translationEnabled = config.getBoolean("translation-enabled");
-		chatTranslationProvider = config.getString("chat-translation-provider");
-		upstreamTranslationProvider = config.getString("upstream-translation-provider");
-		translationDiscordSupportedLanguages = config.getStringList("translation-discord-supported-languages");
-		translationDiscordCategoryFormat = config.getString("translation-discord-category-format");
+		translationEnabled = getBoolean(config, "translation-enabled");
+		chatTranslationProvider = getString(config, "chat-translation-provider");
+		upstreamTranslationProvider = getString(config, "upstream-translation-provider");
+		translationDiscordSupportedLanguages = getStringList(config, "translation-discord-supported-languages");
+		translationDiscordCategoryFormat = getString(config, "translation-discord-category-format");
 
-		supportedLocalesProvider = config.getString("supported-locales-provider");
-		supportedLocalesApiUrl = config.getString("supported-locales-api-url");
-		defaultLocale = config.getString("default-locale");
+		supportedLocalesProvider = getString(config, "supported-locales-provider");
+		supportedLocalesApiUrl = getString(config, "supported-locales-api-url");
+		defaultLocale = getString(config, "default-locale");
 
-		enableTabCompletion = config.getBoolean("enable-tab-completion");
+		enableTabCompletion = getBoolean(config, "enable-tab-completion");
 
-		deeplToken = config.getString("deepl-token");
-		deeplEndpoint = config.getString("deepl-endpoint");
-		deeplFormality = config.getString("deepl-formality");
-		deeplPreserveFormatting = config.getBoolean("deepl-preserve-formatting");
+		deeplToken = getString(config, "deepl-token");
+		deeplEndpoint = getString(config, "deepl-endpoint");
+		deeplFormality = getString(config, "deepl-formality");
+		deeplPreserveFormatting = getBoolean(config, "deepl-preserve-formatting");
 
-		modernMtToken = config.getString("modernmt-token");
+		modernMtToken = getString(config, "modernmt-token");
 
-		urlShorteningEnabled = config.getBoolean("url-shortening-enabled");
-		urlShorteningProvider = config.getString("url-shortening-provider");
-		urlShorteningEndpoint = config.getString("url-shortening-endpoint");
-		urlShorteningToken = config.getString("url-shortening-token");
+		urlShorteningEnabled = getBoolean(config, "url-shortening-enabled");
+		urlShorteningProvider = getString(config, "url-shortening-provider");
+		urlShorteningEndpoint = getString(config, "url-shortening-endpoint");
+		urlShorteningToken = getString(config, "url-shortening-token");
 
-		playerAvatarApiEndpoint = config.getString("player-avatar-endpoint");
-		playerAvatarFormat = config.getString("player-avatar-format");
+		playerAvatarApiEndpoint = getString(config, "player-avatar-endpoint");
+		playerAvatarFormat = getString(config, "player-avatar-format");
 
-		playerProvider = config.getString("player-provider");
-		playerApiUrl = config.getString("player-api-url");
+		playerProvider = getString(config, "player-provider");
+		playerApiUrl = getString(config, "player-api-url");
 
-		mailProvider = config.getString("mail-provider");
+		mailProvider = getString(config, "mail-provider");
 
-		scheduledAnnouncementsProvider = config.getString("scheduled-announcements-provider");
-		scheduledAnnouncementsInterval = config.getLong("scheduled-announcements-interval");
+		scheduledAnnouncementsProvider = getString(config, "scheduled-announcements-provider");
+		scheduledAnnouncementsInterval = getLong(config, "scheduled-announcements-interval");
 
-		databaseUri = config.getString("database-uri");
-		databaseUsername = config.getString("database-username");
-		databasePassword = config.getString("database-password");
+		databaseUri = getString(config, "database-uri");
+		databaseUsername = getString(config, "database-username");
+		databasePassword = getString(config, "database-password");
 
-		cacheProvider = config.getString("cache-provider");
-		redisUri = config.getString("redis-uri");
-		redisKeyPrefix = config.getString("redis-key-prefix");
+		cacheProvider = getString(config, "cache-provider");
+		redisUri = getString(config, "redis-uri");
+		redisKeyPrefix = getString(config, "redis-key-prefix");
 	}
 
-	public static Configuration getConfig(Plugin plugin) throws IOException {
-		if (!plugin.getDataFolder().exists()) {
-			plugin.getDataFolder().mkdir();
+	public static Map<String, Object> getConfig(RedCraftChat plugin) throws IOException {
+		Path dataDirectory = plugin.getDataDirectory();
+		if (!Files.exists(dataDirectory)) {
+			Files.createDirectories(dataDirectory);
 		}
 
-		File configFile = new File(plugin.getDataFolder(), "config.yml");
-		if (!configFile.exists()) {
-			configFile.createNewFile();
-			try (InputStream is = plugin.getResourceAsStream("config.yml");
-				OutputStream os = new FileOutputStream(configFile)) {
-				ByteStreams.copy(is, os);
+		Path configFile = dataDirectory.resolve("config.yml");
+		if (!Files.exists(configFile)) {
+			try (InputStream is = Config.class.getResourceAsStream("/config.yml")) {
+				Files.copy(is, configFile, StandardCopyOption.REPLACE_EXISTING);
 			}
 		}
 
-		Configuration configuration;
-		try {
-			configuration = ConfigurationProvider.getProvider(YamlConfiguration.class).load(new File(plugin.getDataFolder(), "config.yml"));
-		} catch (IOException e) {
-			e.printStackTrace();
-			return null;
+		try (InputStream is = Files.newInputStream(configFile)) {
+			return new Yaml().load(is);
 		}
-		return configuration;
+	}
+
+	private static String getString(Map<String, Object> config, String key) {
+		Object value = config.get(key);
+		return value == null ? "" : String.valueOf(value);
+	}
+
+	private static boolean getBoolean(Map<String, Object> config, String key) {
+		Object value = config.get(key);
+		return value instanceof Boolean ? (Boolean) value : false;
+	}
+
+	private static long getLong(Map<String, Object> config, String key) {
+		Object value = config.get(key);
+		return value instanceof Number ? ((Number) value).longValue() : 0;
+	}
+
+	@SuppressWarnings("unchecked")
+	private static List<String> getStringList(Map<String, Object> config, String key) {
+		Object value = config.get(key);
+		if (value instanceof List) {
+			return (List<String>) value;
+		}
+		return new ArrayList<String>();
 	}
 }
