@@ -71,6 +71,15 @@
 								</relocation>
 							</relocations>
 							<minimizeJar>true</minimizeJar>
+							<filters>
+								<!-- The JDBC driver is loaded reflectively, keep it out of minimization -->
+								<filter>
+									<artifact>com.mysql:mysql-connector-j</artifact>
+									<includes>
+										<include>**</include>
+									</includes>
+								</filter>
+							</filters>
 						</configuration>
 					</execution>
 				</executions>
@@ -113,6 +122,12 @@
 			<groupId>com.dieselpoint</groupId>
 			<artifactId>norm</artifactId>
 			<version>1.0.4</version>
+		</dependency>
+		<dependency>
+			<!-- BungeeCord bundled a MySQL driver, Velocity does not -->
+			<groupId>com.mysql</groupId>
+			<artifactId>mysql-connector-j</artifactId>
+			<version>9.7.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.modernmt</groupId>
