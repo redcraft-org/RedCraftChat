@@ -1,114 +1,146 @@
 package org.redcraft.redcraftchat;
 
+import com.google.inject.Inject;
+import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
+import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
+import com.velocitypowered.api.plugin.Plugin;
+import com.velocitypowered.api.plugin.annotation.DataDirectory;
+import com.velocitypowered.api.proxy.ProxyServer;
+import com.velocitypowered.api.scheduler.Scheduler;
+
 import net.dv8tion.jda.api.JDA;
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.plugin.Plugin;
-import net.md_5.bungee.api.plugin.PluginManager;
-import net.md_5.bungee.api.scheduler.TaskScheduler;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
 import org.redcraft.redcraftchat.bridge.MinecraftDiscordBridge;
 import org.redcraft.redcraftchat.caching.providers.RedisCache;
 import org.redcraft.redcraftchat.commands.discord.LangDiscordCommand;
 import org.redcraft.redcraftchat.commands.discord.LinkMinecraftAccountDiscordCommand;
-import org.redcraft.redcraftchat.commands.discord.PlayersDiscordCommand;
-import org.redcraft.redcraftchat.commands.minecraft.BroadcastMinecraftCommand;
-import org.redcraft.redcraftchat.commands.minecraft.CommandSpyMinecraftCommand;
-import org.redcraft.redcraftchat.commands.minecraft.LangMinecraftCommand;
-import org.redcraft.redcraftchat.commands.minecraft.LinkDiscordAccountMinecraftCommand;
-import org.redcraft.redcraftchat.commands.minecraft.MailMinecraftCommand;
-import org.redcraft.redcraftchat.commands.minecraft.MeMinecraftCommand;
-import org.redcraft.redcraftchat.commands.minecraft.MsgMinecraftCommand;
-import org.redcraft.redcraftchat.commands.minecraft.PlayerSettingsMinecraftCommand;
-import org.redcraft.redcraftchat.commands.minecraft.ReplyMinecraftCommand;
 import org.redcraft.redcraftchat.database.DatabaseManager;
 import org.redcraft.redcraftchat.discord.DiscordClient;
-import org.redcraft.redcraftchat.listeners.discord.DiscordMessageDeletedListener;
-import org.redcraft.redcraftchat.listeners.discord.DiscordMessageEditedListener;
-import org.redcraft.redcraftchat.listeners.discord.DiscordMessageReceivedListener;
-import org.redcraft.redcraftchat.listeners.minecraft.MinecraftChatListener;
-import org.redcraft.redcraftchat.listeners.minecraft.MinecraftConnectDisconnectMessageListener;
-import org.redcraft.redcraftchat.listeners.minecraft.MinecraftConnectMailListener;
-import org.redcraft.redcraftchat.listeners.minecraft.MinecraftPlayerPreferencesListener;
-import org.redcraft.redcraftchat.listeners.minecraft.MinecraftRemoteServerMessageListener;
-import org.redcraft.redcraftchat.listeners.minecraft.MinecraftTabCompleteListener;
+import org.redcraft.redcraftchat.helpers.LegacyText;
+import org.redcraft.redcraftchat.listeners.minecraft.MinecraftDisplayNameListener;
 import org.redcraft.redcraftchat.runnables.DiscordChannelSynchronizerTask;
 import org.redcraft.redcraftchat.runnables.DiscordUsersSynchronizerTask;
 import org.redcraft.redcraftchat.runnables.LuckPermsSynchronizerTask;
 import org.redcraft.redcraftchat.runnables.MinecraftServerStatusWatcherTask;
 import org.redcraft.redcraftchat.runnables.ScheduledAnnouncementsTask;
 
-public class RedCraftChat extends Plugin {
+import org.slf4j.Logger;
+
+@Plugin(id = "redcraftchat", name = RedCraftChat.PLUGIN_NAME, version = "0.1.0-SNAPSHOT", url = "https://redcraft.org", description = "Multi language chat and Discord bridge", authors = {
+		"RedCraft" })
+public class RedCraftChat {
+
+	public static final String PLUGIN_NAME = "RedCraftChat";
 
 	private static RedCraftChat instance;
 
-	@Override
-	public void onEnable() {
-		setInstance(this);
+	private final ProxyServer proxy;
+	private final Logger logger;
+	private final Path dataDirectory;
 
+	@Inject
+	public RedCraftChat(ProxyServer proxy, Logger logger, @DataDirectory Path dataDirectory) {
+		this.proxy = proxy;
+		this.logger = logger;
+		this.dataDirectory = dataDirectory;
+
+		setInstance(this);
+	}
+
+	@Subscribe
+	public void onProxyInitialization(ProxyInitializeEvent event) {
 		// Setup
 		try {
 			Config.readConfig(this);
 		} catch (IOException e) {
-			this.getLogger().severe("Could not read config.yml");
-			e.printStackTrace();
-			this.onDisable();
+			this.logger.error("Could not read config.yml", e);
 			return;
 		}
 		// TODO: Check if database is needed
 		DatabaseManager.connect();
 
+		boolean discordReady = setupDiscord();
+
+		// Schedulers
+		Scheduler scheduler = proxy.getScheduler();
+		if (discordReady) {
+			scheduler.buildTask(this, new DiscordChannelSynchronizerTask()).delay(3, TimeUnit.SECONDS).repeat(60, TimeUnit.SECONDS).schedule();
+			scheduler.buildTask(this, new DiscordUsersSynchronizerTask()).delay(3, TimeUnit.SECONDS).repeat(60, TimeUnit.SECONDS).schedule();
+		}
+		scheduler.buildTask(this, new LuckPermsSynchronizerTask()).delay(10, TimeUnit.SECONDS).repeat(30, TimeUnit.SECONDS).schedule();
+		scheduler.buildTask(this, new MinecraftServerStatusWatcherTask()).delay(5, TimeUnit.SECONDS).repeat(5, TimeUnit.SECONDS).schedule();
+		scheduler.buildTask(this, new ScheduledAnnouncementsTask()).delay(Config.scheduledAnnouncementsInterval, TimeUnit.SECONDS).repeat(Config.scheduledAnnouncementsInterval, TimeUnit.SECONDS).schedule();
+
+		// Game listeners
+		proxy.getEventManager().register(this, new MinecraftDisplayNameListener());
+		// TODO wave 2: register the chat bridge listeners once the packet layer is ported to PacketEvents
+		// proxy.getEventManager().register(this, new MinecraftChatListener());
+		// proxy.getEventManager().register(this, new MinecraftConnectDisconnectMessageListener());
+		// proxy.getEventManager().register(this, new MinecraftConnectMailListener());
+		// proxy.getEventManager().register(this, new MinecraftRemoteServerMessageListener());
+		// proxy.getEventManager().register(this, new MinecraftPlayerPreferencesListener());
+		// if (Config.enableTabCompletion) {
+		// 	proxy.getEventManager().register(this, new MinecraftTabCompleteListener());
+		// }
+
+		// Game commands
+		// TODO wave 2: register game commands through the CommandManager
+		// CommandManager commandManager = proxy.getCommandManager();
+		// commandManager.register(commandManager.metaBuilder("broadcast").aliases("bc", "alert").plugin(this).build(), new BroadcastMinecraftCommand());
+		// commandManager.register(commandManager.metaBuilder("commandspy").aliases("cspy").plugin(this).build(), new CommandSpyMinecraftCommand());
+		// commandManager.register(commandManager.metaBuilder("lang").aliases("languages").plugin(this).build(), new LangMinecraftCommand());
+		// commandManager.register(commandManager.metaBuilder("discord-link").plugin(this).build(), new LinkDiscordAccountMinecraftCommand());
+		// commandManager.register(commandManager.metaBuilder("mail").plugin(this).build(), new MailMinecraftCommand());
+		// commandManager.register(commandManager.metaBuilder("msg").aliases("tell", "m", "w").plugin(this).build(), new MsgMinecraftCommand());
+		// commandManager.register(commandManager.metaBuilder("me").plugin(this).build(), new MeMinecraftCommand());
+		// commandManager.register(commandManager.metaBuilder("player-settings").plugin(this).build(), new PlayerSettingsMinecraftCommand());
+		// commandManager.register(commandManager.metaBuilder("reply").aliases("r").plugin(this).build(), new ReplyMinecraftCommand());
+	}
+
+	private boolean setupDiscord() {
+		if (!Config.discordEnabled || Config.discordToken == null || Config.discordToken.isEmpty()) {
+			this.logger.warn("Discord is disabled or no token is configured, skipping Discord setup");
+			return false;
+		}
+
+		JDA discordClient;
+		try {
+			discordClient = DiscordClient.getClient();
+		} catch (Exception e) {
+			this.logger.error("Could not initialize the Discord client", e);
+			return false;
+		}
+
+		if (discordClient == null) {
+			return false;
+		}
+
 		// Discord events
-		JDA discordClient = DiscordClient.getClient();
-		discordClient.addEventListener(new DiscordMessageReceivedListener());
-		discordClient.addEventListener(new DiscordMessageEditedListener());
-		discordClient.addEventListener(new DiscordMessageDeletedListener());
+		// TODO wave 2: register the message bridge listeners once the Minecraft side is ported
+		// discordClient.addEventListener(new DiscordMessageReceivedListener());
+		// discordClient.addEventListener(new DiscordMessageEditedListener());
+		// discordClient.addEventListener(new DiscordMessageDeletedListener());
 
 		// Discord commands
-		discordClient.addEventListener(new PlayersDiscordCommand());
+		// TODO wave 2: PlayersDiscordCommand needs the display name service wiring on the embed side
+		// discordClient.addEventListener(new PlayersDiscordCommand());
 		discordClient.addEventListener(new LangDiscordCommand());
 		discordClient.addEventListener(new LinkMinecraftAccountDiscordCommand());
 
-		// Schedulers
-		TaskScheduler scheduler = getProxy().getScheduler();
-		scheduler.schedule(this, new DiscordChannelSynchronizerTask(), 3, 60, TimeUnit.SECONDS);
-		scheduler.schedule(this, new DiscordUsersSynchronizerTask(), 3, 60, TimeUnit.SECONDS);
-		scheduler.schedule(this, new LuckPermsSynchronizerTask(), 10, 30, TimeUnit.SECONDS);
-		scheduler.schedule(this, new MinecraftServerStatusWatcherTask(), 5, 5, TimeUnit.SECONDS);
-		scheduler.schedule(this, new ScheduledAnnouncementsTask(), Config.scheduledAnnouncementsInterval, Config.scheduledAnnouncementsInterval, TimeUnit.SECONDS);
-
-		// Game listeners
-		PluginManager pluginManager = this.getProxy().getPluginManager();
-		pluginManager.registerListener(this, new MinecraftChatListener());
-		pluginManager.registerListener(this, new MinecraftConnectDisconnectMessageListener());
-		pluginManager.registerListener(this, new MinecraftConnectMailListener());
-		pluginManager.registerListener(this, new MinecraftRemoteServerMessageListener());
-		pluginManager.registerListener(this, new MinecraftPlayerPreferencesListener());
-		if (Config.enableTabCompletion) {
-			pluginManager.registerListener(this, new MinecraftTabCompleteListener());
-		}
-
-		// Game commands
-		pluginManager.registerCommand(this, new BroadcastMinecraftCommand());
-		pluginManager.registerCommand(this, new CommandSpyMinecraftCommand());
-		pluginManager.registerCommand(this, new LangMinecraftCommand());
-		pluginManager.registerCommand(this, new LinkDiscordAccountMinecraftCommand());
-		pluginManager.registerCommand(this, new MailMinecraftCommand());
-		pluginManager.registerCommand(this, new MsgMinecraftCommand());
-		pluginManager.registerCommand(this, new MeMinecraftCommand());
-		pluginManager.registerCommand(this, new PlayerSettingsMinecraftCommand());
-		pluginManager.registerCommand(this, new ReplyMinecraftCommand());
+		return true;
 	}
 
-	@Override
-	public void onDisable() {
-		MinecraftDiscordBridge.getInstance().broadcastMessage(ChatColor.RED + "" + ChatColor.BOLD + "Server is shutting down!");
-		getProxy().getScheduler().cancel(this);
-		getProxy().getPluginManager().unregisterListeners(this);
-		getProxy().getPluginManager().unregisterCommands(this);
-		DiscordClient.getClient().shutdownNow();
+	@Subscribe
+	public void onProxyShutdown(ProxyShutdownEvent event) {
+		MinecraftDiscordBridge.getInstance().broadcastMessage(LegacyText.RED + LegacyText.BOLD + "Server is shutting down!");
+		if (DiscordClient.hasClient()) {
+			DiscordClient.getClient().shutdownNow();
+		}
 		RedisCache.close();
 	}
 
@@ -118,5 +150,17 @@ public class RedCraftChat extends Plugin {
 
 	public static RedCraftChat getInstance() {
 		return instance;
+	}
+
+	public ProxyServer getProxy() {
+		return proxy;
+	}
+
+	public Logger getLogger() {
+		return logger;
+	}
+
+	public Path getDataDirectory() {
+		return dataDirectory;
 	}
 }
