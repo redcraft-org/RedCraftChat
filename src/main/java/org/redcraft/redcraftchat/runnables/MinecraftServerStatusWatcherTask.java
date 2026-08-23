@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.redcraft.redcraftchat.RedCraftChat;
+import org.redcraft.redcraftchat.minecraft.ServerDisplayNameManager;
 import org.redcraft.redcraftchat.bridge.MinecraftDiscordBridge;
 import org.redcraft.redcraftchat.helpers.LegacyText;
 
@@ -42,7 +43,7 @@ public class MinecraftServerStatusWatcherTask implements Runnable {
         }
 
         Map<String, String> replacements = new HashMap<String, String>();
-        replacements.put("%server%", serverInfo.getName() + LegacyText.YELLOW);
+        replacements.put("%server%", ServerDisplayNameManager.getDisplayName(serverInfo) + LegacyText.YELLOW);
 
         MinecraftDiscordBridge.getInstance().broadcastMessage(message, replacements);
     }
@@ -51,6 +52,9 @@ public class MinecraftServerStatusWatcherTask implements Runnable {
         for (RegisteredServer server : RedCraftChat.getInstance().getProxy().getAllServers()) {
             ServerInfo serverInfo = server.getServerInfo();
             String serverName = serverInfo.getName();
+
+            // Keeps the readable names current, a backend can change its motd
+            ServerDisplayNameManager.refreshIfUnknown(server);
             if (isServerOnline(serverInfo)) {
                 if (!onlineServers.contains(serverName)) {
                     RedCraftChat.getInstance().getLogger().info("Server " + serverName + " is marked as online");

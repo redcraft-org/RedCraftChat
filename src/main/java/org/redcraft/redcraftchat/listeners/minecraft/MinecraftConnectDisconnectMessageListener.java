@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.bridge.MinecraftDiscordBridge;
 import org.redcraft.redcraftchat.helpers.LegacyText;
+import org.redcraft.redcraftchat.minecraft.ServerDisplayNameManager;
 import org.redcraft.redcraftchat.players.DisplayNameManager;
 import org.redcraft.redcraftchat.runnables.LuckPermsSynchronizerTask;
 
@@ -42,8 +43,8 @@ public class MinecraftConnectDisconnectMessageListener {
 
             Map<String, String> replacements = new HashMap<String, String>();
             replacements.put("%player%", DisplayNameManager.getDisplayName(event.getPlayer()) + LegacyText.YELLOW);
-            replacements.put("%previous_server%", previousServer + LegacyText.YELLOW);
-            replacements.put("%current_server%", currentServer + LegacyText.YELLOW);
+            replacements.put("%previous_server%", ServerDisplayNameManager.getDisplayName(previousServer) + LegacyText.YELLOW);
+            replacements.put("%current_server%", ServerDisplayNameManager.getDisplayName(currentServer) + LegacyText.YELLOW);
 
             // TODO make nice embeds
             MinecraftDiscordBridge.getInstance().broadcastMessage(message, replacements);
