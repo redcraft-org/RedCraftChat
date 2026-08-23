@@ -27,6 +27,12 @@ public class ClaudeProvider implements TranslationProvider {
     // low also caps what a single message can cost if the model rambles.
     private static final int MAX_TOKENS = 1024;
 
+    // Translations run a little longer or shorter than their source, they do not
+    // run away. The margin keeps very short messages from tripping the ratio,
+    // "ok" becoming "d'accord" is a legitimate quadrupling.
+    private static final int MAX_LENGTH_RATIO = 3;
+    private static final int MAX_LENGTH_MARGIN = 60;
+
     // The reply is relayed to players verbatim, so anything the model says other
     // than the translation is shown as if the player had typed it. The reply is
     // therefore opened for the model and closed with a stop sequence, which
@@ -120,6 +126,15 @@ public class ClaudeProvider implements TranslationProvider {
         if (translated == null || translated.isEmpty()) {
             throw new IllegalStateException("Claude returned no translation for " + sourceLangId + " to "
                     + targetLangId);
+        }
+
+        // The reply is broadcast to every player and to Discord, so a message that
+        // talked the model into answering instead of translating must not be
+        // relayed. A translation stays near the length of its source, and the
+        // caller falls back to the original text when this throws.
+        if (translated.length() > MAX_LENGTH_RATIO * text.length() + MAX_LENGTH_MARGIN) {
+            throw new IllegalStateException("Claude returned an implausibly long translation for " + sourceLangId
+                    + " to " + targetLangId + ", falling back to the original message");
         }
 
         // TODO remove debug
