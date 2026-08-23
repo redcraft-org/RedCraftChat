@@ -11,6 +11,7 @@ import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 import org.redcraft.redcraftchat.detection.DetectionManager;
 import org.redcraft.redcraftchat.models.translate.TokenizedMessage;
 import org.redcraft.redcraftchat.tokenizer.TokenizerManager;
+import org.redcraft.redcraftchat.translate.providers.ClaudeProvider;
 import org.redcraft.redcraftchat.translate.providers.DeeplProvider;
 import org.redcraft.redcraftchat.translate.providers.ModernmtFreeProvider;
 import org.redcraft.redcraftchat.translate.providers.ModernmtProvider;
@@ -26,6 +27,9 @@ public class TranslationManager {
 
     public TranslationManager(String translationProvider) {
         switch (translationProvider) {
+            case "claude":
+                this.translationProvider = new ClaudeProvider();
+                break;
             case "deepl":
                 this.translationProvider = new DeeplProvider();
                 break;

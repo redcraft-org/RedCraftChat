@@ -40,6 +40,11 @@ public class Config {
 	public static String deeplFormality = "normal";
 	public static boolean deeplPreserveFormatting = false;
 
+	public static String claudeToken = "";
+	public static String claudeModel = "claude-haiku-4-5-20251001";
+	public static String claudeEndpoint = "https://api.anthropic.com/v1/messages";
+	public static String claudeApiVersion = "2023-06-01";
+
 	public static String modernMtToken = "";
 
 	public static boolean urlShorteningEnabled = false;
@@ -104,6 +109,11 @@ public class Config {
 		deeplFormality = getString(config, "deepl-formality");
 		deeplPreserveFormatting = getBoolean(config, "deepl-preserve-formatting");
 
+		claudeToken = getString(config, "claude-token", claudeToken);
+		claudeModel = getString(config, "claude-model", claudeModel);
+		claudeEndpoint = getString(config, "claude-endpoint", claudeEndpoint);
+		claudeApiVersion = getString(config, "claude-api-version", claudeApiVersion);
+
 		modernMtToken = getString(config, "modernmt-token");
 
 		urlShorteningEnabled = getBoolean(config, "url-shortening-enabled");
@@ -152,6 +162,13 @@ public class Config {
 	private static String getString(Map<String, Object> config, String key) {
 		Object value = config.get(key);
 		return value == null ? "" : String.valueOf(value);
+	}
+
+	// Keys added after a config was first written are missing from older files, so
+	// they fall back to the field default instead of being blanked out.
+	private static String getString(Map<String, Object> config, String key, String defaultValue) {
+		Object value = config.get(key);
+		return value == null ? defaultValue : String.valueOf(value);
 	}
 
 	private static boolean getBoolean(Map<String, Object> config, String key) {
