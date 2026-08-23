@@ -27,6 +27,16 @@ supported-locales-provider: 'database'
 supported-locales-api-url: 'https://redcraft.org/api/v1/language/list'
 default-locale: 'en-US'
 
+# Readable names for the backend servers, used in join and leave messages and
+# in the Discord bridge. Falls back to the motd a server answers a ping with,
+# and then to the name the proxy registers it under.
+server-display-names:
+  hub: '&aHub'
+  museum: '&6Museum'
+  survival_vanilla: '&2Survival Vanilla'
+  crea_build_plot: '&bCrea Build'
+  crea_redstone_plot: '&cCrea Redstone'
+  crea_engineer_test: '&7Crea Engineer Test'
 # This is to add missing players in tab completion
 enable-tab-completion: true
 # Translate every menu and button into each supported language on startup,

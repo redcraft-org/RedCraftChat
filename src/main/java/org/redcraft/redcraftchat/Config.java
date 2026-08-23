@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -33,6 +34,8 @@ public class Config {
 	public static boolean enableTabCompletion = true;
 
 	public static boolean pretranslateUiEnabled = true;
+
+	public static Map<String, String> serverDisplayNames = new HashMap<String, String>();
 
 	public static boolean stripChatSignatures = true;
 	public static boolean stripLoginProfileKey = false;
@@ -103,6 +106,7 @@ public class Config {
 
 		enableTabCompletion = getBoolean(config, "enable-tab-completion");
 		pretranslateUiEnabled = getBoolean(config, "pretranslate-ui-enabled", true);
+		serverDisplayNames = getStringMap(config, "server-display-names");
 
 		stripChatSignatures = getBoolean(config, "strip-chat-signatures", true);
 		stripLoginProfileKey = getBoolean(config, "strip-login-profile-key", false);
@@ -186,6 +190,22 @@ public class Config {
 	private static long getLong(Map<String, Object> config, String key) {
 		Object value = config.get(key);
 		return value instanceof Number ? ((Number) value).longValue() : 0;
+	}
+
+	@SuppressWarnings("unchecked")
+	private static Map<String, String> getStringMap(Map<String, Object> config, String key) {
+		Object value = config.get(key);
+		Map<String, String> parsed = new HashMap<String, String>();
+
+		if (value instanceof Map) {
+			for (Map.Entry<Object, Object> entry : ((Map<Object, Object>) value).entrySet()) {
+				if (entry.getKey() != null && entry.getValue() != null) {
+					parsed.put(String.valueOf(entry.getKey()), String.valueOf(entry.getValue()));
+				}
+			}
+		}
+
+		return parsed;
 	}
 
 	@SuppressWarnings("unchecked")

@@ -3,7 +3,9 @@ package org.redcraft.redcraftchat.minecraft;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
+import org.redcraft.redcraftchat.helpers.LegacyText;
 
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerInfo;
@@ -31,6 +33,14 @@ public class ServerDisplayNameManager {
     public static String getDisplayName(String serverName) {
         if (serverName == null) {
             return null;
+        }
+
+        // A name set in the config wins, it is the only one that can carry
+        // colours and it does not depend on a backend answering a ping
+        String configured = Config.serverDisplayNames.get(serverName);
+
+        if (configured != null && !configured.isEmpty()) {
+            return LegacyText.translateAlternateColorCodes('&', configured);
         }
 
         return displayNames.getOrDefault(serverName, serverName);
