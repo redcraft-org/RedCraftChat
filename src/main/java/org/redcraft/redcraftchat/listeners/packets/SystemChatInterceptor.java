@@ -113,6 +113,16 @@ public class SystemChatInterceptor extends PacketListenerAbstract {
     public static void handleChatPacket(User user, Player player, Component message, boolean overlay) {
         Component translatedMessageComponent = message;
 
+        // Translating serialises the component down to a legacy string, which
+        // keeps the colours and drops everything else. A menu that went through
+        // that came out unclickable, so anything carrying a click is forwarded
+        // untouched. RedCraftChat builds its own menus in the player's language
+        // already, so nothing is lost by leaving them alone.
+        if (isInteractive(message)) {
+            sendMessage(user, player, message, overlay);
+            return;
+        }
+
         // Anything else than plain text is forwarded as it came
         if (message instanceof TextComponent) {
             LegacyComponentSerializer serializer = LegacyComponentSerializer.legacySection();
@@ -141,10 +151,14 @@ public class SystemChatInterceptor extends PacketListenerAbstract {
             }
         }
 
+        sendMessage(user, player, translatedMessageComponent, overlay);
+    }
+
+    private static void sendMessage(User user, Player player, Component message, boolean overlay) {
         try {
             // Silently, otherwise the packet goes back through the packetevents
             // encoder and this listener sees its own message again
-            user.sendPacketSilently(new WrapperPlayServerSystemChatMessage(overlay, translatedMessageComponent));
+            user.sendPacketSilently(new WrapperPlayServerSystemChatMessage(overlay, message));
         } catch (Exception e) {
             String messageTemplate = "Encountered an exception while parsing incoming message from server %s to player %s: %s";
             String errorMessage = String.format(messageTemplate, MinecraftDiscordBridge.getServerName(player),
@@ -152,5 +166,23 @@ public class SystemChatInterceptor extends PacketListenerAbstract {
             RedCraftChat.getInstance().getLogger().error(errorMessage);
             e.printStackTrace();
         }
+    }
+
+    /**
+     * A click anywhere in the tree makes the whole message interactive, since
+     * serialising any part of it would drop that child's event.
+     */
+    private static boolean isInteractive(Component message) {
+        if (message.clickEvent() != null) {
+            return true;
+        }
+
+        for (Component child : message.children()) {
+            if (isInteractive(child)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

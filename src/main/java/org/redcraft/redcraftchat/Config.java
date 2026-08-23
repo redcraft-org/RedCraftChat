@@ -32,6 +32,8 @@ public class Config {
 
 	public static boolean enableTabCompletion = true;
 
+	public static boolean pretranslateUiEnabled = true;
+
 	public static boolean stripChatSignatures = true;
 	public static boolean stripLoginProfileKey = false;
 
@@ -100,6 +102,7 @@ public class Config {
 		defaultLocale = getString(config, "default-locale");
 
 		enableTabCompletion = getBoolean(config, "enable-tab-completion");
+		pretranslateUiEnabled = getBoolean(config, "pretranslate-ui-enabled", true);
 
 		stripChatSignatures = getBoolean(config, "strip-chat-signatures", true);
 		stripLoginProfileKey = getBoolean(config, "strip-login-profile-key", false);

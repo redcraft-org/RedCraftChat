@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
+import org.redcraft.redcraftchat.locales.TranslationWarmer;
 import org.redcraft.redcraftchat.bridge.MinecraftDiscordBridge;
 import org.redcraft.redcraftchat.caching.providers.RedisCache;
 import org.redcraft.redcraftchat.commands.discord.LangDiscordCommand;
@@ -123,6 +124,11 @@ public class RedCraftChat {
 		}
 		scheduler.buildTask(this, new LuckPermsSynchronizerTask()).delay(10, TimeUnit.SECONDS).repeat(30, TimeUnit.SECONDS).schedule();
 		scheduler.buildTask(this, new MinecraftServerStatusWatcherTask()).delay(5, TimeUnit.SECONDS).repeat(5, TimeUnit.SECONDS).schedule();
+		if (Config.pretranslateUiEnabled) {
+			// Runs once and off the startup path, the menus fall back to
+			// translating on demand until it finishes
+			scheduler.buildTask(this, new TranslationWarmer()).delay(15, TimeUnit.SECONDS).schedule();
+		}
 		scheduler.buildTask(this, new ScheduledAnnouncementsTask()).delay(Config.scheduledAnnouncementsInterval, TimeUnit.SECONDS).repeat(Config.scheduledAnnouncementsInterval, TimeUnit.SECONDS).schedule();
 
 		// Packet listeners, they must be registered between load() and init()

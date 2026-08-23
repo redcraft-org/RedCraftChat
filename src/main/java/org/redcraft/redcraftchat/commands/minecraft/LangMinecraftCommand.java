@@ -3,6 +3,7 @@ package org.redcraft.redcraftchat.commands.minecraft;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.helpers.BasicMessageFormatter;
@@ -67,7 +68,7 @@ public class LangMinecraftCommand implements SimpleCommand {
     private List<Component> generateMenu(PlayerPreferences preferences) {
         String originalHeaderText = "LANGUAGE SELECTOR";
         String originalHelpText = "Click on a language to enable or disable it, click on the checkbox to make it default.";
-        String originalCaptionText = "Caption:";
+        String originalCaptionText = "Legend:";
         String originalDisabledText = "disabled";
         String originalEnabledText = "enabled";
 
@@ -124,7 +125,7 @@ public class LangMinecraftCommand implements SimpleCommand {
                         .hoverEvent(showText(LegacyText.GREEN + setAsMainLanguage));
             }
 
-            Component localeName = Component.text(locale.name);
+            Component localeName = Component.text(getEndonym(locale));
             if (preferences.languages.contains(locale.code)) {
                 localeName = localeName.color(NamedTextColor.GREEN);
                 if (isMainLanguage) {
@@ -146,6 +147,22 @@ public class LangMinecraftCommand implements SimpleCommand {
         }
 
         return messages;
+    }
+
+    /**
+     * The name of a language as its own speakers write it, so a French speaker
+     * looks for "Francais" and not for whatever the reader's language calls it.
+     * Falls back to the stored name when the JVM has no display name for the tag.
+     */
+    private String getEndonym(SupportedLocale locale) {
+        Locale localeTag = Locale.forLanguageTag(locale.code.replace('_', '-'));
+        String endonym = localeTag.getDisplayLanguage(localeTag);
+
+        if (endonym.isEmpty() || endonym.equalsIgnoreCase(localeTag.getLanguage())) {
+            return locale.name;
+        }
+
+        return endonym.substring(0, 1).toUpperCase(localeTag) + endonym.substring(1);
     }
 
     private HoverEvent<Component> showText(String legacyText) {
