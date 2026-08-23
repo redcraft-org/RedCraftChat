@@ -13,6 +13,7 @@ import org.redcraft.redcraftchat.models.caching.CacheCategory;
 import org.redcraft.redcraftchat.models.discord.TranslatedChannel;
 import org.redcraft.redcraftchat.models.discord.WebhookMessageMapping;
 import org.redcraft.redcraftchat.models.discord.WebhookMessageMappingList;
+import org.redcraft.redcraftchat.detection.DetectionManager;
 import org.redcraft.redcraftchat.translate.TranslationManager;
 
 import dev.vankka.mcdiscordreserializer.minecraft.MinecraftSerializer;
@@ -66,13 +67,22 @@ public class DiscordMessageReceivedListener extends ListenerAdapter {
                 return;
             }
 
-            List<String> targetLanguages = TranslationManager.getTargetLanguages(sourceChannel.languageId);
-
             Component parsedMessage = MinecraftSerializer.INSTANCE.serialize(message.getContentDisplay());
             String formattedMessage = LegacyComponentSerializer.legacySection().serialize(parsedMessage);
 
-            Map<String, String> translatedLanguages = translationManager.translateBulk(formattedMessage, sourceChannel.languageId, targetLanguages);
-            MinecraftDiscordBridge.getInstance().sendMessageToPlayers("Discord", member.getEffectiveName(), sourceChannel.languageId, formattedMessage, translatedLanguages);
+            // The channel says which language it collects, not which language the
+            // message was written in. Somebody writing English in the French
+            // channel used to be relayed as French, so French players were told
+            // they already spoke it and got the English text untouched.
+            String sourceLanguage = DetectionManager.getLanguage(formattedMessage);
+            if (sourceLanguage == null) {
+                sourceLanguage = sourceChannel.languageId;
+            }
+
+            List<String> targetLanguages = TranslationManager.getTargetLanguages(sourceLanguage);
+
+            Map<String, String> translatedLanguages = translationManager.translateBulk(formattedMessage, sourceLanguage, targetLanguages);
+            MinecraftDiscordBridge.getInstance().sendMessageToPlayers("Discord", member.getEffectiveName(), sourceLanguage, formattedMessage, translatedLanguages);
         }
 
         if (sourceChannel != null && translatedChannelsMappings.containsKey(sourceChannel)) {
