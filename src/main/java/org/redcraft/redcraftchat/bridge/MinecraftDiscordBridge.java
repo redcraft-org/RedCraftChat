@@ -15,6 +15,7 @@ import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.helpers.LegacyText;
 import org.redcraft.redcraftchat.players.DisplayNameManager;
+import org.redcraft.redcraftchat.minecraft.ServerDisplayNameManager;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 import org.redcraft.redcraftchat.tokenizer.TokenizerManager;
 import org.redcraft.redcraftchat.discord.ChannelManager;
@@ -195,7 +196,7 @@ public class MinecraftDiscordBridge {
     }
 
     public void formatAndSendMessageToPlayer(String server, String sender, Player receiver, String translatedMessage, String originalMessage, String sourceLanguage) {
-        String serverPrefix = server + LegacyText.RESET;
+        String serverPrefix = ServerDisplayNameManager.getDisplayName(server) + LegacyText.RESET;
         String senderPrefix = sender + LegacyText.RESET;
 
         String targetLanguage = null;
