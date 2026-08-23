@@ -54,8 +54,8 @@ public class Config {
 	public static String urlShorteningEndpoint = "https://redcraft.org/api/v1/url";
 	public static String urlShorteningToken = "";
 
-	public static String playerAvatarApiEndpoint = "https://redcraft.org/api/v1/skin/head/%playername%?size=128";
-	public static String playerAvatarFormat = "";
+	public static String playerAvatarApiEndpoint = "https://mc-heads.net/avatar/%player%/128";
+	public static String playerAvatarFormat = "uuid";
 
 	public static String playerProvider = "database";
 	public static String playerApiUrl = "https://redcraft.org/api/v1/player";
@@ -124,8 +124,8 @@ public class Config {
 		urlShorteningEndpoint = getString(config, "url-shortening-endpoint");
 		urlShorteningToken = getString(config, "url-shortening-token");
 
-		playerAvatarApiEndpoint = getString(config, "player-avatar-endpoint");
-		playerAvatarFormat = getString(config, "player-avatar-format");
+		playerAvatarApiEndpoint = getString(config, "player-avatar-endpoint", playerAvatarApiEndpoint);
+		playerAvatarFormat = getString(config, "player-avatar-format", playerAvatarFormat);
 
 		playerProvider = getString(config, "player-provider");
 		playerApiUrl = getString(config, "player-api-url");
