@@ -27,6 +27,14 @@ supported-locales-provider: 'database'
 supported-locales-api-url: 'https://redcraft.org/api/v1/language/list'
 default-locale: 'en-US'
 
+# Extra commands that run another command, since Velocity has no alias of its
+# own. /hub runs /server hub, and whatever the player types after the alias is
+# appended, so /hub museum still works. The command being aliased checks its
+# own permission, an alias grants nothing by itself.
+command-aliases:
+  hub: 'server hub'
+  lobby: 'server hub'
+
 # Readable names for the backend servers, used in join and leave messages and
 # in the Discord bridge. Falls back to the motd a server answers a ping with,
 # and then to the name the proxy registers it under.

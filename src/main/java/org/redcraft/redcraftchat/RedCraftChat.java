@@ -19,6 +19,7 @@ import io.github.retrooper.packetevents.velocity.factory.VelocityPacketEventsBui
 import net.dv8tion.jda.api.JDA;
 
 import java.io.IOException;
+import java.util.Map;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
@@ -28,6 +29,7 @@ import org.redcraft.redcraftchat.caching.providers.RedisCache;
 import org.redcraft.redcraftchat.commands.discord.LangDiscordCommand;
 import org.redcraft.redcraftchat.commands.discord.LinkMinecraftAccountDiscordCommand;
 import org.redcraft.redcraftchat.commands.discord.PlayersDiscordCommand;
+import org.redcraft.redcraftchat.commands.minecraft.AliasMinecraftCommand;
 import org.redcraft.redcraftchat.commands.minecraft.BroadcastMinecraftCommand;
 import org.redcraft.redcraftchat.commands.minecraft.CommandSpyMinecraftCommand;
 import org.redcraft.redcraftchat.commands.minecraft.LangMinecraftCommand;
@@ -155,6 +157,14 @@ public class RedCraftChat {
 		// and a rejected alias aborts the rest of this method, so they are left out
 		// until someone confirms them against a running proxy.
 		CommandManager commandManager = proxy.getCommandManager();
+		// Aliases come from the config, so a server can be given a shortcut
+		// without shipping a command for it
+		for (Map.Entry<String, String> alias : Config.commandAliases.entrySet()) {
+			commandManager.register(
+				commandManager.metaBuilder(alias.getKey()).plugin(this).build(),
+				new AliasMinecraftCommand(alias.getValue()));
+		}
+
 		commandManager.register(commandManager.metaBuilder("broadcast").aliases("bc", "alert").plugin(this).build(), new BroadcastMinecraftCommand());
 		commandManager.register(commandManager.metaBuilder("commandspy").aliases("cspy").plugin(this).build(), new CommandSpyMinecraftCommand());
 		commandManager.register(commandManager.metaBuilder("lang").aliases("languages").plugin(this).build(), new LangMinecraftCommand());
