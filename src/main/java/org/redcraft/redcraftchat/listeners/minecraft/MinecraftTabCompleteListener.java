@@ -2,22 +2,19 @@ package org.redcraft.redcraftchat.listeners.minecraft;
 
 import java.util.List;
 
-import net.md_5.bungee.api.ProxyServer;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
-import net.md_5.bungee.api.event.TabCompleteEvent;
-import net.md_5.bungee.api.event.TabCompleteResponseEvent;
-import net.md_5.bungee.api.plugin.Listener;
-import net.md_5.bungee.event.EventHandler;
-import net.md_5.bungee.event.EventPriority;
+import org.redcraft.redcraftchat.RedCraftChat;
 
-public class MinecraftTabCompleteListener implements Listener {
+import com.velocitypowered.api.event.PostOrder;
+import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.event.player.TabCompleteEvent;
+import com.velocitypowered.api.proxy.Player;
 
-    @EventHandler(priority = EventPriority.NORMAL)
-    public void onTabCompleteResponseEvent(TabCompleteResponseEvent event) {
-        this.addPlayerNameSuggestions(event.getSuggestions());
-    }
+public class MinecraftTabCompleteListener {
 
-    @EventHandler(priority = EventPriority.NORMAL)
+    // Note: BungeeCord also had TabCompleteResponseEvent for backend server suggestions.
+    // Velocity merges backend suggestions into the same TabCompleteEvent.
+
+    @Subscribe(order = PostOrder.NORMAL)
     public void onTabCompleteEvent(TabCompleteEvent event) {
         this.addPlayerNameSuggestions(event.getSuggestions());
     }
@@ -26,16 +23,16 @@ public class MinecraftTabCompleteListener implements Listener {
         boolean isPlayerNameSuggestion = false;
 
         // Check if it contains at least one player in the suggestions
-        for (ProxiedPlayer player : ProxyServer.getInstance().getPlayers()) {
-            if (suggestions.contains(player.getName())) {
+        for (Player player : RedCraftChat.getInstance().getProxy().getAllPlayers()) {
+            if (suggestions.contains(player.getUsername())) {
                 isPlayerNameSuggestion = true;
                 break;
             }
         }
 
         if (isPlayerNameSuggestion) {
-            for (ProxiedPlayer player : ProxyServer.getInstance().getPlayers()) {
-                String playerName = player.getName();
+            for (Player player : RedCraftChat.getInstance().getProxy().getAllPlayers()) {
+                String playerName = player.getUsername();
                 if (!suggestions.contains(playerName)) {
                     suggestions.add(playerName);
                 }

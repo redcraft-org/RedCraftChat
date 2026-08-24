@@ -18,8 +18,8 @@ discord-activity-value: 'RedCraft.org'
 translation-enabled: true
 translation-discord-supported-languages: ['en', 'fr']
 translation-discord-category-format: '[%lang%] %topic%'
-chat-translation-provider: 'modernmt-free'
-upstream-translation-provider: 'modernmt-free' # This is to translate plugins from upstream servers
+chat-translation-provider: 'claude'
+upstream-translation-provider: 'claude' # This is to translate plugins from upstream servers
 
 # This is for supported locales
 supported-locales-provider: 'database'
@@ -27,8 +27,32 @@ supported-locales-provider: 'database'
 supported-locales-api-url: 'https://redcraft.org/api/v1/language/list'
 default-locale: 'en-US'
 
+# Readable names for the backend servers, used in join and leave messages and
+# in the Discord bridge. Falls back to the motd a server answers a ping with,
+# and then to the name the proxy registers it under.
+server-display-names:
+  hub: '&aHub'
+  museum: '&6Museum'
+  survival_vanilla: '&2Survival Vanilla'
+  crea_build_plot: '&bCrea Build'
+  crea_redstone_plot: '&cCrea Redstone'
+  crea_engineer_test: '&7Crea Engineer Test'
 # This is to add missing players in tab completion
 enable-tab-completion: true
+# Translate every menu and button into each supported language on startup,
+# so menus come from the cache instead of being translated while a player waits.
+# The cache never expires, so this costs one pass the first time and nothing after.
+pretranslate-ui-enabled: true
+
+# Chat is cancelled and re-emitted by the proxy, which a signed message forbids,
+# so the signature is stripped from incoming chat and commands before Velocity
+# reads them. Turning this off breaks chat on 1.19 and newer clients.
+strip-chat-signatures: true
+# Also drop the client's public profile key at login. Not needed to send chat,
+# stripping the per message signature is enough, and it requires
+# force-key-authentication = false in velocity.toml or 1.19 to 1.19.2 clients
+# get disconnected. Only turn this on if you want fully keyless players.
+strip-login-profile-key: false
 
 # These are the settings for Deepl live translation (if you use that provider)
 deepl-token: ''
@@ -36,6 +60,11 @@ deepl-endpoint: 'https://api.deepl.com/v2/translate' # If you use a proxy or som
 deepl-formality: 'less' # can be "normal", "more" or "less". Default is "less" so messages seem more friendly
 deepl-preserve-formatting: false # whether the translation engine should respect the original formatting, even if it would usually correct some aspects
 
+# These are the settings for Claude live translation (if you use that provider)
+claude-token: ''
+claude-model: 'claude-haiku-4-5-20251001'
+claude-endpoint: 'https://api.anthropic.com/v1/messages'
+claude-api-version: '2023-06-01'
 # These are the settings for the ModernMT live translation (if you use that provider)
 # PS: If you use modernmt-free, these settings will be ignored
 modernmt-token: ''
@@ -47,7 +76,7 @@ url-shortening-endpoint: 'https://redcraft.org/api/v1/url'
 url-shortening-api-token: ''
 
 # Avatar related settings
-player-avatar-endpoint: 'https://redcraft.org/api/v1/skin/head/%player%?size=128'
+player-avatar-endpoint: 'https://mc-heads.net/avatar/%player%/128'
 player-avatar-format: 'uuid' # Can be "uuid" or "name"
 
 # Storage related settings

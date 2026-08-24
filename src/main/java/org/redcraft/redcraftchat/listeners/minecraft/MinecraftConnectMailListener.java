@@ -6,21 +6,21 @@ import java.util.concurrent.TimeUnit;
 import org.atteo.evo.inflector.English;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.helpers.BasicMessageFormatter;
+import org.redcraft.redcraftchat.helpers.LegacyText;
 import org.redcraft.redcraftchat.messaging.MailMessagesManager;
 import org.redcraft.redcraftchat.models.players.PlayerMail;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.chat.ClickEvent;
-import net.md_5.bungee.api.chat.ComponentBuilder;
-import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.hover.content.Text;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
-import net.md_5.bungee.api.event.PostLoginEvent;
-import net.md_5.bungee.api.plugin.Listener;
-import net.md_5.bungee.event.EventHandler;
+import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.event.connection.PostLoginEvent;
+import com.velocitypowered.api.proxy.Player;
 
-public class MinecraftConnectMailListener implements Listener {
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
+
+public class MinecraftConnectMailListener {
 
     public class AsyncPostLoginEventHandler implements Runnable {
         PostLoginEvent event;
@@ -31,9 +31,9 @@ public class MinecraftConnectMailListener implements Listener {
 
         @Override
         public void run() {
-            ProxiedPlayer player = event.getPlayer();
+            Player player = event.getPlayer();
 
-            if (player == null || !player.isConnected()) {
+            if (player == null || !player.isActive()) {
                 return;
             }
 
@@ -41,20 +41,20 @@ public class MinecraftConnectMailListener implements Listener {
 
             if (!unreadMessages.isEmpty()) {
                 String message = "You have " + unreadMessages.size() + " unread mail " + English.plural("message", unreadMessages.size()) + ", click on this message or type %command% to read them.";
-                String localizedMessage = PlayerPreferencesManager.localizeMessageForPlayer(player, message).replace("%command%", ChatColor.GOLD + "/mail list" + ChatColor.LIGHT_PURPLE);
-                ComponentBuilder messageBuilder = BasicMessageFormatter.prepareInternalMessage()
-                    .append(localizedMessage)
-                    .color(ChatColor.LIGHT_PURPLE)
-                    .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(message.replace("%command%", "/mail list"))))
-                    .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mail list"));
-                player.sendMessage(messageBuilder.create());
+                String localizedMessage = PlayerPreferencesManager.localizeMessageForPlayer(player, message).replace("%command%", LegacyText.GOLD + "/mail list" + LegacyText.LIGHT_PURPLE);
+                Component formattedMessage = BasicMessageFormatter.prepareInternalMessage()
+                    .append(BasicMessageFormatter.deserialize(localizedMessage).colorIfAbsent(NamedTextColor.LIGHT_PURPLE))
+                    .hoverEvent(HoverEvent.showText(Component.text(message.replace("%command%", "/mail list"))))
+                    .clickEvent(ClickEvent.runCommand("/mail list"))
+                    .build();
+                player.sendMessage(formattedMessage);
             }
         }
     }
 
-	@EventHandler
+	@Subscribe
 	public void onPlayerJoin(final PostLoginEvent e) {
         // Delay by a second to make sure we logged the player switch
-		RedCraftChat.getInstance().getProxy().getScheduler().schedule(RedCraftChat.getInstance(), new AsyncPostLoginEventHandler(e), 10, TimeUnit.SECONDS);
+		RedCraftChat.getInstance().getProxy().getScheduler().buildTask(RedCraftChat.getInstance(), new AsyncPostLoginEventHandler(e)).delay(10, TimeUnit.SECONDS).schedule();
 	}
 }

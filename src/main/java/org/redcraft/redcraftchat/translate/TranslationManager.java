@@ -11,13 +11,15 @@ import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 import org.redcraft.redcraftchat.detection.DetectionManager;
 import org.redcraft.redcraftchat.models.translate.TokenizedMessage;
 import org.redcraft.redcraftchat.tokenizer.TokenizerManager;
+import org.redcraft.redcraftchat.translate.providers.ClaudeProvider;
 import org.redcraft.redcraftchat.translate.providers.DeeplProvider;
 import org.redcraft.redcraftchat.translate.providers.ModernmtFreeProvider;
 import org.redcraft.redcraftchat.translate.providers.ModernmtProvider;
 import org.redcraft.redcraftchat.translate.providers.TranslationProvider;
 
-import net.md_5.bungee.api.ProxyServer;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
+import com.velocitypowered.api.proxy.Player;
+
+import org.redcraft.redcraftchat.RedCraftChat;
 
 public class TranslationManager {
 
@@ -25,6 +27,9 @@ public class TranslationManager {
 
     public TranslationManager(String translationProvider) {
         switch (translationProvider) {
+            case "claude":
+                this.translationProvider = new ClaudeProvider();
+                break;
             case "deepl":
                 this.translationProvider = new DeeplProvider();
                 break;
@@ -73,7 +78,7 @@ public class TranslationManager {
         return translatedLanguages;
     }
 
-    public static String getSourceLanguage(String message, ProxiedPlayer sender) {
+    public static String getSourceLanguage(String message, Player sender) {
         String sourceLanguage = DetectionManager.getLanguage(message);
 
         if (sourceLanguage == null && sender != null) {
@@ -86,7 +91,7 @@ public class TranslationManager {
     public static List<String> getTargetLanguages(String sourceLanguage) {
         List<String> targetLanguages = new ArrayList<String>(Config.translationDiscordSupportedLanguages);
 
-        for (ProxiedPlayer receiver : ProxyServer.getInstance().getPlayers()) {
+        for (Player receiver : RedCraftChat.getInstance().getProxy().getAllPlayers()) {
             if (!PlayerPreferencesManager.playerSpeaksLanguage(receiver, sourceLanguage)) {
                 String playerLanguage = PlayerPreferencesManager.getMainPlayerLanguage(receiver).toLowerCase();
                 if (!targetLanguages.contains(playerLanguage)) {

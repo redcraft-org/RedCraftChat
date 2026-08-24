@@ -4,72 +4,98 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.bridge.MinecraftDiscordBridge;
+import org.redcraft.redcraftchat.helpers.LegacyText;
+import org.redcraft.redcraftchat.players.DisplayNameManager;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.ProxyServer;
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.ComponentBuilder;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
-import net.md_5.bungee.api.event.ChatEvent;
-import net.md_5.bungee.api.plugin.Listener;
-import net.md_5.bungee.event.EventHandler;
-import net.md_5.bungee.event.EventPriority;
+import com.velocitypowered.api.command.CommandSource;
+import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.event.command.CommandExecuteEvent;
+import com.velocitypowered.api.event.player.PlayerChatEvent;
+import com.velocitypowered.api.proxy.Player;
 
-public class MinecraftChatListener implements Listener {
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
-    private List<ChatColor> stylingCodes = Arrays.asList(
-        ChatColor.BOLD,
-        ChatColor.ITALIC,
-        ChatColor.STRIKETHROUGH,
-        ChatColor.UNDERLINE
+public class MinecraftChatListener {
+
+    private List<String> stylingCodes = Arrays.asList(
+        LegacyText.BOLD,
+        LegacyText.ITALIC,
+        LegacyText.STRIKETHROUGH,
+        LegacyText.UNDERLINE
     );
 
-    @EventHandler(priority = EventPriority.NORMAL)
-    public void onChatEvent(ChatEvent event) {
-        if (!(event.getSender() instanceof ProxiedPlayer) || event.isCancelled()) {
+    @Subscribe
+    public void onChatEvent(PlayerChatEvent event) {
+        if (!event.getResult().isAllowed()) {
             return;
         }
 
-        ProxiedPlayer player = (ProxiedPlayer) event.getSender();
+        Player player = event.getPlayer();
 
-        if (event.isProxyCommand() || event.isCommand()) {
-            handleCommandSpy(player, event.getMessage());
-            return;
-        }
+        String message = stripUnauthorizedFormatting(player, event.getMessage());
 
-        String message = ChatColor.translateAlternateColorCodes('&', event.getMessage());
-
-        if (!player.hasPermission("redcraftchat.formatting.colors")) {
-            message = ChatColor.stripColor(message);
-        }
-
-        if (!player.hasPermission("redcraftchat.formatting.styling")) {
-            for (ChatColor bannedCode : stylingCodes) {
-                message = message.replace(bannedCode.toString(), "");
-            }
-        }
-
-        if (!player.hasPermission("redcraftchat.formatting.magic")) {
-            message = message.replace(ChatColor.MAGIC.toString(), "");
-        }
-
-        event.setCancelled(true);
+        // The message never reaches the backend, the proxy re-emits a translated
+        // copy to every recipient itself. Velocity marks setResult deprecated
+        // without offering another way to deny a message, and denying is only
+        // lawful because the signature was stripped off the packet beforehand.
+        event.setResult(PlayerChatEvent.ChatResult.denied());
 
         MinecraftDiscordBridge.getInstance().translateAndPostMessage(player, message);
     }
 
-    public void handleCommandSpy(ProxiedPlayer player, String message) {
-        for (ProxiedPlayer potentialStaffMember : ProxyServer.getInstance().getPlayers()) {
+    /**
+     * BungeeCord fired a single event for chat and commands alike, Velocity does
+     * not, so the command spy half of the original listener lives here. The
+     * command comes without its leading slash, it is added back so the spy output
+     * keeps showing what the player actually typed.
+     */
+    @Subscribe
+    public void onCommandExecute(CommandExecuteEvent event) {
+        if (!event.getResult().isAllowed()) {
+            return;
+        }
+
+        CommandSource source = event.getCommandSource();
+        if (!(source instanceof Player)) {
+            return;
+        }
+
+        handleCommandSpy((Player) source, "/" + event.getCommand());
+    }
+
+    public String stripUnauthorizedFormatting(Player player, String rawMessage) {
+        String message = LegacyText.translateAlternateColorCodes('&', rawMessage);
+
+        if (!player.hasPermission("redcraftchat.formatting.colors")) {
+            message = LegacyText.stripColor(message);
+        }
+
+        if (!player.hasPermission("redcraftchat.formatting.styling")) {
+            for (String bannedCode : stylingCodes) {
+                message = message.replace(bannedCode, "");
+            }
+        }
+
+        if (!player.hasPermission("redcraftchat.formatting.magic")) {
+            message = message.replace(LegacyText.MAGIC, "");
+        }
+
+        return message;
+    }
+
+    public void handleCommandSpy(Player player, String message) {
+        for (Player potentialStaffMember : RedCraftChat.getInstance().getProxy().getAllPlayers()) {
             if (!player.equals(potentialStaffMember) && potentialStaffMember.hasPermission("redcraftchat.moderation.commandspy")) {
                 PlayerPreferences playerPreferences;
                 try {
                     playerPreferences = PlayerPreferencesManager.getPlayerPreferences(potentialStaffMember);
                     if (playerPreferences.commandSpyEnabled) {
-                        BaseComponent[] formattedMessage = new ComponentBuilder("[CSPY][" + player.getDisplayName() + ChatColor.AQUA + "] " + message).color(ChatColor.AQUA).create();
-                        potentialStaffMember.sendMessage(formattedMessage);
+                        String formattedMessage = LegacyText.AQUA + "[CSPY][" + DisplayNameManager.getDisplayName(player) + LegacyText.AQUA + "] " + message;
+                        potentialStaffMember.sendMessage(LegacyComponentSerializer.legacySection().deserialize(formattedMessage));
                     }
                 } catch (IOException | InterruptedException e) {
                     e.printStackTrace();

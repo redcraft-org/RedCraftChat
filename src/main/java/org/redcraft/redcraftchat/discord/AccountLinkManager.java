@@ -12,9 +12,9 @@ import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 import org.redcraft.redcraftchat.runnables.DiscordUsersSynchronizerTask;
 
+import com.velocitypowered.api.proxy.Player;
+
 import net.dv8tion.jda.api.entities.User;
-import net.md_5.bungee.api.ProxyServer;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 public class AccountLinkManager {
 
@@ -22,13 +22,13 @@ public class AccountLinkManager {
         throw new IllegalStateException("This class should not be instantiated");
     }
 
-    public static AccountLinkCode getLinkCode(ProxiedPlayer player) {
+    public static AccountLinkCode getLinkCode(Player player) {
         String uniqueId = player.getUniqueId().toString();
         AccountLinkCode code = getLinkCode(uniqueId);
 
         if (code.minecraftUuid == null) {
             code.minecraftUuid = uniqueId;
-            code.minecraftName = player.getName();
+            code.minecraftName = player.getUsername();
             CacheManager.put(CacheCategory.ACCOUNT_LINK_CODE_USER_ID, uniqueId, code);
             CacheManager.put(CacheCategory.ACCOUNT_LINK_CODE, code.token, code);
         }
@@ -64,7 +64,7 @@ public class AccountLinkManager {
             return false;
         }
         if ((preferences == null || preferences.minecraftUuid == null) && code.minecraftUuid != null) {
-            ProxiedPlayer player = ProxyServer.getInstance().getPlayer(UUID.fromString(code.minecraftUuid));
+            Player player = RedCraftChat.getInstance().getProxy().getPlayer(UUID.fromString(code.minecraftUuid)).orElse(null);
             if (player == null) {
                 return false;
             }

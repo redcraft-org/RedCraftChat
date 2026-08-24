@@ -5,11 +5,12 @@ import java.util.UUID;
 
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 
+import com.velocitypowered.api.proxy.Player;
+
 import net.dv8tion.jda.api.entities.User;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 public interface PlayerProvider {
-    public PlayerPreferences getPlayerPreferences(ProxiedPlayer player, boolean createIfNotFound) throws IOException, InterruptedException;
+    public PlayerPreferences getPlayerPreferences(Player player, boolean createIfNotFound) throws IOException, InterruptedException;
 
     public PlayerPreferences getPlayerPreferences(User user, boolean createIfNotFound) throws IOException, InterruptedException;
 

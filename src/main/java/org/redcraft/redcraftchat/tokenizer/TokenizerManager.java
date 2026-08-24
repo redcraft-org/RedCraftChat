@@ -12,11 +12,11 @@ import java.util.regex.Pattern;
 import com.vdurmont.emoji.EmojiParser;
 import com.vdurmont.emoji.EmojiParser.FitzpatrickAction;
 
-import org.apache.commons.codec.digest.DigestUtils;
-import org.redcraft.redcraftchat.models.translate.TokenizedMessage;
+import com.velocitypowered.api.proxy.Player;
 
-import net.md_5.bungee.api.ProxyServer;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.redcraft.redcraftchat.RedCraftChat;
+import org.redcraft.redcraftchat.models.translate.TokenizedMessage;
 
 public class TokenizerManager {
     static final Map<String, String> minecraftColorsMappings = new TreeMap<>();
@@ -86,8 +86,8 @@ public class TokenizerManager {
 
         // Tokenize Minecraft usernames
         if (tokenizePlayers) {
-            for (ProxiedPlayer player : ProxyServer.getInstance().getPlayers()) {
-                Pattern playerUsernamePattern = Pattern.compile(player.getName());
+            for (Player player : RedCraftChat.getInstance().getProxy().getAllPlayers()) {
+                Pattern playerUsernamePattern = Pattern.compile(player.getUsername());
                 patterns.add(playerUsernamePattern);
             }
         }

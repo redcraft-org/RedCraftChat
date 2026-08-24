@@ -30,7 +30,7 @@ public class DiscordUsersSynchronizerTask implements Runnable {
         try {
             return syncDiscordUser(member, LuckPermsProvider.get());
         } catch (Exception e) {
-            RedCraftChat.getInstance().getLogger().severe("Error while syncing Discord user " + member.getUser().getName());
+            RedCraftChat.getInstance().getLogger().error("Error while syncing Discord user " + member.getUser().getName());
             e.printStackTrace();
         }
         return false;
@@ -63,7 +63,7 @@ public class DiscordUsersSynchronizerTask implements Runnable {
             }
             if (lpUser == null) {
                 String debugMessage = "Could not find LuckPerms user for " + member.getUser().getName() + " (" + player.minecraftUuid + ")";
-                RedCraftChat.getInstance().getLogger().warning(debugMessage);
+                RedCraftChat.getInstance().getLogger().warn(debugMessage);
                 return false;
             }
 
@@ -110,7 +110,7 @@ public class DiscordUsersSynchronizerTask implements Runnable {
             } catch (HierarchyException e) {
                 // We can't edit, probably server owner
                 if (!warnedAboutRoleHierarchy) {
-                    RedCraftChat.getInstance().getLogger().warning("Could not update Discord user " + member.getUser().getName() + " roles due to hierarchy (probably server owner) - will not warn again");
+                    RedCraftChat.getInstance().getLogger().warn("Could not update Discord user " + member.getUser().getName() + " roles due to hierarchy (probably server owner) - will not warn again");
                     warnedAboutRoleHierarchy = true;
                 }
             }
@@ -123,7 +123,7 @@ public class DiscordUsersSynchronizerTask implements Runnable {
             } catch (HierarchyException e) {
                 // We can't edit, probably server owner
                 if (!warnedAboutNickHierarchy) {
-                    RedCraftChat.getInstance().getLogger().warning(
+                    RedCraftChat.getInstance().getLogger().warn(
                         "Could not update Discord user " + member.getUser().getName() + " nickname to " + player.lastKnownMinecraftName + " due to hierarchy (probably server owner) - will not warn again");
                     warnedAboutNickHierarchy = true;
                 }
@@ -175,15 +175,15 @@ public class DiscordUsersSynchronizerTask implements Runnable {
                 });
             });
             if (discordLpRoles.size() != updatedDiscordLpRoles.size()) {
-                RedCraftChat.getInstance().getLogger().fine("Discord LP groups updated. New detected linked roles: ");
+                RedCraftChat.getInstance().getLogger().debug("Discord LP groups updated. New detected linked roles: ");
                 updatedDiscordLpRoles.forEach(role -> {
-                    RedCraftChat.getInstance().getLogger().fine(" - " + role);
+                    RedCraftChat.getInstance().getLogger().debug(" - " + role);
                 });
                 discordLpRoles = updatedDiscordLpRoles;
             }
         } catch (IllegalStateException e) {
             // LuckPerms not installed
-            RedCraftChat.getInstance().getLogger().severe("Error while building Discord LP roles");
+            RedCraftChat.getInstance().getLogger().error("Error while building Discord LP roles");
             e.printStackTrace();
         }
     }
@@ -207,15 +207,15 @@ public class DiscordUsersSynchronizerTask implements Runnable {
             }
 
             if (discordLocaleRoles.size() != updatedDiscordLocaleRoles.size()) {
-                RedCraftChat.getInstance().getLogger().fine("Discord Locale groups updated. New detected linked roles: ");
+                RedCraftChat.getInstance().getLogger().debug("Discord Locale groups updated. New detected linked roles: ");
                 updatedDiscordLocaleRoles.forEach(role -> {
-                    RedCraftChat.getInstance().getLogger().fine(" - " + role);
+                    RedCraftChat.getInstance().getLogger().debug(" - " + role);
                 });
                 discordLocaleRoles = updatedDiscordLocaleRoles;
             }
         } catch (IllegalStateException e) {
             // LuckPerms not installed
-            RedCraftChat.getInstance().getLogger().severe("Error while building Discord locale roles");
+            RedCraftChat.getInstance().getLogger().error("Error while building Discord locale roles");
             e.printStackTrace();
         }
     }
@@ -233,7 +233,7 @@ public class DiscordUsersSynchronizerTask implements Runnable {
                         RedCraftChat.getInstance().getLogger().info("Updated Discord user " + member.getUser().getName());
                     }
                 } catch (Exception e) {
-                    RedCraftChat.getInstance().getLogger().severe("Error while syncing Discord user " + member.getUser().getName());
+                    RedCraftChat.getInstance().getLogger().error("Error while syncing Discord user " + member.getUser().getName());
                     e.printStackTrace();
                 }
             });

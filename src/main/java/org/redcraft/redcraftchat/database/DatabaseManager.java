@@ -1,6 +1,9 @@
 package org.redcraft.redcraftchat.database;
 
 import java.lang.reflect.Constructor;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -22,23 +25,43 @@ public class DatabaseManager {
     }
 
     public static void connect() {
+        try {
+            // Velocity does not bundle a JDBC driver and the plugin class loader
+            // is not scanned by DriverManager, register the shaded driver by hand
+            Class.forName("com.mysql.cj.jdbc.Driver");
+        } catch (ClassNotFoundException ex) {
+            RedCraftChat.getInstance().getLogger().warn("MySQL driver not found: {}", ex.getMessage());
+        }
+
         database = new Database();
         database.setJdbcUrl(Config.databaseUri);
 
         database.setUser(Config.databaseUsername);
         database.setPassword(Config.databasePassword);
 
+        // Probe the database before norm spins up a connection pool,
+        // a Hikari pool that fails to start dumps a stack trace in the log
+        try (Connection probe = DriverManager.getConnection(Config.databaseUri, Config.databaseUsername, Config.databasePassword)) {
+            RedCraftChat.getInstance().getLogger().debug("Database probe succeeded");
+        } catch (SQLException ex) {
+            RedCraftChat.getInstance().getLogger().warn("Database is unreachable, features that need it will fail until it is back: {}", ex.getMessage());
+            return;
+        }
+
         List<Class<?>> classes = new ArrayList<Class<?>>();
         classes.add(PlayerPreferencesDatabase.class);
         classes.add(PlayerMailDatabase.class);
         classes.add(ScheduledAnnouncementDatabase.class);
         classes.add(SupportedLocaleDatabase.class);
-        createStructure(classes);
 
-        RedCraftChat.getInstance().getLogger().info("Connected to database!");
+        if (createStructure(classes)) {
+            RedCraftChat.getInstance().getLogger().info("Connected to database!");
+        } else {
+            RedCraftChat.getInstance().getLogger().warn("Database is unreachable, features that need it will fail until it is back");
+        }
     }
 
-    public static void createStructure(List<Class<?>> classes) {
+    public static boolean createStructure(List<Class<?>> classes) {
         Iterator<Class<?>> it = classes.iterator();
         while (it.hasNext()) {
             Class<?> classToCreate = it.next();
@@ -59,9 +82,11 @@ public class DatabaseManager {
             try {
                 database.sql(sqlCreationQuery).execute();
             } catch (Exception ex) {
-                ex.printStackTrace();
+                RedCraftChat.getInstance().getLogger().warn("Could not create table for {}: {}", classToCreate.getSimpleName(), ex.getMessage());
+                return false;
             }
         }
+        return true;
     }
 
     public static Database getDatabase() {

@@ -9,9 +9,8 @@ import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.bridge.MinecraftDiscordBridge;
 import org.redcraft.redcraftchat.messaging.announcements.providers.AnnouncementsProvider;
 import org.redcraft.redcraftchat.messaging.announcements.providers.DatabaseAnnouncementsProvider;
+import org.redcraft.redcraftchat.helpers.LegacyText;
 import org.redcraft.redcraftchat.messaging.announcements.providers.RedCraftApiAnnouncementsProvider;
-
-import net.md_5.bungee.api.ChatColor;
 
 public class ScheduledAnnouncementsTask implements Runnable {
 
@@ -32,7 +31,7 @@ public class ScheduledAnnouncementsTask implements Runnable {
 
     public void run() {
         // Do not send messages if no one is online
-        if (RedCraftChat.getInstance().getProxy().getOnlineCount() == 0) {
+        if (RedCraftChat.getInstance().getProxy().getPlayerCount() == 0) {
             return;
         }
 
@@ -44,7 +43,7 @@ public class ScheduledAnnouncementsTask implements Runnable {
             return;
         }
 
-        String message = ChatColor.GREEN + "[Auto announcement] " + ChatColor.GREEN + ChatColor.translateAlternateColorCodes('&', messages.pop());
+        String message = LegacyText.GREEN + "[Auto announcement] " + LegacyText.GREEN + LegacyText.translateAlternateColorCodes('&', messages.pop());
 
         MinecraftDiscordBridge.getInstance().broadcastMinecraft(message, new HashMap<String, String>());
 

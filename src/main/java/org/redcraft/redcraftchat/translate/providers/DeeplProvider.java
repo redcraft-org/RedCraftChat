@@ -18,8 +18,20 @@ public class DeeplProvider implements TranslationProvider {
 
     private Translator translator;
 
-    public DeeplProvider() {
-        this.translator = new Translator(Config.deeplToken);
+    // The client is built on first use rather than in the constructor. Deepl
+    // rejects an empty auth key by throwing, and the provider is constructed
+    // while the proxy is initialising, so an unset token used to abort startup
+    // before any listener or command was registered.
+    private Translator getTranslator() {
+        if (Config.deeplToken == null || Config.deeplToken.isEmpty()) {
+            throw new IllegalStateException("Deepl translation is selected but deepl-token is empty");
+        }
+
+        if (translator == null) {
+            translator = new Translator(Config.deeplToken);
+        }
+
+        return translator;
     }
 
     public String translate(String text, String sourceLanguageId, String targetLanguageId)
@@ -57,7 +69,7 @@ public class DeeplProvider implements TranslationProvider {
 
         TextResult result;
         try {
-            result = translator.translateText(text, sourceLangId, targetLangId, translationOptions);
+            result = getTranslator().translateText(text, sourceLangId, targetLangId, translationOptions);
         } catch (DeepLException e) {
             e.printStackTrace();
             throw new IllegalStateException("Could not translate text from " + sourceLangId + " to " + targetLangId

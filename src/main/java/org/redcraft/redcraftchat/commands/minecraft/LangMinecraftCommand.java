@@ -3,35 +3,32 @@ package org.redcraft.redcraftchat.commands.minecraft;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.helpers.BasicMessageFormatter;
+import org.redcraft.redcraftchat.helpers.LegacyText;
 import org.redcraft.redcraftchat.locales.LocaleManager;
 import org.redcraft.redcraftchat.models.locales.SupportedLocale;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.CommandSender;
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.ClickEvent;
-import net.md_5.bungee.api.chat.ComponentBuilder;
-import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.hover.content.Text;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
-import net.md_5.bungee.api.plugin.Command;
+import com.velocitypowered.api.command.CommandSource;
+import com.velocitypowered.api.command.SimpleCommand;
+import com.velocitypowered.api.proxy.Player;
 
-public class LangMinecraftCommand extends Command {
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
 
-    public LangMinecraftCommand() {
-        super("lang", "redcraftchat.command.lang", "languages");
-    }
+public class LangMinecraftCommand implements SimpleCommand {
 
     public class LangMinecraftCommandHandler implements Runnable {
-        CommandSender sender;
+        CommandSource sender;
         String[] args;
 
-        public LangMinecraftCommandHandler(CommandSender sender, String[] args) {
+        public LangMinecraftCommandHandler(CommandSource sender, String[] args) {
             this.sender = sender;
             this.args = args;
         }
@@ -39,12 +36,12 @@ public class LangMinecraftCommand extends Command {
         @Override
         public void run() {
             // If it's not a player we need an arg
-            if (!(sender instanceof ProxiedPlayer)) {
+            if (!(sender instanceof Player)) {
                 BasicMessageFormatter.sendInternalError(sender, "This command can only be used by players");
                 return;
             }
 
-            ProxiedPlayer player = (ProxiedPlayer) sender;
+            Player player = (Player) sender;
 
             try {
                 PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);
@@ -58,7 +55,7 @@ public class LangMinecraftCommand extends Command {
                     preferences = PlayerPreferencesManager.getPlayerPreferences(player);
                 }
 
-                for (BaseComponent[] message : generateMenu(preferences)) {
+                for (Component message : generateMenu(preferences)) {
                     player.sendMessage(message);
                 }
             } catch (IOException | InterruptedException e) {
@@ -68,10 +65,10 @@ public class LangMinecraftCommand extends Command {
         }
     }
 
-    private List<BaseComponent[]> generateMenu(PlayerPreferences preferences) {
+    private List<Component> generateMenu(PlayerPreferences preferences) {
         String originalHeaderText = "LANGUAGE SELECTOR";
         String originalHelpText = "Click on a language to enable or disable it, click on the checkbox to make it default.";
-        String originalCaptionText = "Caption:";
+        String originalCaptionText = "Legend:";
         String originalDisabledText = "disabled";
         String originalEnabledText = "enabled";
 
@@ -86,62 +83,93 @@ public class LangMinecraftCommand extends Command {
         String removeFromLanguages = PlayerPreferencesManager.localizeMessageForPlayer(preferences, "Click to remove this languages");
         String addToLanguages = PlayerPreferencesManager.localizeMessageForPlayer(preferences, "Click to add this language");
 
-        List<BaseComponent[]> messages = new ArrayList<BaseComponent[]>();
+        List<Component> messages = new ArrayList<Component>();
 
         // Add 5 empty lines to make the menu look better
         for (int i = 0; i < 5; i++) {
-            messages.add(new ComponentBuilder().create());
+            messages.add(Component.empty());
         }
 
-        messages.add(new ComponentBuilder()
-                .append("---------- ").color(ChatColor.GREEN)
-                .append(headerText).color(ChatColor.GOLD).event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(originalHeaderText)))
-                .append(" ----------").color(ChatColor.GREEN)
-                .create());
+        // BungeeCord copied the hover of the previous part into every part that did
+        // not set one of its own, Adventure has no such cascade between siblings so
+        // the inherited events are repeated explicitly below
+        HoverEvent<Component> headerHover = showText(originalHeaderText);
+        messages.add(Component.text()
+                .append(Component.text("---------- ", NamedTextColor.GREEN))
+                .append(Component.text(headerText, NamedTextColor.GOLD).hoverEvent(headerHover))
+                .append(Component.text(" ----------", NamedTextColor.GREEN).hoverEvent(headerHover))
+                .build());
 
-        messages.add(new ComponentBuilder()
-                .append(helpText).color(ChatColor.YELLOW).event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(originalHelpText)))
-                .create());
+        messages.add(Component.text(helpText, NamedTextColor.YELLOW).hoverEvent(showText(originalHelpText)));
 
-        messages.add(new ComponentBuilder()
-                .append(captionText).color(ChatColor.GOLD).event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(originalCaptionText)))
-                .append(" ")
-                .append(disabledText).color(ChatColor.GRAY).event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(originalDisabledText)))
-                .append(" ")
-                .append(enabledText).color(ChatColor.GREEN).event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(originalEnabledText)))
-                .create());
+        HoverEvent<Component> captionHover = showText(originalCaptionText);
+        HoverEvent<Component> disabledHover = showText(originalDisabledText);
+        messages.add(Component.text()
+                .append(Component.text(captionText, NamedTextColor.GOLD).hoverEvent(captionHover))
+                .append(Component.text(" ", NamedTextColor.GOLD).hoverEvent(captionHover))
+                .append(Component.text(disabledText, NamedTextColor.GRAY).hoverEvent(disabledHover))
+                .append(Component.text(" ", NamedTextColor.GRAY).hoverEvent(disabledHover))
+                .append(Component.text(enabledText, NamedTextColor.GREEN).hoverEvent(showText(originalEnabledText)))
+                .build());
 
         for (SupportedLocale locale : LocaleManager.getSupportedLocales()) {
-            ComponentBuilder formattedLocale = new ComponentBuilder();
-            if (locale.code.equals(preferences.mainLanguage)) {
-                formattedLocale.append("[X] ").color(ChatColor.GREEN)
-                    .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(ChatColor.RED + alreadyMainLanguage)));
-            } else {
-                formattedLocale.append("[ ] ").color(ChatColor.DARK_GRAY)
-                    .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/lang " + locale.code + " main"))
-                    .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(ChatColor.GREEN + setAsMainLanguage)));
-            }
-            formattedLocale.append(locale.name);
-            if (preferences.languages.contains(locale.code)) {
-                formattedLocale.color(ChatColor.GREEN);
-                if (!locale.code.equals(preferences.mainLanguage)) {
-                    formattedLocale.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(ChatColor.RED + removeFromLanguages)));
-                }
+            boolean isMainLanguage = locale.code.equals(preferences.mainLanguage);
 
+            Component checkbox;
+            if (isMainLanguage) {
+                checkbox = Component.text("[X] ", NamedTextColor.GREEN)
+                        .hoverEvent(showText(LegacyText.RED + alreadyMainLanguage));
             } else {
-                formattedLocale.color(ChatColor.GRAY);
-                formattedLocale.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(ChatColor.GREEN + addToLanguages)));
+                checkbox = Component.text("[ ] ", NamedTextColor.DARK_GRAY)
+                        .clickEvent(ClickEvent.runCommand("/lang " + locale.code + " main"))
+                        .hoverEvent(showText(LegacyText.GREEN + setAsMainLanguage));
             }
-            if (!locale.code.equals(preferences.mainLanguage)) {
-                formattedLocale.event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/lang " + locale.code));
+
+            Component localeName = Component.text(getEndonym(locale));
+            if (preferences.languages.contains(locale.code)) {
+                localeName = localeName.color(NamedTextColor.GREEN);
+                if (isMainLanguage) {
+                    // Inherited from the checkbox, the main language row explains
+                    // on hover why nothing on it can be clicked
+                    localeName = localeName.hoverEvent(showText(LegacyText.RED + alreadyMainLanguage));
+                } else {
+                    localeName = localeName.hoverEvent(showText(LegacyText.RED + removeFromLanguages));
+                }
+            } else {
+                localeName = localeName.color(NamedTextColor.GRAY)
+                        .hoverEvent(showText(LegacyText.GREEN + addToLanguages));
             }
-            messages.add(formattedLocale.create());
+            if (!isMainLanguage) {
+                localeName = localeName.clickEvent(ClickEvent.runCommand("/lang " + locale.code));
+            }
+
+            messages.add(Component.text().append(checkbox).append(localeName).build());
         }
 
         return messages;
     }
 
-    private void toggleLocale(PlayerPreferences preferences, ProxiedPlayer player, String locale) {
+    /**
+     * The name of a language as its own speakers write it, so a French speaker
+     * looks for "Francais" and not for whatever the reader's language calls it.
+     * Falls back to the stored name when the JVM has no display name for the tag.
+     */
+    private String getEndonym(SupportedLocale locale) {
+        Locale localeTag = Locale.forLanguageTag(locale.code.replace('_', '-'));
+        String endonym = localeTag.getDisplayLanguage(localeTag);
+
+        if (endonym.isEmpty() || endonym.equalsIgnoreCase(localeTag.getLanguage())) {
+            return locale.name;
+        }
+
+        return endonym.substring(0, 1).toUpperCase(localeTag) + endonym.substring(1);
+    }
+
+    private HoverEvent<Component> showText(String legacyText) {
+        return HoverEvent.showText(BasicMessageFormatter.deserialize(legacyText));
+    }
+
+    private void toggleLocale(PlayerPreferences preferences, Player player, String locale) {
         try {
             PlayerPreferencesManager.togglePlayerLocale(preferences, locale);
         } catch (IllegalArgumentException | IllegalStateException e) {
@@ -150,8 +178,13 @@ public class LangMinecraftCommand extends Command {
     }
 
     @Override
-    public void execute(CommandSender sender, String[] args) {
-        var commandHandler = new LangMinecraftCommandHandler(sender, args);
-        RedCraftChat.getInstance().getProxy().getScheduler().runAsync(RedCraftChat.getInstance(), commandHandler);
+    public void execute(Invocation invocation) {
+        var commandHandler = new LangMinecraftCommandHandler(invocation.source(), invocation.arguments());
+        RedCraftChat.getInstance().getProxy().getScheduler().buildTask(RedCraftChat.getInstance(), commandHandler).schedule();
+    }
+
+    @Override
+    public boolean hasPermission(Invocation invocation) {
+        return invocation.source().hasPermission("redcraftchat.command.lang");
     }
 }

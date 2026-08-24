@@ -19,8 +19,9 @@ import org.redcraft.redcraftchat.players.providers.RedCraftApiPlayerProvider;
 import org.redcraft.redcraftchat.runnables.DiscordUsersSynchronizerTask;
 import org.redcraft.redcraftchat.translate.TranslationManager;
 
+import com.velocitypowered.api.proxy.Player;
+
 import net.dv8tion.jda.api.entities.User;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 public class PlayerPreferencesManager {
 
@@ -48,11 +49,11 @@ public class PlayerPreferencesManager {
         return playerProvider;
     }
 
-    public static PlayerPreferences getPlayerPreferences(ProxiedPlayer player) throws IOException, InterruptedException {
+    public static PlayerPreferences getPlayerPreferences(Player player) throws IOException, InterruptedException {
         return getPlayerPreferences(player, true);
     }
 
-    public static PlayerPreferences getPlayerPreferences(ProxiedPlayer player, boolean createIfNotFound) throws IOException, InterruptedException {
+    public static PlayerPreferences getPlayerPreferences(Player player, boolean createIfNotFound) throws IOException, InterruptedException {
         UUID playerUniqueId = player.getUniqueId();
 
         PlayerPreferences cachedPlayerPreferences = (PlayerPreferences) CacheManager.get(CacheCategory.PLAYER_PREFERENCES, playerUniqueId.toString(), PlayerPreferences.class);
@@ -64,10 +65,10 @@ public class PlayerPreferencesManager {
 
         boolean updated = false;
 
-        if (!player.getName().equals(playerPreferences.lastKnownMinecraftName)) {
+        if (!player.getUsername().equals(playerPreferences.lastKnownMinecraftName)) {
             // Detect username change
             playerPreferences.previousKnownMinecraftName = playerPreferences.lastKnownMinecraftName;
-            playerPreferences.lastKnownMinecraftName = player.getName();
+            playerPreferences.lastKnownMinecraftName = player.getUsername();
             updated = true;
         }
 
@@ -84,7 +85,7 @@ public class PlayerPreferencesManager {
     }
 
     public static PlayerPreferences getPlayerPreferences(UUID playerUniqueId) throws IOException, InterruptedException {
-        ProxiedPlayer onlinePlayer = RedCraftChat.getInstance().getProxy().getPlayer(playerUniqueId);
+        Player onlinePlayer = RedCraftChat.getInstance().getProxy().getPlayer(playerUniqueId).orElse(null);
         if (onlinePlayer != null) {
             return getPlayerPreferences(onlinePlayer, false);
         }
@@ -244,7 +245,7 @@ public class PlayerPreferencesManager {
             updatePlayerPreferences(preferences);
             triggerDiscordSync();
         } catch (IOException | InterruptedException e) {
-            RedCraftChat.getInstance().getLogger().severe("Failed to update player preferences");
+            RedCraftChat.getInstance().getLogger().error("Failed to update player preferences");
             e.printStackTrace();
             throw new IllegalStateException("Failed to update player preferences, please try again later");
         }
@@ -273,7 +274,7 @@ public class PlayerPreferencesManager {
         return true;
     }
 
-    public static boolean toggleCommandSpy(ProxiedPlayer player) throws IOException, InterruptedException {
+    public static boolean toggleCommandSpy(Player player) throws IOException, InterruptedException {
         PlayerPreferences preferences = getPlayerPreferences(player);
 
         preferences.commandSpyEnabled = !preferences.commandSpyEnabled;
@@ -283,28 +284,28 @@ public class PlayerPreferencesManager {
         return preferences.commandSpyEnabled;
     }
 
-    public static String extractPlayerLanguage(ProxiedPlayer player) {
+    public static String extractPlayerLanguage(Player player) {
         Locale locale = getPlayerLocale(player, 5);
         if (locale != null) {
             String detectedLocale = locale.getLanguage() + "-" + locale.getCountry();
-            String debugMessage = "Detected language for " + player.getName() + ": " + detectedLocale;
+            String debugMessage = "Detected language for " + player.getUsername() + ": " + detectedLocale;
             RedCraftChat.getInstance().getLogger().info(debugMessage);
             if (LocaleManager.isSupportedLocale(detectedLocale)) {
                 return detectedLocale;
             }
         } else {
             // TODO GeoIP test (User has a very old version of Minecraft or Minechat)
-            RedCraftChat.getInstance().getLogger().severe("Failed to detect language for " + player.getName() + ", falling back to default locale");
+            RedCraftChat.getInstance().getLogger().error("Failed to detect language for " + player.getUsername() + ", falling back to default locale");
         }
 
         // Fallback
         return Config.defaultLocale;
     }
 
-    private static Locale getPlayerLocale(ProxiedPlayer player, int maxTries) {
+    private static Locale getPlayerLocale(Player player, int maxTries) {
         int tries = 0;
         while (tries < maxTries) {
-            Locale locale = player.getLocale();
+            Locale locale = player.getEffectiveLocale();
             if (locale != null) {
                 return locale;
             }
@@ -319,7 +320,7 @@ public class PlayerPreferencesManager {
         return null;
     }
 
-    public static boolean playerSpeaksLanguage(ProxiedPlayer player, String languageIsoCode) {
+    public static boolean playerSpeaksLanguage(Player player, String languageIsoCode) {
         try {
             return playerSpeaksLanguage(getPlayerPreferences(player), languageIsoCode);
         } catch (IOException | InterruptedException e) {
@@ -330,7 +331,7 @@ public class PlayerPreferencesManager {
         return false;
     }
 
-    public static String getMainPlayerLanguage(ProxiedPlayer player) {
+    public static String getMainPlayerLanguage(Player player) {
         try {
             return getMainPlayerLanguage(getPlayerPreferences(player));
         } catch (IOException | InterruptedException e) {
@@ -341,7 +342,7 @@ public class PlayerPreferencesManager {
         return extractPlayerLanguage(player);
     }
 
-    public static String localizeMessageForPlayer(ProxiedPlayer player, String message, String translationProvider) {
+    public static String localizeMessageForPlayer(Player player, String message, String translationProvider) {
         try {
             return localizeMessageForPlayer(getPlayerPreferences(player), message, translationProvider);
         } catch (IOException | InterruptedException | IllegalStateException e) {
@@ -352,7 +353,7 @@ public class PlayerPreferencesManager {
         return message;
     }
 
-    public static String localizeMessageForPlayer(ProxiedPlayer player, String message) {
+    public static String localizeMessageForPlayer(Player player, String message) {
         return localizeMessageForPlayer(player, message, null);
     }
 
@@ -395,7 +396,7 @@ public class PlayerPreferencesManager {
 
     public static void triggerDiscordSync() {
         RedCraftChat instance = RedCraftChat.getInstance();
-        instance.getProxy().getScheduler().schedule(instance, new DiscordUsersSynchronizerTask(), 10, TimeUnit.MILLISECONDS);
+        instance.getProxy().getScheduler().buildTask(instance, new DiscordUsersSynchronizerTask()).delay(10, TimeUnit.MILLISECONDS).schedule();
     }
 
 }

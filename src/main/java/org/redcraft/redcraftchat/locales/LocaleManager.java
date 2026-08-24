@@ -58,7 +58,7 @@ public class LocaleManager {
             supportedLocales = getLocaleProvider().getSupportedLocales();
             CacheManager.put(CacheCategory.SUPPORTED_LOCALES, Config.supportedLocalesProvider, supportedLocales);
         } catch (IOException | InterruptedException e) {
-            RedCraftChat.getInstance().getLogger().severe("Failed to get supported locales");
+            RedCraftChat.getInstance().getLogger().error("Failed to get supported locales");
             e.printStackTrace();
         }
 

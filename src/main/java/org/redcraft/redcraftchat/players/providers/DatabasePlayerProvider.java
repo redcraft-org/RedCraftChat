@@ -12,14 +12,15 @@ import org.redcraft.redcraftchat.database.DatabaseManager;
 import org.redcraft.redcraftchat.models.database.PlayerPreferencesDatabase;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 
+import com.velocitypowered.api.proxy.Player;
+
 import net.dv8tion.jda.api.entities.User;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 public class DatabasePlayerProvider implements PlayerProvider {
 
     Database db = DatabaseManager.getDatabase();
 
-    public PlayerPreferences getPlayerPreferences(ProxiedPlayer player, boolean createIfNotFound) throws IOException, InterruptedException {
+    public PlayerPreferences getPlayerPreferences(Player player, boolean createIfNotFound) throws IOException, InterruptedException {
         UUID playerUniqueId = player.getUniqueId();
 
         PlayerPreferencesDatabase result = db.where("minecraft_uuid=?", playerUniqueId.toString()).first(PlayerPreferencesDatabase.class);

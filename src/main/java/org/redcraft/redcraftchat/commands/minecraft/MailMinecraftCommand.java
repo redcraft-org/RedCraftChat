@@ -7,44 +7,40 @@ import java.util.List;
 
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.helpers.BasicMessageFormatter;
+import org.redcraft.redcraftchat.helpers.LegacyText;
 import org.redcraft.redcraftchat.messaging.MailMessagesManager;
 import org.redcraft.redcraftchat.models.players.PlayerMail;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.CommandSender;
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.ClickEvent;
-import net.md_5.bungee.api.chat.ComponentBuilder;
-import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.hover.content.Text;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
-import net.md_5.bungee.api.plugin.Command;
+import com.velocitypowered.api.command.CommandSource;
+import com.velocitypowered.api.command.SimpleCommand;
+import com.velocitypowered.api.proxy.Player;
 
-public class MailMinecraftCommand extends Command {
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
 
-    public MailMinecraftCommand() {
-        super("mail", "redcraftchat.command.mail");
-    }
+public class MailMinecraftCommand implements SimpleCommand {
 
     public class MailMinecraftCommandHandler implements Runnable {
-        CommandSender sender;
+        CommandSource sender;
         String[] args;
 
-        public MailMinecraftCommandHandler(CommandSender sender, String[] args) {
+        public MailMinecraftCommandHandler(CommandSource sender, String[] args) {
             this.sender = sender;
             this.args = args;
         }
 
         @Override
         public void run() {
-            if (!(sender instanceof ProxiedPlayer)) {
+            if (!(sender instanceof Player)) {
                 BasicMessageFormatter.sendInternalError(sender, "This command can only be used by players");
                 return;
             }
 
-            ProxiedPlayer player = (ProxiedPlayer) sender;
+            Player player = (Player) sender;
 
             if (args.length > 0) {
                 switch (args[0]) {
@@ -65,7 +61,16 @@ public class MailMinecraftCommand extends Command {
 
                     case "list":
                     case "listall":
-                        int page = args.length > 1 ? Integer.parseInt(args[1]) : 1;
+                        int page = 1;
+                        if (args.length > 1) {
+                            try {
+                                page = Integer.parseInt(args[1]);
+                            } catch (NumberFormatException e) {
+                                // BungeeCord let this one blow up inside the async task
+                                BasicMessageFormatter.sendInternalError(player, "Invalid page number");
+                                return;
+                            }
+                        }
                         handleMailList(player, page, !args[0].equals("listall"));
                         return;
 
@@ -77,15 +82,15 @@ public class MailMinecraftCommand extends Command {
             handleUsage(player);
         }
 
-        private void handleUsage(ProxiedPlayer player) {
+        private void handleUsage(Player player) {
             BasicMessageFormatter.sendInternalError(player, "Usage:", "/mail <list | listall | read | send>");
-            BasicMessageFormatter.sendInternalMessage(player, "To see your unread mails, type:", "/mail list", ChatColor.GREEN);
-            BasicMessageFormatter.sendInternalMessage(player, "To see your mails including the ones you already read, type:", "/mail listall", ChatColor.GREEN);
-            BasicMessageFormatter.sendInternalMessage(player, "To mark all your emails as read, type:", "/mail read", ChatColor.GREEN);
-            BasicMessageFormatter.sendInternalMessage(player, "To send a mail, type:", "/mail send <player> <message>", ChatColor.GREEN);
+            BasicMessageFormatter.sendInternalMessage(player, "To see your unread mails, type:", "/mail list", NamedTextColor.GREEN);
+            BasicMessageFormatter.sendInternalMessage(player, "To see your mails including the ones you already read, type:", "/mail listall", NamedTextColor.GREEN);
+            BasicMessageFormatter.sendInternalMessage(player, "To mark all your emails as read, type:", "/mail read", NamedTextColor.GREEN);
+            BasicMessageFormatter.sendInternalMessage(player, "To send a mail, type:", "/mail send <player> <message>", NamedTextColor.GREEN);
         }
 
-        private void handleMessageRead(ProxiedPlayer player, String id) {
+        private void handleMessageRead(Player player, String id) {
             List<PlayerMail> mails = MailMessagesManager.getPlayerMail(player);
 
             if (id != null) {
@@ -101,15 +106,15 @@ public class MailMinecraftCommand extends Command {
                     return;
                 }
                 MailMessagesManager.markMailAsRead(mail);
-                BasicMessageFormatter.sendInternalMessage(sender, "Mail marked as read", ChatColor.GREEN);
+                BasicMessageFormatter.sendInternalMessage(sender, "Mail marked as read", NamedTextColor.GREEN);
                 handleMailList(player, 1, true);
             } else {
                 MailMessagesManager.markAllMailAsRead(player);
-                BasicMessageFormatter.sendInternalMessage(sender, "All mails marked as read", ChatColor.GREEN);
+                BasicMessageFormatter.sendInternalMessage(sender, "All mails marked as read", NamedTextColor.GREEN);
             }
         }
 
-        private void handleMailSend(ProxiedPlayer player, String recipientUsername, String message) {
+        private void handleMailSend(Player player, String recipientUsername, String message) {
             PlayerPreferences recipient = null;
             try {
                 recipient = PlayerPreferencesManager.getPlayerPreferences(recipientUsername, true, false);
@@ -122,10 +127,10 @@ public class MailMinecraftCommand extends Command {
             }
 
             MailMessagesManager.sendMail(player, recipient.minecraftUuid, message);
-            BasicMessageFormatter.sendInternalMessage(sender, "Mail sent to " + recipient.lastKnownMinecraftName, ChatColor.GREEN);
+            BasicMessageFormatter.sendInternalMessage(sender, "Mail sent to " + recipient.lastKnownMinecraftName, NamedTextColor.GREEN);
         }
 
-        private void handleMailList(ProxiedPlayer player, int page, boolean unreadOnly) {
+        private void handleMailList(Player player, int page, boolean unreadOnly) {
             List<PlayerMail> mails = MailMessagesManager.getPlayerMail(player, unreadOnly);
             if (page < 1) {
                 BasicMessageFormatter.sendInternalError(player, "Invalid page number");
@@ -134,6 +139,17 @@ public class MailMinecraftCommand extends Command {
 
             int elementsPerPage = 5;
             int totalPages = (int) Math.ceil(mails.size() / (double) elementsPerPage);
+
+            // BungeeCord never checked the upper bound and threw out of the async
+            // task, leaving the player without a menu and without an explanation.
+            // An empty inbox has no pages but still renders its page 1 menu, so the
+            // bound is never below 1, otherwise "/mail list 3" on an empty inbox
+            // walks past the end of the list and throws again.
+            if (page > Math.max(totalPages, 1)) {
+                BasicMessageFormatter.sendInternalError(player, "Invalid page number");
+                return;
+            }
+
             int start = (page - 1) * elementsPerPage;
             int end = start + elementsPerPage;
 
@@ -143,121 +159,140 @@ public class MailMinecraftCommand extends Command {
 
             List<PlayerMail> mailsToDisplay = mails.subList(start, end);
 
-            List<BaseComponent[]> menu;
+            List<Component> menu;
             try {
                 menu = generateMenu(player, page, totalPages, elementsPerPage, mailsToDisplay, unreadOnly);
-            } catch (IOException|InterruptedException e) {
+            } catch (IOException | InterruptedException e) {
                 BasicMessageFormatter.sendInternalError(player, "Error while generating menu, please try again later");
                 return;
             }
 
-            for (BaseComponent[] message : menu) {
+            for (Component message : menu) {
                 player.sendMessage(message);
             }
         }
 
-        private List<BaseComponent[]> generateMenu(ProxiedPlayer player, int page, int totalPages, int elementsPerPage, List<PlayerMail> mailsToDisplay, boolean unreadOnly) throws IOException, InterruptedException {
+        private List<Component> generateMenu(Player player, int page, int totalPages, int elementsPerPage, List<PlayerMail> mailsToDisplay, boolean unreadOnly) throws IOException, InterruptedException {
             PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);
 
             String originalHeaderText = "MAIL INBOX";
             String originalNoMailsText = "You have no mails.";
             if (unreadOnly) {
-                originalNoMailsText += ChatColor.DARK_PURPLE + "\n\nTip: run the command %command% to see messages you already read";
+                originalNoMailsText += LegacyText.DARK_PURPLE + "\n\nTip: run the command %command% to see messages you already read";
             }
 
             String headerText = PlayerPreferencesManager.localizeMessageForPlayer(preferences, originalHeaderText);
             String noMailsText = PlayerPreferencesManager.localizeMessageForPlayer(preferences, originalNoMailsText).replace("%command%", "/mail listall");
 
-            List<BaseComponent[]> messages = new ArrayList<BaseComponent[]>();
+            List<Component> messages = new ArrayList<Component>();
 
             // Add 5 empty lines to make the menu look better
             for (int i = 0; i < 5; i++) {
-                messages.add(new ComponentBuilder().create());
+                messages.add(Component.empty());
             }
 
-            messages.add(new ComponentBuilder()
-                    .append("---------- ").color(ChatColor.GREEN)
-                    .append(headerText).color(ChatColor.GOLD).event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(originalHeaderText)))
-                    .append(" ----------").color(ChatColor.GREEN)
-                    .create());
+            // The trailing dashes inherited the header hover through the BungeeCord
+            // format retention, Adventure has no cascade between siblings so it is set again
+            HoverEvent<Component> headerHover = showText(originalHeaderText);
+            messages.add(Component.text()
+                    .append(Component.text("---------- ", NamedTextColor.GREEN))
+                    .append(Component.text(headerText, NamedTextColor.GOLD).hoverEvent(headerHover))
+                    .append(Component.text(" ----------", NamedTextColor.GREEN).hoverEvent(headerHover))
+                    .build());
 
             messages.add(getPageSelector(preferences, page, totalPages, unreadOnly));
 
             if (mailsToDisplay.isEmpty()) {
-                messages.add(new ComponentBuilder("").create());
-                messages.add(new ComponentBuilder("").create());
-                messages.add(new ComponentBuilder()
-                        .append(noMailsText).color(ChatColor.RED)
-                        .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(originalNoMailsText.replace("%command%", "/mail listall"))))
-                        .create());
-                messages.add(new ComponentBuilder("").create());
-                messages.add(new ComponentBuilder("").create());
+                messages.add(Component.empty());
+                messages.add(Component.empty());
+                messages.add(BasicMessageFormatter.deserialize(noMailsText).colorIfAbsent(NamedTextColor.RED)
+                        .hoverEvent(showText(originalNoMailsText.replace("%command%", "/mail listall"))));
+                messages.add(Component.empty());
+                messages.add(Component.empty());
             } else {
                 for (PlayerMail mail : mailsToDisplay) {
                     messages.add(getMailMessage(preferences, mail));
                 }
                 // Pad to always have the same number of lines
                 for (int i = 0; i < elementsPerPage - mailsToDisplay.size(); i++) {
-                    messages.add(new ComponentBuilder().create());
+                    messages.add(Component.empty());
                 }
 
                 String hoverHelpMessage = PlayerPreferencesManager.localizeMessageForPlayer(preferences, "Tip: Hover the message to see the full text");
 
-                messages.add(new ComponentBuilder(hoverHelpMessage).color(ChatColor.ITALIC).color(ChatColor.YELLOW).create());
+                // BungeeCord asked for italic then for yellow and the second call won,
+                // so this line renders yellow and upright, which is kept as is
+                messages.add(Component.text(hoverHelpMessage, NamedTextColor.YELLOW));
             }
 
             return messages;
         }
 
-        private BaseComponent[] getMailMessage(PlayerPreferences preferences, PlayerMail mail) {
+        private Component getMailMessage(PlayerPreferences preferences, PlayerMail mail) {
             String markAsReadText = PlayerPreferencesManager.localizeMessageForPlayer(preferences, "Mark as read");
             String alreadyMarkedAsReadText = PlayerPreferencesManager.localizeMessageForPlayer(preferences, "Already marked as read");
             String clickToReplyText = PlayerPreferencesManager.localizeMessageForPlayer(preferences, "Click to reply");
 
-            ComponentBuilder mailMessage = new ComponentBuilder();
+            Component statusTag;
+            HoverEvent<Component> statusHover;
+            ClickEvent statusClick = null;
 
             if (mail.readAt == null) {
-                mailMessage
-                        .append("[NEW] ")
-                        .color(ChatColor.GREEN)
-                        .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(markAsReadText)))
-                        .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mail read " + mail.internalId));
+                statusHover = showText(markAsReadText);
+                statusClick = ClickEvent.runCommand("/mail read " + mail.internalId);
+                statusTag = Component.text("[NEW] ", NamedTextColor.GREEN)
+                        .hoverEvent(statusHover)
+                        .clickEvent(statusClick);
             } else {
-                mailMessage
-                        .append("[OLD] ")
-                        .color(ChatColor.GRAY)
-                        .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(alreadyMarkedAsReadText)));
+                statusHover = showText(alreadyMarkedAsReadText);
+                statusTag = Component.text("[OLD] ", NamedTextColor.GRAY)
+                        .hoverEvent(statusHover);
             }
 
             String senderDisplayName = MailMessagesManager.getMailSenderDisplayName(mail);
 
-            mailMessage.append(senderDisplayName).color(ChatColor.GOLD);
-
-            mailMessage.append(" -> ").color(ChatColor.GRAY);
+            // The sender name and the arrow inherited the status hover and click on
+            // BungeeCord, so clicking them also marks an unread mail as read
+            Component senderName = Component.text(senderDisplayName, NamedTextColor.GOLD).hoverEvent(statusHover);
+            Component arrow = Component.text(" -> ", NamedTextColor.GRAY).hoverEvent(statusHover);
+            if (statusClick != null) {
+                senderName = senderName.clickEvent(statusClick);
+                arrow = arrow.clickEvent(statusClick);
+            }
 
             String fullMessage = PlayerPreferencesManager.localizeMessageForPlayer(preferences, mail.message);
 
-            String messagePreview = fullMessage.substring(0, Math.min(mail.message.length(), 25));
+            // BungeeCord bounded the localized preview by the length of the original
+            // message, which threw whenever a translation came out shorter
+            String messagePreview = fullMessage.substring(0, Math.min(fullMessage.length(), 25));
 
             if (!messagePreview.equals(fullMessage)) {
                 messagePreview += "...";
             }
 
             if (!mail.message.equals(fullMessage)) {
-                fullMessage += "\n\nOriginal [" + mail.originalLanguage.toUpperCase() + "]\n" + mail.message;;
+                String originalLanguage = mail.originalLanguage != null ? mail.originalLanguage.toUpperCase() : "??";
+                fullMessage += "\n\nOriginal [" + originalLanguage + "]\n" + mail.message;
             }
 
-            fullMessage += "\n\n" + ChatColor.GREEN + clickToReplyText;
+            fullMessage += "\n\n" + LegacyText.GREEN + clickToReplyText;
 
-            mailMessage.append(messagePreview).color(ChatColor.WHITE);
+            // Mail bodies carry the sender's own colour codes, BungeeCord left them
+            // literal in the component text and let the client sort them out
+            Component preview = BasicMessageFormatter.deserialize(messagePreview)
+                    .colorIfAbsent(NamedTextColor.WHITE)
+                    .hoverEvent(showText(fullMessage))
+                    .clickEvent(ClickEvent.suggestCommand("/mail send " + senderDisplayName + " "));
 
-            mailMessage.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(fullMessage)));
-            mailMessage.event(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/mail send " + senderDisplayName + " "));
-
-            return mailMessage.create();
+            return Component.text()
+                    .append(statusTag)
+                    .append(senderName)
+                    .append(arrow)
+                    .append(preview)
+                    .build();
         }
 
-        private BaseComponent[] getPageSelector(PlayerPreferences preferences, int page, int totalPages, boolean unreadOnly) {
+        private Component getPageSelector(PlayerPreferences preferences, int page, int totalPages, boolean unreadOnly) {
             String originalPreviousText = "Previous page";
             String originalPreviousTooltipText = "Click to go to the previous page";
             String originalNextText = "Next page";
@@ -270,34 +305,55 @@ public class MailMinecraftCommand extends Command {
 
             String subCommand = unreadOnly ? "list" : "listall";
 
-            ComponentBuilder pageNavigation = new ComponentBuilder();
-            pageNavigation.append("[" + previousText + "]");
+            Component previous = Component.text("[" + previousText + "]");
+            HoverEvent<Component> previousHover = null;
+            ClickEvent previousClick = null;
             if (page > 1) {
-                pageNavigation.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(previousTooltipText)));
-                pageNavigation.event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mail " + subCommand + " " + (page - 1)));
+                previousHover = showText(previousTooltipText);
+                previousClick = ClickEvent.runCommand("/mail " + subCommand + " " + (page - 1));
+                previous = previous.hoverEvent(previousHover).clickEvent(previousClick);
             } else {
-                pageNavigation.color(ChatColor.GRAY);
+                previous = previous.color(NamedTextColor.GRAY);
             }
 
             String spacer = "          ";
-            pageNavigation.append(spacer + page + "/" + totalPages + spacer).color(ChatColor.YELLOW);
-
-            pageNavigation.append("[" + nextText + "]");
-            if (page < totalPages) {
-                pageNavigation.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(nextTooltipText)));
-                pageNavigation.event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mail "
-                        + subCommand + " " + (page + 1)));
-            } else {
-                pageNavigation.color(ChatColor.GRAY);
+            Component counter = Component.text(spacer + page + "/" + totalPages + spacer, NamedTextColor.YELLOW);
+            // The counter inherited the previous page events on BungeeCord, which makes
+            // it a second previous page button, and that is kept
+            if (previousClick != null) {
+                counter = counter.hoverEvent(previousHover).clickEvent(previousClick);
             }
 
-            return pageNavigation.create();
+            Component next = Component.text("[" + nextText + "]");
+            if (page < totalPages) {
+                next = next.hoverEvent(showText(nextTooltipText))
+                        .clickEvent(ClickEvent.runCommand("/mail " + subCommand + " " + (page + 1)));
+            } else {
+                // On BungeeCord the greyed out next button still inherited the previous
+                // page click and walked backwards, here it stays inert
+                next = next.color(NamedTextColor.GRAY);
+            }
+
+            return Component.text()
+                    .append(previous)
+                    .append(counter)
+                    .append(next)
+                    .build();
+        }
+
+        private HoverEvent<Component> showText(String legacyText) {
+            return HoverEvent.showText(BasicMessageFormatter.deserialize(legacyText));
         }
     }
 
     @Override
-    public void execute(CommandSender sender, String[] args) {
-        var commandHandler = new MailMinecraftCommandHandler(sender, args);
-        RedCraftChat.getInstance().getProxy().getScheduler().runAsync(RedCraftChat.getInstance(), commandHandler);
+    public void execute(Invocation invocation) {
+        var commandHandler = new MailMinecraftCommandHandler(invocation.source(), invocation.arguments());
+        RedCraftChat.getInstance().getProxy().getScheduler().buildTask(RedCraftChat.getInstance(), commandHandler).schedule();
+    }
+
+    @Override
+    public boolean hasPermission(Invocation invocation) {
+        return invocation.source().hasPermission("redcraftchat.command.mail");
     }
 }

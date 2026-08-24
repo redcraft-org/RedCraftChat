@@ -14,14 +14,15 @@ import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import org.redcraft.redcraftchat.models.redcraft_api.PlayerPreferenceApi;
 import org.redcraft.redcraftchat.models.redcraft_api.PlayerProviderApi;
 
+import com.velocitypowered.api.proxy.Player;
+
 import net.dv8tion.jda.api.entities.User;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 public class RedCraftApiPlayerProvider implements PlayerProvider {
 
     static HttpClient httpClient = HttpClient.newHttpClient();
 
-    public PlayerPreferences getPlayerPreferences(ProxiedPlayer player, boolean createIfNotFound)
+    public PlayerPreferences getPlayerPreferences(Player player, boolean createIfNotFound)
             throws IOException, InterruptedException {
         String url = Config.playerApiUrl + "/" + player.getUniqueId().toString() + "?isProvider=true";
 

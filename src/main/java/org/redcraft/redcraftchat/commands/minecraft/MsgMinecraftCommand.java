@@ -4,25 +4,22 @@ import java.util.Arrays;
 
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.helpers.BasicMessageFormatter;
+import org.redcraft.redcraftchat.helpers.LegacyText;
 import org.redcraft.redcraftchat.messaging.PrivateMessagesManager;
+import org.redcraft.redcraftchat.players.DisplayNameManager;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.CommandSender;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
-import net.md_5.bungee.api.plugin.Command;
+import com.velocitypowered.api.command.CommandSource;
+import com.velocitypowered.api.command.SimpleCommand;
+import com.velocitypowered.api.proxy.Player;
 
-public class MsgMinecraftCommand extends Command {
-
-    public MsgMinecraftCommand() {
-        super("msg", "redcraftchat.command.msg", "minecraft:tell", "tell", "m", "w");
-    }
+public class MsgMinecraftCommand implements SimpleCommand {
 
     public class MsgMinecraftCommandHandler implements Runnable {
-        CommandSender sender;
+        CommandSource sender;
         String[] args;
 
-        public MsgMinecraftCommandHandler(CommandSender sender, String[] args) {
+        public MsgMinecraftCommandHandler(CommandSource sender, String[] args) {
             this.sender = sender;
             this.args = args;
         }
@@ -34,7 +31,7 @@ public class MsgMinecraftCommand extends Command {
                 return;
             }
 
-            ProxiedPlayer receiver = RedCraftChat.getInstance().getProxy().getPlayer(args[0]);
+            Player receiver = RedCraftChat.getInstance().getProxy().getPlayer(args[0]).orElse(null);
             if (receiver == null) {
                 BasicMessageFormatter.sendInternalError(sender, "Not found:", args[0]);
                 return;
@@ -42,19 +39,24 @@ public class MsgMinecraftCommand extends Command {
 
             String message =  String.join(" ", Arrays.copyOfRange(args, 1, args.length));
 
-            if (!(sender instanceof ProxiedPlayer)) {
+            if (!(sender instanceof Player)) {
                 String displayedMessage = PlayerPreferencesManager.localizeMessageForPlayer(receiver, message);
-                PrivateMessagesManager.sendToPlayer(receiver, ChatColor.DARK_RED + "Console", receiver.getDisplayName(), displayedMessage, message, null, null, null);
+                PrivateMessagesManager.sendToPlayer(receiver, LegacyText.DARK_RED + "Console", DisplayNameManager.getDisplayName(receiver), displayedMessage, message, null, null, null);
                 return;
             }
 
-            PrivateMessagesManager.handlePrivateMessage((ProxiedPlayer) sender, receiver, message);
+            PrivateMessagesManager.handlePrivateMessage((Player) sender, receiver, message);
         }
     }
 
     @Override
-    public void execute(CommandSender sender, String[] args) {
-        var commandHandler = new MsgMinecraftCommandHandler(sender, args);
-        RedCraftChat.getInstance().getProxy().getScheduler().runAsync(RedCraftChat.getInstance(), commandHandler);
+    public void execute(Invocation invocation) {
+        var commandHandler = new MsgMinecraftCommandHandler(invocation.source(), invocation.arguments());
+        RedCraftChat.getInstance().getProxy().getScheduler().buildTask(RedCraftChat.getInstance(), commandHandler).schedule();
+    }
+
+    @Override
+    public boolean hasPermission(Invocation invocation) {
+        return invocation.source().hasPermission("redcraftchat.command.msg");
     }
 }

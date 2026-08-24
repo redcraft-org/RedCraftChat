@@ -6,42 +6,38 @@ import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.helpers.BasicMessageFormatter;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.CommandSender;
-import net.md_5.bungee.api.ProxyServer;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
-import net.md_5.bungee.api.plugin.Command;
+import com.velocitypowered.api.command.CommandSource;
+import com.velocitypowered.api.command.SimpleCommand;
+import com.velocitypowered.api.proxy.Player;
 
-public class CommandSpyMinecraftCommand extends Command {
+import net.kyori.adventure.text.format.NamedTextColor;
 
-    public CommandSpyMinecraftCommand() {
-        super("commandspy", "redcraftchat.moderation.commandspy", "cspy");
-    }
+public class CommandSpyMinecraftCommand implements SimpleCommand {
 
     public class CommandSpyMinecraftCommandHandler implements Runnable {
-        CommandSender sender;
+        CommandSource sender;
         String[] args;
 
-        public CommandSpyMinecraftCommandHandler(CommandSender sender, String[] args) {
+        public CommandSpyMinecraftCommandHandler(CommandSource sender, String[] args) {
             this.sender = sender;
             this.args = args;
         }
 
         @Override
         public void run() {
-            ProxiedPlayer player = null;
+            Player player = null;
 
             // If it's not a player we need an arg
-            if (!(sender instanceof ProxiedPlayer) && args.length < 1) {
+            if (!(sender instanceof Player) && args.length < 1) {
                 BasicMessageFormatter.sendInternalError(sender, "You need to specify a player name");
                 return;
             }
 
             // Get from arg
             if (args.length > 0 && sender.hasPermission("redcraftchat.moderation.commandspy.others")) {
-                player = ProxyServer.getInstance().getPlayer(args[0]);
+                player = RedCraftChat.getInstance().getProxy().getPlayer(args[0]).orElse(null);
             } else {
-                player = (ProxiedPlayer) sender;
+                player = (Player) sender;
             }
 
             if (player == null) {
@@ -58,7 +54,7 @@ public class CommandSpyMinecraftCommand extends Command {
             try {
                 boolean commandSpyEnabled = PlayerPreferencesManager.toggleCommandSpy(player);
                 BasicMessageFormatter.sendInternalMessage(sender,
-                        "Command spy " + (commandSpyEnabled ? "enabled" : "disabled"), ChatColor.GREEN);
+                        "Command spy " + (commandSpyEnabled ? "enabled" : "disabled"), NamedTextColor.GREEN);
             } catch (IOException | InterruptedException e) {
                 BasicMessageFormatter.sendInternalError(sender,
                         "An error occured while trying to toggle command spy, check logs for more info");
@@ -68,8 +64,13 @@ public class CommandSpyMinecraftCommand extends Command {
     }
 
     @Override
-    public void execute(CommandSender sender, String[] args) {
-        var commandHandler = new CommandSpyMinecraftCommandHandler(sender, args);
-        RedCraftChat.getInstance().getProxy().getScheduler().runAsync(RedCraftChat.getInstance(), commandHandler);
+    public void execute(Invocation invocation) {
+        var commandHandler = new CommandSpyMinecraftCommandHandler(invocation.source(), invocation.arguments());
+        RedCraftChat.getInstance().getProxy().getScheduler().buildTask(RedCraftChat.getInstance(), commandHandler).schedule();
+    }
+
+    @Override
+    public boolean hasPermission(Invocation invocation) {
+        return invocation.source().hasPermission("redcraftchat.moderation.commandspy");
     }
 }

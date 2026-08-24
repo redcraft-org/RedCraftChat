@@ -7,39 +7,35 @@ import org.redcraft.redcraftchat.models.caching.AccountLinkCode;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.CommandSender;
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.ClickEvent;
-import net.md_5.bungee.api.chat.ComponentBuilder;
-import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.hover.content.Text;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
-import net.md_5.bungee.api.plugin.Command;
+import com.velocitypowered.api.command.CommandSource;
+import com.velocitypowered.api.command.SimpleCommand;
+import com.velocitypowered.api.proxy.Player;
 
-public class LinkDiscordAccountMinecraftCommand extends Command {
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 
-    public LinkDiscordAccountMinecraftCommand() {
-        super("discord-link", "redcraftchat.command.link-discord-account");
-    }
+public class LinkDiscordAccountMinecraftCommand implements SimpleCommand {
 
     public class LinkDiscordAccountMinecraftCommandHandler implements Runnable {
-        CommandSender sender;
+        CommandSource sender;
         String[] args;
 
-        public LinkDiscordAccountMinecraftCommandHandler(CommandSender sender, String[] args) {
+        public LinkDiscordAccountMinecraftCommandHandler(CommandSource sender, String[] args) {
             this.sender = sender;
             this.args = args;
         }
 
         @Override
         public void run() {
-            if (!(sender instanceof ProxiedPlayer)) {
+            if (!(sender instanceof Player)) {
                 BasicMessageFormatter.sendInternalError(sender, "This command can only be used by players");
                 return;
             }
 
-            ProxiedPlayer player = (ProxiedPlayer) sender;
+            Player player = (Player) sender;
 
             try {
                 PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);
@@ -50,7 +46,7 @@ public class LinkDiscordAccountMinecraftCommand extends Command {
                         return;
                     }
                     AccountLinkManager.unLinkAccounts(preferences);
-                    BasicMessageFormatter.sendInternalMessage(player, "You have successfully unlinked your accounts", ChatColor.GREEN);
+                    BasicMessageFormatter.sendInternalMessage(player, "You have successfully unlinked your accounts", NamedTextColor.GREEN);
                     return;
                 }
 
@@ -61,17 +57,11 @@ public class LinkDiscordAccountMinecraftCommand extends Command {
 
                     String command = "/discord-link unlink";
 
-                    BaseComponent[] formattedMessage = new ComponentBuilder()
-                            .append(message)
-                            .color(ChatColor.YELLOW)
-                            .create();
+                    Component formattedMessage = Component.text(message, NamedTextColor.YELLOW);
 
-                    BaseComponent[] button = new ComponentBuilder()
-                            .append(ChatColor.BOLD + unlink)
-                            .color(ChatColor.DARK_RED)
-                            .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, command))
-                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(ChatColor.RED + tooltip)))
-                            .create();
+                    Component button = Component.text(unlink, NamedTextColor.DARK_RED, TextDecoration.BOLD)
+                            .clickEvent(ClickEvent.runCommand(command))
+                            .hoverEvent(HoverEvent.showText(Component.text(tooltip, NamedTextColor.RED)));
 
                     player.sendMessage(formattedMessage);
                     player.sendMessage(button);
@@ -80,7 +70,7 @@ public class LinkDiscordAccountMinecraftCommand extends Command {
 
                 if (args.length > 0) {
                     if (AccountLinkManager.linkAccounts(preferences, args[0])) {
-                        BasicMessageFormatter.sendInternalMessage(player, "You have successfully linked your accounts", ChatColor.GREEN);
+                        BasicMessageFormatter.sendInternalMessage(player, "You have successfully linked your accounts", NamedTextColor.GREEN);
                         return;
                     }
                     BasicMessageFormatter.sendInternalError(player, "Invalid code");
@@ -94,14 +84,12 @@ public class LinkDiscordAccountMinecraftCommand extends Command {
 
                 String command = "/minecraft-link " + code.token;
 
-                BaseComponent[] formattedMessage = new ComponentBuilder()
-                        .append(message)
-                        .color(ChatColor.GREEN)
-                        .append(command)
-                        .color(ChatColor.GOLD)
-                        .event(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, command))
-                        .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(ChatColor.GREEN + copyToClipboard)))
-                        .create();
+                Component formattedMessage = Component.text()
+                        .append(Component.text(message, NamedTextColor.GREEN))
+                        .append(Component.text(command, NamedTextColor.GOLD)
+                                .clickEvent(ClickEvent.copyToClipboard(command))
+                                .hoverEvent(HoverEvent.showText(Component.text(copyToClipboard, NamedTextColor.GREEN))))
+                        .build();
 
                 player.sendMessage(formattedMessage);
             } catch (Exception e) {
@@ -112,8 +100,13 @@ public class LinkDiscordAccountMinecraftCommand extends Command {
     }
 
     @Override
-    public void execute(CommandSender sender, String[] args) {
-        var commandHandler = new LinkDiscordAccountMinecraftCommandHandler(sender, args);
-        RedCraftChat.getInstance().getProxy().getScheduler().runAsync(RedCraftChat.getInstance(), commandHandler);
+    public void execute(Invocation invocation) {
+        var commandHandler = new LinkDiscordAccountMinecraftCommandHandler(invocation.source(), invocation.arguments());
+        RedCraftChat.getInstance().getProxy().getScheduler().buildTask(RedCraftChat.getInstance(), commandHandler).schedule();
+    }
+
+    @Override
+    public boolean hasPermission(Invocation invocation) {
+        return invocation.source().hasPermission("redcraftchat.command.link-discord-account");
     }
 }
