@@ -27,6 +27,15 @@ supported-locales-provider: 'database'
 supported-locales-api-url: 'https://redcraft.org/api/v1/language/list'
 default-locale: 'en-US'
 
+# A small HTTP server reporting who is online and which client versions the
+# proxy accepts, at /players.json and /versions.json. The player list carries
+# the languages each player speaks.
+# :warning: There is no authentication, so bind it where only your own
+# services can reach it.
+json-api-enabled: false
+json-api-bind: '127.0.0.1'
+json-api-port: 8080
+
 # Extra commands that run another command, since Velocity has no alias of its
 # own. /hub runs /server hub, and whatever the player types after the alias is
 # appended, so /hub museum still works. The command being aliased checks its

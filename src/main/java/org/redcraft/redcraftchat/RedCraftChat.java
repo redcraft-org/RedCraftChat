@@ -29,6 +29,7 @@ import org.redcraft.redcraftchat.caching.providers.RedisCache;
 import org.redcraft.redcraftchat.commands.discord.LangDiscordCommand;
 import org.redcraft.redcraftchat.commands.discord.LinkMinecraftAccountDiscordCommand;
 import org.redcraft.redcraftchat.commands.discord.PlayersDiscordCommand;
+import org.redcraft.redcraftchat.api.HttpApiServer;
 import org.redcraft.redcraftchat.commands.minecraft.AliasMinecraftCommand;
 import org.redcraft.redcraftchat.commands.minecraft.BroadcastMinecraftCommand;
 import org.redcraft.redcraftchat.commands.minecraft.CommandSpyMinecraftCommand;
@@ -61,13 +62,15 @@ import org.redcraft.redcraftchat.runnables.ScheduledAnnouncementsTask;
 
 import org.slf4j.Logger;
 
-@Plugin(id = "redcraftchat", name = RedCraftChat.PLUGIN_NAME, version = "0.1.2-SNAPSHOT", url = "https://redcraft.org", description = "Multi language chat and Discord bridge", authors = {
+@Plugin(id = "redcraftchat", name = RedCraftChat.PLUGIN_NAME, version = "0.1.3-SNAPSHOT", url = "https://redcraft.org", description = "Multi language chat and Discord bridge", authors = {
 		"RedCraft" })
 public class RedCraftChat {
 
 	public static final String PLUGIN_NAME = "RedCraftChat";
 
 	private static RedCraftChat instance;
+
+	private final HttpApiServer jsonApiServer = new HttpApiServer();
 
 	private final ProxyServer proxy;
 	private final Logger logger;
@@ -157,6 +160,8 @@ public class RedCraftChat {
 		// and a rejected alias aborts the rest of this method, so they are left out
 		// until someone confirms them against a running proxy.
 		CommandManager commandManager = proxy.getCommandManager();
+		jsonApiServer.start();
+
 		// Aliases come from the config, so a server can be given a shortcut
 		// without shipping a command for it
 		for (Map.Entry<String, String> alias : Config.commandAliases.entrySet()) {
@@ -213,6 +218,7 @@ public class RedCraftChat {
 		if (DiscordClient.hasClient()) {
 			DiscordClient.getClient().shutdownNow();
 		}
+		jsonApiServer.stop();
 		RedisCache.close();
 		if (PacketEvents.getAPI() != null && PacketEvents.getAPI().isInitialized()) {
 			PacketEvents.getAPI().terminate();

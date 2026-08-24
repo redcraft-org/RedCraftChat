@@ -39,6 +39,10 @@ public class Config {
 
 	public static Map<String, String> commandAliases = new HashMap<String, String>();
 
+	public static boolean jsonApiEnabled = false;
+	public static String jsonApiBind = "127.0.0.1";
+	public static int jsonApiPort = 8080;
+
 	public static boolean stripChatSignatures = true;
 	public static boolean stripLoginProfileKey = false;
 
@@ -110,6 +114,10 @@ public class Config {
 		pretranslateUiEnabled = getBoolean(config, "pretranslate-ui-enabled", true);
 		serverDisplayNames = getStringMap(config, "server-display-names");
 		commandAliases = getStringMap(config, "command-aliases");
+
+		jsonApiEnabled = getBoolean(config, "json-api-enabled", jsonApiEnabled);
+		jsonApiBind = getString(config, "json-api-bind", jsonApiBind);
+		jsonApiPort = (int) getLong(config, "json-api-port", jsonApiPort);
 
 		stripChatSignatures = getBoolean(config, "strip-chat-signatures", true);
 		stripLoginProfileKey = getBoolean(config, "strip-login-profile-key", false);
@@ -188,6 +196,11 @@ public class Config {
 	private static boolean getBoolean(Map<String, Object> config, String key, boolean defaultValue) {
 		Object value = config.get(key);
 		return value instanceof Boolean ? (Boolean) value : defaultValue;
+	}
+
+	private static long getLong(Map<String, Object> config, String key, long defaultValue) {
+		Object value = config.get(key);
+		return value instanceof Number ? ((Number) value).longValue() : defaultValue;
 	}
 
 	private static long getLong(Map<String, Object> config, String key) {
