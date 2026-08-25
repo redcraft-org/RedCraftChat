@@ -34,6 +34,7 @@ public class Config {
 	public static boolean enableTabCompletion = true;
 
 	public static boolean pretranslateUiEnabled = true;
+	public static boolean translateHolograms = true;
 
 	public static Map<String, String> serverDisplayNames = new HashMap<String, String>();
 
@@ -112,6 +113,7 @@ public class Config {
 
 		enableTabCompletion = getBoolean(config, "enable-tab-completion");
 		pretranslateUiEnabled = getBoolean(config, "pretranslate-ui-enabled", true);
+		translateHolograms = getBoolean(config, "translate-holograms", true);
 		serverDisplayNames = getStringMap(config, "server-display-names");
 		commandAliases = getStringMap(config, "command-aliases");
 

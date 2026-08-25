@@ -53,6 +53,7 @@ import org.redcraft.redcraftchat.listeners.minecraft.MinecraftDisplayNameListene
 import org.redcraft.redcraftchat.listeners.minecraft.MinecraftPlayerPreferencesListener;
 import org.redcraft.redcraftchat.listeners.minecraft.MinecraftTabCompleteListener;
 import org.redcraft.redcraftchat.listeners.packets.ChatSignatureStripper;
+import org.redcraft.redcraftchat.listeners.packets.HologramTranslator;
 import org.redcraft.redcraftchat.listeners.packets.SystemChatInterceptor;
 import org.redcraft.redcraftchat.runnables.DiscordChannelSynchronizerTask;
 import org.redcraft.redcraftchat.runnables.DiscordUsersSynchronizerTask;
@@ -141,6 +142,9 @@ public class RedCraftChat {
 			PacketEvents.getAPI().getEventManager().registerListener(new ChatSignatureStripper());
 		}
 		PacketEvents.getAPI().getEventManager().registerListener(new SystemChatInterceptor());
+		if (Config.translationEnabled && Config.translateHolograms) {
+			PacketEvents.getAPI().getEventManager().registerListener(new HologramTranslator());
+		}
 		PacketEvents.getAPI().init();
 
 		// Game listeners
