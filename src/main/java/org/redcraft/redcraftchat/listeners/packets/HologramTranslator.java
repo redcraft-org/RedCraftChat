@@ -107,6 +107,24 @@ public class HologramTranslator extends PacketListenerAbstract {
         LEGACY_STRING
     }
 
+    /**
+     * Everything needed to rebuild a line's name packet later: the refresh on
+     * a language change has no metadata packet in hand to copy from.
+     */
+    static class LineInfo {
+        final String legacy;
+        final int nameIndex;
+        final EntityDataType<?> nameType;
+        final NameShape shape;
+
+        LineInfo(CustomName name) {
+            this.legacy = name.legacy;
+            this.nameIndex = name.entry.getIndex();
+            this.nameType = name.entry.getType();
+            this.shape = name.shape;
+        }
+    }
+
     /** A custom name found in a metadata list, with its wire shape. */
     public static class CustomName {
         public final EntityData<?> entry;
@@ -153,7 +171,7 @@ public class HologramTranslator extends PacketListenerAbstract {
         final Set<Integer> armorStands = ConcurrentHashMap.newKeySet();
         final Set<Integer> holograms = ConcurrentHashMap.newKeySet();
         final Set<Integer> dynamic = ConcurrentHashMap.newKeySet();
-        final Map<Integer, String> lastText = new ConcurrentHashMap<>();
+        final Map<Integer, LineInfo> lastText = new ConcurrentHashMap<>();
         final Map<Integer, TextChurn> churn = new ConcurrentHashMap<>();
 
         void forget(int entityId) {
@@ -242,19 +260,71 @@ public class HologramTranslator extends PacketListenerAbstract {
         final NameShape shape;
         final String originalText;
 
-        Waiter(User user, UUID playerId, int entityId, CustomName name) {
+        /**
+         * A refresh waiter restores the original text when the new language
+         * needs no translation, since the client may still be displaying the
+         * previous language. Packet driven waiters never do: their client is
+         * already showing the original.
+         */
+        final boolean restore;
+
+        Waiter(User user, UUID playerId, int entityId, LineInfo line, boolean restore) {
             this.user = user;
             this.playerId = playerId;
             this.entityId = entityId;
-            this.nameIndex = name.entry.getIndex();
-            this.nameType = name.entry.getType();
-            this.shape = name.shape;
-            this.originalText = name.legacy;
+            this.nameIndex = line.nameIndex;
+            this.nameType = line.nameType;
+            this.shape = line.shape;
+            this.originalText = line.legacy;
+            this.restore = restore;
         }
     }
 
+    /** The registered listener, so a preference update can reach it. */
+    private static volatile HologramTranslator instance;
+
     public HologramTranslator() {
         super(PacketListenerPriority.NORMAL);
+        instance = this;
+    }
+
+    /**
+     * Called whenever preferences are saved. Drops the cached language and
+     * pushes corrected packets for every hologram line the player currently
+     * sees, since holograms only ever resend on their own when they change.
+     */
+    public static void onPreferencesUpdated(UUID playerId) {
+        HologramTranslator translator = instance;
+        if (translator != null && playerId != null) {
+            translator.refreshPlayer(playerId);
+        }
+    }
+
+    private void refreshPlayer(UUID playerId) {
+        languageByPlayer.remove(playerId);
+
+        Player player = RedCraftChat.getInstance().getProxy().getPlayer(playerId).orElse(null);
+        if (player == null) {
+            return;
+        }
+
+        for (Map.Entry<User, TrackedEntities> entry : tracked.entrySet()) {
+            UUID uuid = entry.getKey().getProfile().getUUID();
+            if (!playerId.equals(uuid)) {
+                continue;
+            }
+
+            TrackedEntities state = entry.getValue();
+            for (Map.Entry<Integer, LineInfo> line : state.lastText.entrySet()) {
+                int entityId = line.getKey();
+                if (!state.holograms.contains(entityId) || state.dynamic.contains(entityId)
+                        || !hasTranslatableText(line.getValue().legacy)) {
+                    continue;
+                }
+                scheduleTranslation(
+                        new Waiter(entry.getKey(), playerId, entityId, line.getValue(), true), player);
+            }
+        }
     }
 
     @Override
@@ -389,8 +459,9 @@ public class HologramTranslator extends PacketListenerAbstract {
         // staleness guard for corrective packets, and a change to letterless
         // text still has to invalidate an in flight translation of the
         // previous content
-        String previous = state.lastText.put(entityId, name.legacy);
-        if (previous != null && !previous.equals(name.legacy)) {
+        LineInfo line = new LineInfo(name);
+        LineInfo previous = state.lastText.put(entityId, line);
+        if (previous != null && !previous.legacy.equals(name.legacy)) {
             TextChurn churn = state.churn.computeIfAbsent(entityId, id -> new TextChurn());
             if (churn.recordChange(System.currentTimeMillis())) {
                 state.dynamic.add(entityId);
@@ -422,7 +493,7 @@ public class HologramTranslator extends PacketListenerAbstract {
         if (cached == null) {
             // First sight: the original text is a fine placeholder for the
             // moment it takes, a corrected packet follows the translation
-            scheduleTranslation(new Waiter(event.getUser(), player.getUniqueId(), entityId, name), player);
+            scheduleTranslation(new Waiter(event.getUser(), player.getUniqueId(), entityId, line, false), player);
             event.markForReEncode(false);
             return;
         }
@@ -623,7 +694,18 @@ public class HologramTranslator extends PacketListenerAbstract {
 
     private void deliver(Waiter waiter, CachedTranslation cached) {
         PlayerLanguages languages = languageByPlayer.get(waiter.playerId);
-        if (languages == null || !shouldRewrite(cached, waiter.originalText, languages)) {
+        if (languages == null) {
+            return;
+        }
+
+        String text;
+        if (shouldRewrite(cached, waiter.originalText, languages)) {
+            text = cached.translated;
+        } else if (waiter.restore) {
+            // The client may still display the previous language, put the
+            // original back
+            text = waiter.originalText;
+        } else {
             return;
         }
 
@@ -633,7 +715,8 @@ public class HologramTranslator extends PacketListenerAbstract {
             return;
         }
 
-        if (!waiter.originalText.equals(state.lastText.get(waiter.entityId))) {
+        LineInfo current = state.lastText.get(waiter.entityId);
+        if (current == null || !waiter.originalText.equals(current.legacy)) {
             // The line moved on while the translation was in flight, a
             // corrective packet now would paste stale text over newer content
             return;
@@ -642,7 +725,7 @@ public class HologramTranslator extends PacketListenerAbstract {
         try {
             @SuppressWarnings({"unchecked", "rawtypes"})
             EntityData<?> nameEntry = new EntityData(waiter.nameIndex, (EntityDataType) waiter.nameType,
-                    encodeName(waiter.shape, cached.translated));
+                    encodeName(waiter.shape, text));
 
             // Silently, so this listener never sees its own correction
             waiter.user.sendPacketSilently(

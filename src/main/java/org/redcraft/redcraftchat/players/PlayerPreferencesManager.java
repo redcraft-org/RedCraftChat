@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.caching.CacheManager;
+import org.redcraft.redcraftchat.listeners.packets.HologramTranslator;
 import org.redcraft.redcraftchat.detection.DetectionManager;
 import org.redcraft.redcraftchat.locales.LocaleManager;
 import org.redcraft.redcraftchat.models.caching.CacheCategory;
@@ -172,6 +173,11 @@ public class PlayerPreferencesManager {
         if (preferences.discordId != null) {
             CacheManager.put(CacheCategory.PLAYER_PREFERENCES, preferences.discordId, preferences);
         }
+
+        // After the cache write, so the refresh resolves the new languages.
+        // Holograms only resend on their own when their text changes, so a
+        // language change has to push corrected packets itself.
+        HologramTranslator.onPreferencesUpdated(preferences.minecraftUuid);
     }
 
     public static boolean playerSpeaksLanguage(PlayerPreferences preferences, String languageIsoCode) {
