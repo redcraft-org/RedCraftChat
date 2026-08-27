@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 
 import com.dieselpoint.norm.Database;
 
@@ -25,7 +26,14 @@ public class DatabaseManager {
     // SELECT list and its UPDATE, so a table that predates a column fails
     // reads as well as writes with "Unknown column ... in 'field list'".
     private static volatile boolean schemaReady = false;
-    private static long nextSchemaAttempt = 0;
+    private static volatile long nextSchemaAttempt = 0;
+
+    // tryLock, never lock: getDatabase() is on every query path, and a probe
+    // against a host that drops packets rather than refusing them blocks for
+    // as long as the OS lets it. One thread does the work, everyone else
+    // carries on and fails their own query the way they did before this
+    // guard existed, instead of queueing behind it.
+    private static final ReentrantLock schemaLock = new ReentrantLock();
 
     private static final long SCHEMA_RETRY_INTERVAL_MILLIS = 30_000;
 
@@ -67,45 +75,57 @@ public class DatabaseManager {
         if (schemaReady) {
             return true;
         }
-        synchronized (DatabaseManager.class) {
-            if (schemaReady) {
-                return true;
-            }
-            if (database == null) {
-                return false;
-            }
-            // Every failed attempt costs a connection and a log line, so a
-            // database that stays down is retried on a timer rather than on
-            // every query
-            long now = System.currentTimeMillis();
-            if (now < nextSchemaAttempt) {
-                return false;
-            }
-            nextSchemaAttempt = now + SCHEMA_RETRY_INTERVAL_MILLIS;
+        // Every failed attempt costs a connection and a log line, so a
+        // database that stays down is retried on a timer rather than on
+        // every query
+        if (System.currentTimeMillis() < nextSchemaAttempt) {
+            return false;
+        }
+        if (!schemaLock.tryLock()) {
+            // Another thread is already attempting; this one is not going to
+            // learn anything by waiting for it
+            return false;
+        }
+        try {
+            return attemptSchema();
+        } finally {
+            // Measured from when the attempt ENDED. Timing it from the start
+            // means a probe that outlasts the interval leaves the deadline
+            // already expired, so retries run back to back with no gap.
+            nextSchemaAttempt = System.currentTimeMillis() + SCHEMA_RETRY_INTERVAL_MILLIS;
+            schemaLock.unlock();
+        }
+    }
 
-            // Probe the database before norm spins up a connection pool,
-            // a Hikari pool that fails to start dumps a stack trace in the log
-            try (Connection probe = DriverManager.getConnection(Config.databaseUri, Config.databaseUsername, Config.databasePassword)) {
-                RedCraftChat.getInstance().getLogger().debug("Database probe succeeded");
-            } catch (SQLException ex) {
-                RedCraftChat.getInstance().getLogger().warn("Database is unreachable, features that need it will fail until it is back: {}", ex.getMessage());
-                return false;
-            }
-
-            List<Class<?>> classes = new ArrayList<Class<?>>();
-            classes.add(PlayerPreferencesDatabase.class);
-            classes.add(PlayerMailDatabase.class);
-            classes.add(ScheduledAnnouncementDatabase.class);
-            classes.add(SupportedLocaleDatabase.class);
-
-            if (!createStructure(classes) || !migrate()) {
-                return false;
-            }
-
-            schemaReady = true;
-            RedCraftChat.getInstance().getLogger().info("Connected to database!");
+    private static boolean attemptSchema() {
+        if (schemaReady) {
             return true;
         }
+        if (database == null) {
+            return false;
+        }
+        // Probe the database before norm spins up a connection pool,
+        // a Hikari pool that fails to start dumps a stack trace in the log
+        try (Connection probe = DriverManager.getConnection(Config.databaseUri, Config.databaseUsername, Config.databasePassword)) {
+            RedCraftChat.getInstance().getLogger().debug("Database probe succeeded");
+        } catch (SQLException ex) {
+            RedCraftChat.getInstance().getLogger().warn("Database is unreachable, features that need it will fail until it is back: {}", ex.getMessage());
+            return false;
+        }
+
+        List<Class<?>> classes = new ArrayList<Class<?>>();
+        classes.add(PlayerPreferencesDatabase.class);
+        classes.add(PlayerMailDatabase.class);
+        classes.add(ScheduledAnnouncementDatabase.class);
+        classes.add(SupportedLocaleDatabase.class);
+
+        if (!createStructure(classes) || !migrate()) {
+            return false;
+        }
+
+        schemaReady = true;
+        RedCraftChat.getInstance().getLogger().info("Connected to database!");
+        return true;
     }
 
     /**

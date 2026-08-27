@@ -217,7 +217,17 @@ public class LanguageSelectorSession {
         if (displayKit == null) {
             return;
         }
-        displayKit.getUiThread().dispatch(task);
+        // Wrapped here rather than at the call sites: a task handed to the
+        // executor loses any exception into a Future nobody reads, so an
+        // unwrapped failure would be invisible
+        displayKit.getUiThread().dispatch(() -> {
+            try {
+                task.run();
+            } catch (Exception | LinkageError e) {
+                RedCraftChat.getInstance().getLogger().warn("Selector UI task failed for {}: {}",
+                        player.getUsername(), e.getMessage());
+            }
+        });
     }
 
     /** Language row clicked. Runs on the DisplayKit UI thread: hop off it. */
