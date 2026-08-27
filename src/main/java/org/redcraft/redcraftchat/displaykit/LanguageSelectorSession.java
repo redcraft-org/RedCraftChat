@@ -22,12 +22,17 @@ import io.schemat.displaykit.action.ActionMenuSession;
 import io.schemat.displaykit.action.ActionPage;
 import io.schemat.displaykit.action.ActionSpec;
 import io.schemat.displaykit.math.Vec3d;
+import io.schemat.displaykit.render.DkColor;
+import io.schemat.displaykit.render.TextMetrics;
 import io.schemat.displaykit.surface.BlockButton;
 import io.schemat.displaykit.surface.Surface;
 import io.schemat.displaykit.surface.SurfaceAnchor;
 import io.schemat.displaykit.surface.SurfaceFocus;
 import io.schemat.displaykit.surface.SurfaceLifecyclePolicy;
 import io.schemat.displaykit.surface.widget.ActionMenuView;
+import io.schemat.displaykit.surface.layout.PxSize;
+import io.schemat.displaykit.surface.layout.WidgetNode;
+import io.schemat.displaykit.surface.widget.ActionMenuLabels;
 import io.schemat.displaykit.surface.widget.ActionMenuViewStyle;
 import io.schemat.displaykit.velocity.VelocityDisplayKit;
 import io.schemat.displaykit.velocity.player.VelocityPlayerRef;
@@ -52,14 +57,20 @@ public class LanguageSelectorSession {
     private static final float SURFACE_WIDTH_BLOCKS = 2.2f;
 
     // An action slot the page does not fill still occupies its row and simply
-    // paints nothing, which reads as a hole in the panel. Both steps happen to
-    // want exactly one row per language (N to pick from, or N-1 to tick plus
-    // Done), so sizing the menu to the language count leaves neither a hole
-    // nor a page break.
+    // paints nothing, which reads as a hole in the panel. Both steps want one
+    // row per language plus one (every language then Next, or every language
+    // then Done), so sizing the menu that way leaves neither a hole nor a
+    // page break on either step.
     private static final int MENU_ROW_HEIGHT_PX = 20;
     private static final int MENU_GAP_PX = 2;
     private static final int MENU_NAVIGATION_ROWS = 3;
-    private static final int MENU_MAX_ROWS = 8;
+    private static final int MENU_MAX_ROWS = 9;
+
+    // Two lines of explanation above the menu, sized for the longest
+    // translation rather than the current one so the panel does not resize
+    // under the player as they switch language
+    private static final int HELP_LINES = 2;
+    private static final int HELP_PADDING_PX = 3;
 
     private static final String PAGE_PRIMARY = "rcc:language-selector/primary";
     private static final String PAGE_OTHERS = "rcc:language-selector/others";
@@ -80,8 +91,12 @@ public class LanguageSelectorSession {
     // than set at each transition, so pressing Back keeps it honest and a
     // refresh rebuilds the step the player is actually looking at.
     private volatile String currentPageId = PAGE_PRIMARY;
-    private final AtomicBoolean explainedOthers = new AtomicBoolean(false);
     private final int menuRows;
+
+    // Read while painting, so they are resolved on a scheduler thread and
+    // published here rather than translated on the render path
+    private volatile List<String> helpLines = java.util.Collections.emptyList();
+    private volatile ActionMenuLabels navigationLabels = new ActionMenuLabels();
 
     public LanguageSelectorSession(Player player, PlayerPreferences preferences, boolean firstJoin,
             Runnable onClosed) {
@@ -91,24 +106,111 @@ public class LanguageSelectorSession {
 
         // Blocking: runs on the scheduler thread that created the session
         this.menuRows = menuRowsFor(LocaleManager.getSupportedLocales().size());
+        resolveChrome(preferences, false);
         ActionPage page = buildPrimaryPage(preferences);
         this.actions = new ActionMenuSession(page);
     }
 
-    /** Rows of languages the menu shows at once, clamped to what fits. */
+    /**
+     * Rows the menu shows at once: every language plus the one button that
+     * ends the step, clamped to what a player can comfortably read.
+     */
     public static int menuRowsFor(int localeCount) {
-        return Math.max(1, Math.min(localeCount, MENU_MAX_ROWS));
+        return Math.max(2, Math.min(localeCount + 1, MENU_MAX_ROWS));
     }
 
-    /** Exact height of title + action rows + navigation, gaps included. */
+    /** Exact height of help + title + action rows + navigation, gaps included. */
     public static int surfaceHeightPx(int menuRows) {
         int rows = 1 + menuRows + MENU_NAVIGATION_ROWS;
-        return rows * MENU_ROW_HEIGHT_PX + (rows - 1) * MENU_GAP_PX;
+        int menuHeight = rows * MENU_ROW_HEIGHT_PX + (rows - 1) * MENU_GAP_PX;
+        return menuHeight + helpHeightPx() + MENU_GAP_PX;
+    }
+
+    /** Height of the explanation block above the menu. */
+    public static int helpHeightPx() {
+        return HELP_LINES * TextMetrics.FONT_LINE_HEIGHT_PX + HELP_PADDING_PX * 2;
     }
 
     /** The step the player is on, rebuilt with fresh labels. */
     private ActionPage buildCurrentPage(PlayerPreferences preferences) {
         return PAGE_OTHERS.equals(currentPageId) ? buildOthersPage(preferences) : buildPrimaryPage(preferences);
+    }
+
+    /**
+     * Resolves the text the renderer paints itself, rather than the text the
+     * action model carries. Blocking, so it belongs on a scheduler thread
+     * alongside the page build.
+     */
+    private void resolveChrome(PlayerPreferences preferences, boolean others) {
+        String help = PlayerPreferencesManager.localizeMessageForPlayer(preferences,
+                others ? UiStrings.SELECTOR_OTHERS_HELP : UiStrings.SELECTOR_PRIMARY_HELP);
+        helpLines = wrap(help, SURFACE_WIDTH_PX - HELP_PADDING_PX * 2, HELP_LINES);
+        navigationLabels = new ActionMenuLabels(
+                PlayerPreferencesManager.localizeMessageForPlayer(preferences, UiStrings.SELECTOR_BACK),
+                PlayerPreferencesManager.localizeMessageForPlayer(preferences, UiStrings.SELECTOR_CLOSE),
+                PlayerPreferencesManager.localizeMessageForPlayer(preferences, UiStrings.SELECTOR_PREVIOUS),
+                PlayerPreferencesManager.localizeMessageForPlayer(preferences, UiStrings.SELECTOR_NEXT));
+    }
+
+    /**
+     * Greedy word wrap against the real glyph widths, because a translation
+     * is any length and the panel is a fixed 220px. The last line is
+     * ellipsized rather than dropped, so an over-long translation degrades
+     * instead of vanishing.
+     */
+    public static List<String> wrap(String text, int maxWidthPx, int maxLines) {
+        List<String> lines = new ArrayList<>();
+        StringBuilder line = new StringBuilder();
+        for (String word : text.split("\\s+")) {
+            if (word.isEmpty()) {
+                continue;
+            }
+            String candidate = line.length() == 0 ? word : line + " " + word;
+            if (TextMetrics.INSTANCE.textWidthPx(candidate) <= maxWidthPx || line.length() == 0) {
+                line.setLength(0);
+                line.append(candidate);
+            } else {
+                lines.add(line.toString());
+                line.setLength(0);
+                line.append(word);
+                if (lines.size() == maxLines) {
+                    break;
+                }
+            }
+        }
+        if (lines.size() < maxLines && line.length() > 0) {
+            lines.add(line.toString());
+        }
+        while (lines.size() > maxLines) {
+            lines.remove(lines.size() - 1);
+        }
+        if (!lines.isEmpty()) {
+            int last = lines.size() - 1;
+            lines.set(last, TextMetrics.INSTANCE.ellipsize(lines.get(last), maxWidthPx));
+        }
+        return lines;
+    }
+
+    /** The explanation block painted above the menu. */
+    private WidgetNode helpNode() {
+        WidgetNode node = new WidgetNode(
+                "rcc-language-selector-help",
+                new PxSize(SURFACE_WIDTH_PX, helpHeightPx()),
+                (painter, rect) -> {
+                    painter.fill(new DkColor(255, 32, 34, 40), rect);
+                    List<String> lines = helpLines;
+                    for (int i = 0; i < lines.size(); i++) {
+                        painter.faceLabel(
+                                lines.get(i),
+                                rect.getX() + HELP_PADDING_PX,
+                                TextMetrics.INSTANCE.rowAlignedY(
+                                        rect.getY() + HELP_PADDING_PX + i * TextMetrics.FONT_LINE_HEIGHT_PX),
+                                null,
+                                0f);
+                    }
+                    return Unit.INSTANCE;
+                });
+        return node;
     }
 
     /**
@@ -135,6 +237,22 @@ public class LanguageSelectorSession {
                     context -> onPrimaryClicked(locale.code)));
         }
 
+        // Picking a language sets it and repaints the panel in that language;
+        // moving on is deliberate, so a misclick costs one more click rather
+        // than dropping the player into the next question
+        boolean chosen = preferences.mainLanguage != null && !preferences.mainLanguage.isEmpty();
+        specs.add(new ActionSpec(
+                "selector/next",
+                PlayerPreferencesManager.localizeMessageForPlayer(preferences, UiStrings.SELECTOR_NEXT),
+                new ActionIcon.Text("\u203a", ActionIcon.Default.INSTANCE),
+                null,
+                true,
+                chosen,
+                false,
+                false,
+                null,
+                context -> onNextClicked()));
+
         return new ActionPage(PAGE_PRIMARY, specs, title, java.util.Collections.emptyList());
     }
 
@@ -150,17 +268,19 @@ public class LanguageSelectorSession {
 
         List<ActionSpec> specs = new ArrayList<>();
         for (SupportedLocale locale : LocaleManager.getSupportedLocales()) {
-            if (locale.code.equalsIgnoreCase(preferences.mainLanguage)) {
-                continue;
-            }
-            boolean understood = preferences.languages != null && preferences.languages.contains(locale.code);
+            boolean isMain = locale.code.equalsIgnoreCase(preferences.mainLanguage);
+            boolean understood = isMain
+                    || (preferences.languages != null && preferences.languages.contains(locale.code));
+            // The main language stays listed, ticked and not clickable:
+            // understanding it is implied, togglePlayerLocale refuses to
+            // remove it, and leaving it in keeps both steps the same height
             specs.add(new ActionSpec(
                     "other/" + locale.code,
                     LocaleManager.getEndonym(locale),
                     languageIcon(locale),
                     null,
                     true,
-                    true,
+                    !isMain,
                     understood,
                     false,
                     null,
@@ -237,9 +357,15 @@ public class LanguageSelectorSession {
                         && SurfaceFocus.INSTANCE.state(playerId).getHoveredId().equals(actionId),
                 () -> Unit.INSTANCE,
                 playerId,
-                new ActionMenuViewStyle(BlockButton.INSTANCE.widthFor(BlockButton.MIN_WIDTH), menuRows));
+                new ActionMenuViewStyle(
+                        BlockButton.INSTANCE.widthFor(BlockButton.MIN_WIDTH),
+                        menuRows,
+                        // Read per repaint, so switching language on step one
+                        // retranslates Close without rebuilding the surface
+                        () -> navigationLabels));
 
         surface.layout(root -> {
+            root.addChild(helpNode());
             root.addChild(view.getNode());
             return Unit.INSTANCE;
         });
@@ -310,11 +436,12 @@ public class LanguageSelectorSession {
     }
 
     /**
-     * Step one answered. Sets the main language, then moves the player on to
-     * the question about the others.
+     * Step one, a language picked. Sets it and stops there: the panel
+     * repaints in that language so the choice is visible, and Next is what
+     * moves on.
      *
      * Runs on the DisplayKit UI thread, so the blocking work hops to a
-     * scheduler thread and the page swap hops back.
+     * scheduler thread.
      */
     private void onPrimaryClicked(String localeCode) {
         RedCraftChat plugin = RedCraftChat.getInstance();
@@ -322,36 +449,38 @@ public class LanguageSelectorSession {
             try {
                 PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);
                 PlayerPreferencesManager.setMainPlayerLocale(preferences, localeCode);
+                // onPreferencesUpdated -> refresh() repaints this step, now
+                // in the language just chosen
+            } catch (Exception e) {
+                RedCraftChat.getInstance().getLogger().warn("Language selection failed for {}: {}",
+                        player.getUsername(), e.getMessage());
+            }
+        }).schedule();
+    }
 
-                // Re-read so the second step sees the language list the
-                // mutation just grew, and resolve its labels in the language
-                // that was only just chosen
-                PlayerPreferences updated = PlayerPreferencesManager.getPlayerPreferences(player);
-                ActionPage others = buildOthersPage(updated);
-                String help = PlayerPreferencesManager.localizeMessageForPlayer(updated,
-                        UiStrings.SELECTOR_OTHERS_HELP);
+    /** Next on step one: build the second question and push it. */
+    private void onNextClicked() {
+        RedCraftChat plugin = RedCraftChat.getInstance();
+        plugin.getProxy().getScheduler().buildTask(plugin, () -> {
+            try {
+                PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);
+                resolveChrome(preferences, true);
+                ActionPage others = buildOthersPage(preferences);
 
                 onUiThread(() -> {
                     if (closed.get()) {
                         return;
                     }
-                    // push rather than replace: the Back button then takes
-                    // them to their primary choice instead of nowhere
+                    // push rather than replace, so Back returns to the
+                    // primary choice instead of nowhere
                     if (PAGE_PRIMARY.equals(currentPageId)) {
                         actions.push(others);
                     } else {
                         actions.replaceCurrent(others, false);
                     }
                 });
-
-                // The buttons cannot say it: a tick means "leave this one
-                // alone", which is the opposite of what a checkbox usually
-                // suggests. Said once, not on every toggle.
-                if (explainedOthers.compareAndSet(false, true)) {
-                    BasicMessageFormatter.sendInternalMessage(player, help, NamedTextColor.GRAY);
-                }
             } catch (Exception e) {
-                RedCraftChat.getInstance().getLogger().warn("Language selection failed for {}: {}",
+                RedCraftChat.getInstance().getLogger().warn("Selector step failed for {}: {}",
                         player.getUsername(), e.getMessage());
             }
         }).schedule();
@@ -407,6 +536,7 @@ public class LanguageSelectorSession {
                 }
                 PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);
                 // Blocking label resolution happens here, on the scheduler
+                resolveChrome(preferences, PAGE_OTHERS.equals(currentPageId));
                 ActionPage page = buildCurrentPage(preferences);
                 // The swap itself, and the repaint its subscription triggers,
                 // belong to the UI thread

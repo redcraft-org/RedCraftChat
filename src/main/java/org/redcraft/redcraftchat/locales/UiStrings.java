@@ -40,7 +40,12 @@ public class UiStrings {
 
     public static final String SELECTOR_PRIMARY_TITLE = "What is your primary language?";
     public static final String SELECTOR_OTHERS_TITLE = "Do you understand other languages?";
-    public static final String SELECTOR_OTHERS_HELP = "Tick every language you understand. Those will reach you as they were written, without being translated.";
+    public static final String SELECTOR_PRIMARY_HELP = "Everything on the server gets translated into it";
+    public static final String SELECTOR_OTHERS_HELP = "Ticked languages reach you as written, never translated";
+    public static final String SELECTOR_NEXT = "Next";
+    public static final String SELECTOR_BACK = "Back";
+    public static final String SELECTOR_CLOSE = "Close";
+    public static final String SELECTOR_PREVIOUS = "Previous";
     public static final String SELECTOR_DONE = "Done";
     public static final String SELECTOR_JOIN_PROMPT = "Please confirm the language you want to play in";
     public static final String SELECTOR_KEEP_CURRENT = "Keep %language%";
@@ -66,7 +71,12 @@ public class UiStrings {
             CHANGE_MAIN_LANGUAGE,
             SELECTOR_PRIMARY_TITLE,
             SELECTOR_OTHERS_TITLE,
+            SELECTOR_PRIMARY_HELP,
             SELECTOR_OTHERS_HELP,
+            SELECTOR_NEXT,
+            SELECTOR_BACK,
+            SELECTOR_CLOSE,
+            SELECTOR_PREVIOUS,
             SELECTOR_DONE,
             SELECTOR_JOIN_PROMPT,
             SELECTOR_KEEP_CURRENT,

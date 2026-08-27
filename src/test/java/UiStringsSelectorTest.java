@@ -15,6 +15,13 @@ public class UiStringsSelectorTest extends TestCase {
         assertTrue(UiStrings.ALL.contains(UiStrings.SELECTOR_PRIMARY_TITLE));
         assertTrue(UiStrings.ALL.contains(UiStrings.SELECTOR_OTHERS_TITLE));
         assertTrue(UiStrings.ALL.contains(UiStrings.SELECTOR_OTHERS_HELP));
+        assertTrue(UiStrings.ALL.contains(UiStrings.SELECTOR_PRIMARY_HELP));
+        // The menu paints its own navigation, so those words need translating
+        // like any other label on the panel
+        assertTrue(UiStrings.ALL.contains(UiStrings.SELECTOR_NEXT));
+        assertTrue(UiStrings.ALL.contains(UiStrings.SELECTOR_BACK));
+        assertTrue(UiStrings.ALL.contains(UiStrings.SELECTOR_CLOSE));
+        assertTrue(UiStrings.ALL.contains(UiStrings.SELECTOR_PREVIOUS));
         assertTrue(UiStrings.ALL.contains(UiStrings.SELECTOR_DONE));
         assertTrue(UiStrings.ALL.contains(UiStrings.SELECTOR_JOIN_PROMPT));
         assertTrue(UiStrings.ALL.contains(UiStrings.SELECTOR_KEEP_CURRENT));
