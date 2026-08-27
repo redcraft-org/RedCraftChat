@@ -82,6 +82,12 @@ public class DialogClickListener extends PacketListenerAbstract {
                         PlayerPreferencesManager.setMainPlayerLocale(preferences, code);
                         preferences = PlayerPreferencesManager.getPlayerPreferences(player);
                     }
+                    // Back to the same question, now written in the language
+                    // just chosen. Next is what leaves this step.
+                    NativeDialogSelector.showPrimary(player, preferences);
+                    break;
+
+                case "go_to_others":
                     NativeDialogSelector.showOthers(player, preferences);
                     break;
 

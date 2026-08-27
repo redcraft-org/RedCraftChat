@@ -58,6 +58,8 @@ public final class NativeDialogSelector {
             new ResourceLocation("redcraftchat", "confirm_others");
     public static final ResourceLocation BACK_TO_PRIMARY =
             new ResourceLocation("redcraftchat", "back_to_primary");
+    public static final ResourceLocation GO_TO_OTHERS =
+            new ResourceLocation("redcraftchat", "go_to_others");
 
     /** The payload key carrying the language a primary button stands for. */
     public static final String LANGUAGE_KEY = "language";
@@ -122,14 +124,27 @@ public final class NativeDialogSelector {
                     action));
         }
 
+        // Picking only picks. The click sets the language and this same
+        // dialog comes back translated into it, which is the confirmation,
+        // and Next is what moves on.
+        buttons.add(new ActionButton(
+                new CommonButtonData(
+                        Component.text(localize(preferences, UiStrings.SELECTOR_NEXT)),
+                        null,
+                        BUTTON_WIDTH_PX),
+                new DynamicCustomAction(GO_TO_OTHERS, null)));
+
         CommonDialogData common = new CommonDialogData(
                 Component.text(localize(preferences, UiStrings.SELECTOR_PRIMARY_TITLE)),
                 null,
                 true,
                 true,
-                // The player answers by pressing a button, so the dialog must
-                // stay up until one of them is pressed
-                DialogAction.WAIT_FOR_RESPONSE,
+                // NONE, not WAIT_FOR_RESPONSE: the latter freezes the client on
+                // a "Waiting for Server" screen from the moment of the click
+                // until we answer, and answering means a database write and a
+                // round of translation. Leaving the dialog up means the
+                // replacement simply swaps in when it is ready.
+                DialogAction.NONE,
                 body(preferences, UiStrings.SELECTOR_PRIMARY_HELP),
                 Collections.emptyList());
 
@@ -176,7 +191,9 @@ public final class NativeDialogSelector {
                 null,
                 true,
                 true,
-                DialogAction.WAIT_FOR_RESPONSE,
+                // Same reason as the first step; the confirm handler sends an
+                // explicit clear, since NONE leaves the dialog standing
+                DialogAction.NONE,
                 body(preferences, UiStrings.SELECTOR_OTHERS_HELP),
                 inputs);
 
