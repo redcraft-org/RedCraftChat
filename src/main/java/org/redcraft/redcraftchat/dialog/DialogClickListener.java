@@ -121,7 +121,7 @@ public class DialogClickListener extends PacketListenerAbstract {
             if (locale.code.equalsIgnoreCase(preferences.mainLanguage)) {
                 continue;
             }
-            String raw = readString(values, NativeDialogSelector.UNDERSTOOD_PREFIX + locale.code);
+            String raw = readString(values, NativeDialogSelector.understoodKey(locale.code));
             if (raw == null) {
                 continue;
             }

@@ -65,6 +65,23 @@ public final class NativeDialogSelector {
     /** Prefix for the per-language toggles on the second step. */
     public static final String UNDERSTOOD_PREFIX = "understood_";
 
+    /**
+     * The characters Minecraft allows in a dialog input key: the resource
+     * path set. A key outside it makes the client fail to decode the whole
+     * packet and drop the connection, so this is a kick, not a glitch.
+     */
+    private static final java.util.regex.Pattern INPUT_KEY =
+            java.util.regex.Pattern.compile("[a-z0-9_.-]+");
+
+    /**
+     * Builds the toggle key for a language. Locale codes are mixed case
+     * ("fr-FR") and the key charset is lowercase only, so the case has to go
+     * before it reaches the wire.
+     */
+    public static String understoodKey(String localeCode) {
+        return UNDERSTOOD_PREFIX + localeCode.toLowerCase(java.util.Locale.ROOT).replace('-', '_');
+    }
+
     private static final int BUTTON_WIDTH_PX = 150;
     private static final int BODY_WIDTH_PX = 300;
 
@@ -132,7 +149,7 @@ public final class NativeDialogSelector {
             boolean understood = preferences.languages != null
                     && preferences.languages.contains(locale.code);
             inputs.add(new Input(
-                    UNDERSTOOD_PREFIX + locale.code,
+                    understoodKey(locale.code),
                     new BooleanInputControl(
                             Component.text(LocaleManager.getEndonym(locale)),
                             understood,
@@ -180,12 +197,34 @@ public final class NativeDialogSelector {
                 new PlainMessage(Component.text(localize(preferences, key)), BODY_WIDTH_PX)));
     }
 
+    /** The first input key the client would reject, or null when all are fine. */
+    private static String firstInvalidKey(Dialog dialog) {
+        if (!(dialog instanceof MultiActionDialog)) {
+            return null;
+        }
+        for (Input input : ((MultiActionDialog) dialog).getCommon().getInputs()) {
+            if (!INPUT_KEY.matcher(input.getKey()).matches()) {
+                return input.getKey();
+            }
+        }
+        return null;
+    }
+
     private static String localize(PlayerPreferences preferences, String message) {
         return PlayerPreferencesManager.localizeMessageForPlayer(preferences, message);
     }
 
     private static void send(Player player, Dialog dialog) {
         if (!isSupported(player)) {
+            return;
+        }
+        // Cheap, and the alternative is a disconnect: a malformed key makes
+        // the client fail to decode show_dialog entirely
+        String badKey = firstInvalidKey(dialog);
+        if (badKey != null) {
+            RedCraftChat.getInstance().getLogger().error(
+                    "Refusing to send a language dialog with the invalid input key '{}'; "
+                            + "Minecraft only accepts [a-z0-9_.-] and would drop the connection", badKey);
             return;
         }
         User user = PacketEvents.getAPI().getPlayerManager().getUser(player);
