@@ -55,8 +55,10 @@ public class LanguageSelectorSession {
     private final boolean firstJoin;
     private final Runnable onClosed;
 
-    private ActionMenuSession actions;
-    private VelocitySurfacePresentation presentation;
+    // Both are written on the scheduler thread that builds the session and
+    // read on the UI thread that owns them, so neither may be stale there
+    private volatile ActionMenuSession actions;
+    private volatile VelocitySurfacePresentation presentation;
     // One latch for both close paths: the presentation closing itself and a
     // dismiss racing it must run the teardown exactly once between them
     private final AtomicBoolean closed = new AtomicBoolean(false);
@@ -202,6 +204,15 @@ public class LanguageSelectorSession {
         }, false);
 
         presentation.present();
+
+        // dismiss() can land between the check at the top of this method and
+        // here. When it does it finds presentation still null, closes
+        // nothing, and drops the session from the registry: the surface just
+        // spawned would float there with nothing tracking it, eating the
+        // player's right-clicks and never timing out on a PERSISTENT policy.
+        if (closed.get()) {
+            closeResources();
+        }
     }
 
     /**
@@ -304,9 +315,17 @@ public class LanguageSelectorSession {
         if (!closed.compareAndSet(false, true)) {
             return;
         }
-        // Both the presentation and the action session are UI-thread
-        // confined; dismiss can arrive from a disconnect or server-switch
-        // event thread
+        closeResources();
+        onClosed.run();
+    }
+
+    /**
+     * Closes whatever has been built so far, on the UI thread that owns it.
+     * Tolerates a presentation that does not exist yet, since a dismiss can
+     * arrive from a disconnect or server-switch thread before present() has
+     * built one.
+     */
+    private void closeResources() {
         onUiThread(() -> {
             try {
                 if (presentation != null) {
@@ -314,10 +333,10 @@ public class LanguageSelectorSession {
                 }
                 actions.close();
             } catch (Exception e) {
+                // Closing twice from both sides of a race is expected here
                 RedCraftChat.getInstance().getLogger().debug("Selector close raced: {}", e.getMessage());
             }
         });
-        onClosed.run();
     }
 
     public boolean isFirstJoin() {
