@@ -40,11 +40,16 @@ public class UiStrings {
 
     public static final String SELECTOR_PRIMARY_TITLE = "What is your primary language?";
     public static final String SELECTOR_OTHERS_TITLE = "Do you understand other languages?";
-    public static final String SELECTOR_PRIMARY_HELP = "Everything on the server gets translated into it";
-    public static final String SELECTOR_OTHERS_HELP = "Ticked languages reach you as written, never translated";
+    // Each of these is translated on its own, with nothing around it, so a
+    // pronoun has no antecedent to point at: "translated into it" came back
+    // in French as "traduit dedans". Every line here has to make sense read
+    // cold, and single words have to be the sense we mean, since "Close" and
+    // "Back" both have a common non-verb reading.
+    public static final String SELECTOR_PRIMARY_HELP = "All chat will be translated into the language you choose";
+    public static final String SELECTOR_OTHERS_HELP = "Messages in the languages you tick will not be translated";
     public static final String SELECTOR_NEXT = "Next";
-    public static final String SELECTOR_BACK = "Back";
-    public static final String SELECTOR_CLOSE = "Close";
+    public static final String SELECTOR_BACK = "Go back";
+    public static final String SELECTOR_CLOSE = "Close menu";
     public static final String SELECTOR_PREVIOUS = "Previous";
     public static final String SELECTOR_DONE = "Done";
     public static final String SELECTOR_JOIN_PROMPT = "Please confirm the language you want to play in";

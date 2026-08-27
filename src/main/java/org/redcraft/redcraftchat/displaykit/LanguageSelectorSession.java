@@ -75,10 +75,12 @@ public class LanguageSelectorSession {
     // to turn and the menu owns no Back, but each still contributes its gap.
     private static final int MENU_COLLAPSED_NAV_ROWS = 3;
 
-    // Two lines of explanation above the menu, sized for the longest
-    // translation rather than the current one so the panel does not resize
-    // under the player as they switch language
-    private static final int HELP_LINES = 2;
+    // Three lines of explanation above the menu. The panel's height is fixed
+    // when it is built while the text is re-translated every time the player
+    // switches language, so the budget has to cover the longest translation
+    // rather than the English. German and Russian both run well past two
+    // lines, and a truncated explanation is worse than a blank line.
+    private static final int HELP_LINES = 3;
     private static final int HELP_PADDING_PX = 3;
 
     private static final String PAGE_PRIMARY = "rcc:language-selector/primary";
