@@ -30,8 +30,15 @@ import io.schemat.displaykit.surface.SurfaceAnchor;
 import io.schemat.displaykit.surface.SurfaceFocus;
 import io.schemat.displaykit.surface.SurfaceLifecyclePolicy;
 import io.schemat.displaykit.surface.widget.ActionMenuView;
+import io.schemat.displaykit.render.BlockStateRef;
+import io.schemat.displaykit.surface.layout.CrossAxis;
+import io.schemat.displaykit.surface.layout.FlexDirection;
+import io.schemat.displaykit.surface.layout.FlexNode;
+import io.schemat.displaykit.surface.layout.MainAxis;
 import io.schemat.displaykit.surface.layout.PxSize;
 import io.schemat.displaykit.surface.layout.WidgetNode;
+import io.schemat.displaykit.surface.widget.ActionButtonStyle;
+import io.schemat.displaykit.surface.widget.ActionButtonView;
 import io.schemat.displaykit.surface.widget.ActionMenuLabels;
 import io.schemat.displaykit.surface.widget.ActionMenuViewStyle;
 import io.schemat.displaykit.velocity.VelocityDisplayKit;
@@ -57,14 +64,16 @@ public class LanguageSelectorSession {
     private static final float SURFACE_WIDTH_BLOCKS = 2.2f;
 
     // An action slot the page does not fill still occupies its row and simply
-    // paints nothing, which reads as a hole in the panel. Both steps want one
-    // row per language plus one (every language then Next, or every language
-    // then Done), so sizing the menu that way leaves neither a hole nor a
-    // page break on either step.
+    // paints nothing, which reads as a hole in the panel, so the menu holds
+    // exactly one row per language and nothing else. The buttons that end a
+    // step live below it, outside the list.
     private static final int MENU_ROW_HEIGHT_PX = 20;
     private static final int MENU_GAP_PX = 2;
-    private static final int MENU_NAVIGATION_ROWS = 3;
     private static final int MENU_MAX_ROWS = 9;
+
+    // Previous, Next and Back. They collapse to nothing when there is no page
+    // to turn and the menu owns no Back, but each still contributes its gap.
+    private static final int MENU_COLLAPSED_NAV_ROWS = 3;
 
     // Two lines of explanation above the menu, sized for the longest
     // translation rather than the current one so the panel does not resize
@@ -95,8 +104,17 @@ public class LanguageSelectorSession {
 
     // Read while painting, so they are resolved on a scheduler thread and
     // published here rather than translated on the render path
+    // The language this flow put in the understood list purely as a side
+    // effect of it being picked as primary. Remembered so that changing the
+    // primary takes it back out again, instead of leaving behind a language
+    // the player only tried on the way to another one.
+    private volatile String primaryAddedToUnderstood = null;
+
     private volatile List<String> helpLines = java.util.Collections.emptyList();
     private volatile ActionMenuLabels navigationLabels = new ActionMenuLabels();
+    private volatile String stepButtonLabel = UiStrings.SELECTOR_NEXT;
+    private volatile String closeButtonLabel = UiStrings.SELECTOR_CLOSE;
+    private volatile boolean primaryChosen = false;
 
     public LanguageSelectorSession(Player player, PlayerPreferences preferences, boolean firstJoin,
             Runnable onClosed) {
@@ -116,14 +134,22 @@ public class LanguageSelectorSession {
      * ends the step, clamped to what a player can comfortably read.
      */
     public static int menuRowsFor(int localeCount) {
-        return Math.max(2, Math.min(localeCount + 1, MENU_MAX_ROWS));
+        return Math.max(1, Math.min(localeCount, MENU_MAX_ROWS));
     }
 
-    /** Exact height of help + title + action rows + navigation, gaps included. */
+    /**
+     * Exact height of the whole panel: the help block, the menu, and the two
+     * buttons under it, with every gap the column inserts.
+     *
+     * The collapsed navigation rows measure zero but still take a gap each,
+     * which is why they appear here at all.
+     */
     public static int surfaceHeightPx(int menuRows) {
-        int rows = 1 + menuRows + MENU_NAVIGATION_ROWS;
-        int menuHeight = rows * MENU_ROW_HEIGHT_PX + (rows - 1) * MENU_GAP_PX;
-        return menuHeight + helpHeightPx() + MENU_GAP_PX;
+        int menuChildren = 1 + menuRows + MENU_COLLAPSED_NAV_ROWS;
+        int menuHeight = (1 + menuRows) * MENU_ROW_HEIGHT_PX + (menuChildren - 1) * MENU_GAP_PX;
+        // help, menu, the step button, Close
+        int columnGaps = 3 * MENU_GAP_PX;
+        return helpHeightPx() + menuHeight + 2 * MENU_ROW_HEIGHT_PX + columnGaps;
     }
 
     /** Height of the explanation block above the menu. */
@@ -150,6 +176,40 @@ public class LanguageSelectorSession {
                 PlayerPreferencesManager.localizeMessageForPlayer(preferences, UiStrings.SELECTOR_CLOSE),
                 PlayerPreferencesManager.localizeMessageForPlayer(preferences, UiStrings.SELECTOR_PREVIOUS),
                 PlayerPreferencesManager.localizeMessageForPlayer(preferences, UiStrings.SELECTOR_NEXT));
+
+        stepButtonLabel = PlayerPreferencesManager.localizeMessageForPlayer(preferences,
+                others ? UiStrings.SELECTOR_DONE : UiStrings.SELECTOR_NEXT);
+        closeButtonLabel = others
+                ? PlayerPreferencesManager.localizeMessageForPlayer(preferences, UiStrings.SELECTOR_BACK)
+                : PlayerPreferencesManager.localizeMessageForPlayer(preferences, UiStrings.SELECTOR_CLOSE);
+        primaryChosen = preferences.mainLanguage != null && !preferences.mainLanguage.isEmpty();
+    }
+
+    /**
+     * Which language to drop from the understood list when the primary
+     * changes: only ever the one this flow added itself, and never the
+     * language being picked now.
+     *
+     * A language the player already understood before the selector opened is
+     * left alone. They may simply be moving their primary and still read the
+     * old one, and step two is right there to untick it if not.
+     */
+    public static String languageToDropOnPrimaryChange(String autoAdded, String newPrimary) {
+        if (autoAdded == null || autoAdded.equalsIgnoreCase(newPrimary)) {
+            return null;
+        }
+        return autoAdded;
+    }
+
+    /**
+     * What to remember as self-added after picking a primary. Re-picking the
+     * same one does not change how it got there.
+     */
+    public static String rememberAutoAdded(String autoAdded, String newPrimary, boolean alreadyUnderstood) {
+        if (autoAdded != null && autoAdded.equalsIgnoreCase(newPrimary)) {
+            return autoAdded;
+        }
+        return alreadyUnderstood ? null : newPrimary;
     }
 
     /**
@@ -159,36 +219,93 @@ public class LanguageSelectorSession {
      * instead of vanishing.
      */
     public static List<String> wrap(String text, int maxWidthPx, int maxLines) {
-        List<String> lines = new ArrayList<>();
+        List<String> all = new ArrayList<>();
         StringBuilder line = new StringBuilder();
-        for (String word : text.split("\\s+")) {
+        for (String word : text.trim().split("\\s+")) {
             if (word.isEmpty()) {
                 continue;
             }
             String candidate = line.length() == 0 ? word : line + " " + word;
-            if (TextMetrics.INSTANCE.textWidthPx(candidate) <= maxWidthPx || line.length() == 0) {
+            // A single word wider than the panel still has to start a line;
+            // ellipsize deals with it below
+            if (line.length() == 0 || TextMetrics.INSTANCE.textWidthPx(candidate) <= maxWidthPx) {
                 line.setLength(0);
                 line.append(candidate);
             } else {
-                lines.add(line.toString());
+                all.add(line.toString());
                 line.setLength(0);
                 line.append(word);
-                if (lines.size() == maxLines) {
-                    break;
-                }
             }
         }
-        if (lines.size() < maxLines && line.length() > 0) {
-            lines.add(line.toString());
+        if (line.length() > 0) {
+            all.add(line.toString());
         }
-        while (lines.size() > maxLines) {
-            lines.remove(lines.size() - 1);
+
+        if (all.size() <= maxLines) {
+            // Every line fit as written, but a lone over-long word can still
+            // overflow its own line
+            List<String> exact = new ArrayList<>(all.size());
+            for (String kept : all) {
+                exact.add(TextMetrics.INSTANCE.ellipsize(kept, maxWidthPx));
+            }
+            return exact;
         }
-        if (!lines.isEmpty()) {
-            int last = lines.size() - 1;
-            lines.set(last, TextMetrics.INSTANCE.ellipsize(lines.get(last), maxWidthPx));
-        }
-        return lines;
+
+        List<String> kept = new ArrayList<>(all.subList(0, maxLines));
+        int last = maxLines - 1;
+        // Words were dropped, so the last line has to show it. Appending the
+        // first dropped word guarantees the line overflows, which is what
+        // makes ellipsize add its marker rather than hand the text back
+        // unchanged and hide the truncation.
+        kept.set(last, TextMetrics.INSTANCE.ellipsize(
+                kept.get(last) + " " + all.get(maxLines), maxWidthPx));
+        return kept;
+    }
+
+    /**
+     * The button that ends the step: Next on the first, Done on the second.
+     *
+     * Deliberately outside the menu. Inside it, it rendered as one more row
+     * in the language list and read as a seventh language.
+     */
+    private ActionButtonView stepButton(UUID playerId) {
+        return new ActionButtonView(
+                "rcc-language-selector-step",
+                () -> stepButtonLabel,
+                () -> true,
+                () -> primaryChosen,
+                () -> false,
+                new ActionButtonStyle(),
+                // A different material from the language rows, so it reads as
+                // the way forward rather than another thing to pick
+                () -> new BlockStateRef("minecraft:gilded_blackstone"),
+                actionId -> isHovered(playerId, actionId),
+                () -> {
+                    onStepButtonClicked();
+                    return Unit.INSTANCE;
+                });
+    }
+
+    /** Back on the second step, Close on the first. */
+    private ActionButtonView closeButton(UUID playerId) {
+        return new ActionButtonView(
+                "rcc-language-selector-close",
+                () -> closeButtonLabel,
+                () -> true,
+                () -> true,
+                () -> false,
+                new ActionButtonStyle(),
+                () -> new BlockStateRef("minecraft:deepslate_tiles"),
+                actionId -> isHovered(playerId, actionId),
+                () -> {
+                    onCloseClicked();
+                    return Unit.INSTANCE;
+                });
+    }
+
+    private boolean isHovered(UUID playerId, String actionId) {
+        String hovered = SurfaceFocus.INSTANCE.state(playerId).getHoveredId();
+        return hovered != null && hovered.equals(actionId);
     }
 
     /** The explanation block painted above the menu. */
@@ -237,22 +354,6 @@ public class LanguageSelectorSession {
                     context -> onPrimaryClicked(locale.code)));
         }
 
-        // Picking a language sets it and repaints the panel in that language;
-        // moving on is deliberate, so a misclick costs one more click rather
-        // than dropping the player into the next question
-        boolean chosen = preferences.mainLanguage != null && !preferences.mainLanguage.isEmpty();
-        specs.add(new ActionSpec(
-                "selector/next",
-                PlayerPreferencesManager.localizeMessageForPlayer(preferences, UiStrings.SELECTOR_NEXT),
-                new ActionIcon.Text("\u203a", ActionIcon.Default.INSTANCE),
-                null,
-                true,
-                chosen,
-                false,
-                false,
-                null,
-                context -> onNextClicked()));
-
         return new ActionPage(PAGE_PRIMARY, specs, title, java.util.Collections.emptyList());
     }
 
@@ -264,8 +365,6 @@ public class LanguageSelectorSession {
     private ActionPage buildOthersPage(PlayerPreferences preferences) {
         String title = PlayerPreferencesManager.localizeMessageForPlayer(preferences,
                 UiStrings.SELECTOR_OTHERS_TITLE);
-        String doneLabel = PlayerPreferencesManager.localizeMessageForPlayer(preferences, UiStrings.SELECTOR_DONE);
-
         List<ActionSpec> specs = new ArrayList<>();
         for (SupportedLocale locale : LocaleManager.getSupportedLocales()) {
             boolean isMain = locale.code.equalsIgnoreCase(preferences.mainLanguage);
@@ -286,18 +385,6 @@ public class LanguageSelectorSession {
                     null,
                     context -> onOtherToggled(locale.code)));
         }
-
-        specs.add(new ActionSpec(
-                "selector/done",
-                doneLabel,
-                new ActionIcon.Text("\u2714", ActionIcon.Default.INSTANCE),
-                null,
-                true,
-                true,
-                false,
-                false,
-                null,
-                context -> onDoneClicked()));
 
         return new ActionPage(PAGE_OTHERS, specs, title, java.util.Collections.emptyList());
     }
@@ -361,12 +448,33 @@ public class LanguageSelectorSession {
                         BlockButton.INSTANCE.widthFor(BlockButton.MIN_WIDTH),
                         menuRows,
                         // Read per repaint, so switching language on step one
-                        // retranslates Close without rebuilding the surface
-                        () -> navigationLabels));
+                        // retranslates the buttons without rebuilding
+                        () -> navigationLabels,
+                        MENU_GAP_PX,
+                        new BlockStateRef("minecraft:polished_blackstone"),
+                        new BlockStateRef("minecraft:gilded_blackstone"),
+                        new BlockStateRef("minecraft:gray_concrete"),
+                        new BlockStateRef("minecraft:deepslate_tiles"),
+                        0.0625f,
+                        // The menu owns the language list and nothing else:
+                        // its Back would sit below the step button
+                        false));
 
         surface.layout(root -> {
-            root.addChild(helpNode());
-            root.addChild(view.getNode());
+            // The root is a BoxNode, which places every child at the same
+            // origin, so two children painted straight onto it land on top of
+            // each other. A column is what sequences them.
+            FlexNode column = new FlexNode(
+                    "rcc-language-selector-column",
+                    FlexDirection.COLUMN,
+                    MainAxis.START,
+                    CrossAxis.START,
+                    MENU_GAP_PX);
+            column.addChild(helpNode());
+            column.addChild(view.getNode());
+            column.addChild(stepButton(playerId).getNode());
+            column.addChild(closeButton(playerId).getNode());
+            root.addChild(column);
             return Unit.INSTANCE;
         });
 
@@ -448,7 +556,19 @@ public class LanguageSelectorSession {
         plugin.getProxy().getScheduler().buildTask(plugin, () -> {
             try {
                 PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);
+
+                boolean alreadyUnderstood = preferences.languages != null
+                        && preferences.languages.contains(localeCode);
+                String drop = languageToDropOnPrimaryChange(primaryAddedToUnderstood, localeCode);
+                if (drop != null && preferences.languages != null) {
+                    // In memory only: setMainPlayerLocale persists right
+                    // after, so the swap costs one write rather than two
+                    preferences.languages.remove(drop);
+                }
+
                 PlayerPreferencesManager.setMainPlayerLocale(preferences, localeCode);
+                primaryAddedToUnderstood =
+                        rememberAutoAdded(primaryAddedToUnderstood, localeCode, alreadyUnderstood);
                 // onPreferencesUpdated -> refresh() repaints this step, now
                 // in the language just chosen
             } catch (Exception e) {
@@ -456,6 +576,28 @@ public class LanguageSelectorSession {
                         player.getUsername(), e.getMessage());
             }
         }).schedule();
+    }
+
+    /** The step button: Next on the first step, Done on the second. */
+    private void onStepButtonClicked() {
+        if (PAGE_OTHERS.equals(currentPageId)) {
+            onDoneClicked();
+        } else {
+            onNextClicked();
+        }
+    }
+
+    /** Close on the first step, Back on the second. */
+    private void onCloseClicked() {
+        if (PAGE_OTHERS.equals(currentPageId)) {
+            onUiThread(() -> {
+                if (!closed.get()) {
+                    actions.pop();
+                }
+            });
+            return;
+        }
+        LanguageSelectorManager.dismiss(player.getUniqueId());
     }
 
     /** Next on step one: build the second question and push it. */

@@ -13,24 +13,29 @@ import org.redcraft.redcraftchat.displaykit.LanguageSelectorSession;
  */
 public class SelectorGeometryTest extends TestCase {
 
-    public void testRowsAreEveryLanguagePlusTheStepButton() {
-        // Six locales: six languages then Next, or six languages then Done
-        assertEquals(7, LanguageSelectorSession.menuRowsFor(6));
-        assertEquals(3, LanguageSelectorSession.menuRowsFor(2));
+    public void testRowsAreExactlyTheLanguages() {
+        // The buttons that end a step live below the menu now, so the list
+        // holds nothing but languages
+        assertEquals(6, LanguageSelectorSession.menuRowsFor(6));
+        assertEquals(2, LanguageSelectorSession.menuRowsFor(2));
     }
 
     public void testRowsNeverCollapseOrRunAwayWithTheSurface() {
-        assertEquals(2, LanguageSelectorSession.menuRowsFor(0));
-        assertEquals(2, LanguageSelectorSession.menuRowsFor(1));
+        assertEquals(1, LanguageSelectorSession.menuRowsFor(0));
+        assertEquals(1, LanguageSelectorSession.menuRowsFor(1));
         // Beyond the clamp the menu paginates rather than growing a panel
         // taller than the player can comfortably read
         assertEquals(9, LanguageSelectorSession.menuRowsFor(20));
     }
 
-    public void testHeightCoversHelpTitleRowsAndNavigation() {
+    public void testHeightCoversHelpMenuAndBothButtons() {
         int menuRows = LanguageSelectorSession.menuRowsFor(6);
-        int rows = 1 + menuRows + 3;
-        int expected = rows * 20 + (rows - 1) * 2 + LanguageSelectorSession.helpHeightPx() + 2;
+        // The menu paints a title and one row per language. Its three
+        // navigation slots collapse to nothing, but each still costs a gap.
+        int menuChildren = 1 + menuRows + 3;
+        int menuHeight = (1 + menuRows) * 20 + (menuChildren - 1) * 2;
+        // help, menu, step button, close, and the three gaps between them
+        int expected = LanguageSelectorSession.helpHeightPx() + menuHeight + 2 * 20 + 3 * 2;
         assertEquals(expected, LanguageSelectorSession.surfaceHeightPx(menuRows));
     }
 
@@ -56,6 +61,31 @@ public class SelectorGeometryTest extends TestCase {
         }
         List<String> lines = LanguageSelectorSession.wrap(giant.toString().trim(), 214, 2);
         assertEquals(2, lines.size());
+    }
+
+    public void testWrapSaysSoWhenItDropsWords() {
+        StringBuilder giant = new StringBuilder();
+        for (int i = 0; i < 60; i++) {
+            giant.append("langue ");
+        }
+        List<String> lines = LanguageSelectorSession.wrap(giant.toString().trim(), 214, 2);
+        // Silently cutting the sentence short would read as the whole message
+        assertTrue("truncation must be visible", lines.get(1).endsWith("..."));
+    }
+
+    public void testWrapDoesNotClaimTruncationWhenNothingWasDropped() {
+        List<String> lines = LanguageSelectorSession.wrap(
+                "Ticked languages reach you as written, never translated", 214, 2);
+        for (String line : lines) {
+            assertFalse(line.endsWith("..."));
+        }
+    }
+
+    public void testWrapKeepsAWordWiderThanThePanelInsideIt() {
+        List<String> lines = LanguageSelectorSession.wrap(
+                "Sprachauswahlbestaetigungseinstellungsuebersicht", 60, 2);
+        assertEquals(1, lines.size());
+        assertTrue(lines.get(0).endsWith("..."));
     }
 
     public void testWrapHandlesTextShorterThanOneLine() {
