@@ -31,6 +31,7 @@ public class DatabasePlayerProviderTest extends TestCase {
         original.languages = Arrays.asList("fr", "en");
         original.mainLanguage = "fr";
         original.commandSpyEnabled = true;
+        original.languageSelectorConfirmed = true;
 
         DatabasePlayerProvider provider = new DatabasePlayerProvider();
         PlayerPreferences restored = provider.transform(provider.transformToDatabase(original));
@@ -45,5 +46,6 @@ public class DatabasePlayerProviderTest extends TestCase {
         assertEquals(original.languages, restored.languages);
         assertEquals(original.mainLanguage, restored.mainLanguage);
         assertEquals(original.commandSpyEnabled, restored.commandSpyEnabled);
+        assertEquals(original.languageSelectorConfirmed, restored.languageSelectorConfirmed);
     }
 }

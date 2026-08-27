@@ -52,6 +52,8 @@ import org.redcraft.redcraftchat.listeners.minecraft.MinecraftConnectMailListene
 import org.redcraft.redcraftchat.listeners.minecraft.MinecraftDisplayNameListener;
 import org.redcraft.redcraftchat.listeners.minecraft.MinecraftPlayerPreferencesListener;
 import org.redcraft.redcraftchat.listeners.minecraft.MinecraftTabCompleteListener;
+import org.redcraft.redcraftchat.displaykit.DisplayKitIntegration;
+import org.redcraft.redcraftchat.listeners.minecraft.MinecraftLanguageSelectorListener;
 import org.redcraft.redcraftchat.listeners.packets.ChatSignatureStripper;
 import org.redcraft.redcraftchat.listeners.packets.HologramTranslator;
 import org.redcraft.redcraftchat.listeners.packets.SystemChatInterceptor;
@@ -145,6 +147,9 @@ public class RedCraftChat {
 		if (Config.translationEnabled && Config.translateHolograms) {
 			PacketEvents.getAPI().getEventManager().registerListener(new HologramTranslator());
 		}
+		// DisplayKit registers its own packet listener, so it shares the same
+		// pre-init window; a failure degrades to the chat selector
+		DisplayKitIntegration.init(proxy);
 		PacketEvents.getAPI().init();
 
 		// Game listeners
@@ -153,6 +158,7 @@ public class RedCraftChat {
 		proxy.getEventManager().register(this, new MinecraftConnectDisconnectMessageListener());
 		proxy.getEventManager().register(this, new MinecraftConnectMailListener());
 		proxy.getEventManager().register(this, new MinecraftPlayerPreferencesListener());
+		proxy.getEventManager().register(this, new MinecraftLanguageSelectorListener());
 		if (Config.enableTabCompletion) {
 			proxy.getEventManager().register(this, new MinecraftTabCompleteListener());
 		}
@@ -225,6 +231,7 @@ public class RedCraftChat {
 		jsonApiServer.stop();
 		RedisCache.close();
 		if (PacketEvents.getAPI() != null && PacketEvents.getAPI().isInitialized()) {
+			DisplayKitIntegration.shutdown();
 			PacketEvents.getAPI().terminate();
 		}
 	}

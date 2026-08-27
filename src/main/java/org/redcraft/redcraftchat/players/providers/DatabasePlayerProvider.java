@@ -138,6 +138,7 @@ public class DatabasePlayerProvider implements PlayerProvider {
         playerPreferences.mainLanguage = preferences.mainLanguage;
 
         playerPreferences.commandSpyEnabled = preferences.commandSpyEnabled;
+        playerPreferences.languageSelectorConfirmed = preferences.languageSelectorConfirmed;
 
         return playerPreferences;
     }
@@ -160,6 +161,7 @@ public class DatabasePlayerProvider implements PlayerProvider {
         playerPreferences.mainLanguage = preferences.mainLanguage;
 
         playerPreferences.commandSpyEnabled = preferences.commandSpyEnabled;
+        playerPreferences.languageSelectorConfirmed = preferences.languageSelectorConfirmed;
 
         return playerPreferences;
     }

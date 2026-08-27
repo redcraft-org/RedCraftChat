@@ -8,7 +8,11 @@ import java.util.Locale;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.helpers.BasicMessageFormatter;
 import org.redcraft.redcraftchat.helpers.LegacyText;
+import org.redcraft.redcraftchat.displaykit.LanguageSelectorManager;
+import org.redcraft.redcraftchat.displaykit.LanguageSelectorManager.SelectorRoute;
+import org.redcraft.redcraftchat.displaykit.LanguageSelectorManager.Trigger;
 import org.redcraft.redcraftchat.locales.LocaleManager;
+import org.redcraft.redcraftchat.locales.UiStrings;
 import org.redcraft.redcraftchat.models.locales.SupportedLocale;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
@@ -45,6 +49,26 @@ public class LangMinecraftCommand implements SimpleCommand {
 
             try {
                 PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);
+
+                if (args.length == 1 && args[0].equalsIgnoreCase("confirm")) {
+                    // The chat prompt's "keep what I have": marks the choice
+                    // confirmed and shows no menu
+                    PlayerPreferencesManager.confirmLanguageSelection(preferences);
+                    LanguageSelectorManager.dismiss(player.getUniqueId());
+                    BasicMessageFormatter.sendInternalMessage(player,
+                            PlayerPreferencesManager.localizeMessageForPlayer(preferences, UiStrings.SELECTOR_CONFIRMED), NamedTextColor.GREEN);
+                    return;
+                }
+
+                if (args.length == 0) {
+                    // Modern clients get the in-world selector; everyone else,
+                    // and any surface failure, the chat menu below
+                    SelectorRoute route = LanguageSelectorManager.decideFor(player, preferences, Trigger.LANG_NO_ARGS);
+                    if (route == SelectorRoute.SURFACE_MANAGE
+                            && LanguageSelectorManager.openSurface(player, preferences, false)) {
+                        return;
+                    }
+                }
 
                 if (args.length > 0) {
                     if (args.length > 1 && args[1].equals("main")) {
@@ -155,14 +179,7 @@ public class LangMinecraftCommand implements SimpleCommand {
      * Falls back to the stored name when the JVM has no display name for the tag.
      */
     private String getEndonym(SupportedLocale locale) {
-        Locale localeTag = Locale.forLanguageTag(locale.code.replace('_', '-'));
-        String endonym = localeTag.getDisplayLanguage(localeTag);
-
-        if (endonym.isEmpty() || endonym.equalsIgnoreCase(localeTag.getLanguage())) {
-            return locale.name;
-        }
-
-        return endonym.substring(0, 1).toUpperCase(localeTag) + endonym.substring(1);
+        return LocaleManager.getEndonym(locale);
     }
 
     private HoverEvent<Component> showText(String legacyText) {

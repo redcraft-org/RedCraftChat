@@ -55,9 +55,36 @@ public class DatabaseManager {
         classes.add(SupportedLocaleDatabase.class);
 
         if (createStructure(classes)) {
+            migrate();
             RedCraftChat.getInstance().getLogger().info("Connected to database!");
         } else {
             RedCraftChat.getInstance().getLogger().warn("Database is unreachable, features that need it will fail until it is back");
+        }
+    }
+
+    /**
+     * Idempotent migrations for live tables. createStructure only ever runs
+     * "create table if not exists", so an existing install never picks up a
+     * new column from it, and norm writes every mapped field in every UPDATE:
+     * a column missing from the table breaks all writes for that model. Each
+     * migration must therefore run before the first write after an upgrade.
+     */
+    private static void migrate() {
+        ensureColumn("rcc_player_preferences", "`language_selector_confirmed` tinyint(1) NOT NULL DEFAULT 0");
+    }
+
+    private static void ensureColumn(String table, String columnDefinition) {
+        try {
+            database.sql("ALTER TABLE `" + table + "` ADD COLUMN " + columnDefinition).execute();
+            RedCraftChat.getInstance().getLogger().info("Added column to {}: {}", table, columnDefinition);
+        } catch (Exception ex) {
+            String message = ex.getMessage() == null ? "" : ex.getMessage().toLowerCase();
+            // MySQL says "Duplicate column name", SQLite "duplicate column
+            // name", both covered; anything else is a real failure worth
+            // shouting about since every preference write depends on it
+            if (!message.contains("duplicate column")) {
+                RedCraftChat.getInstance().getLogger().error("Could not add column to {}: {}", table, ex.getMessage());
+            }
         }
     }
 

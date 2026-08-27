@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.caching.CacheManager;
+import org.redcraft.redcraftchat.displaykit.LanguageSelectorManager;
 import org.redcraft.redcraftchat.listeners.packets.HologramTranslator;
 import org.redcraft.redcraftchat.detection.DetectionManager;
 import org.redcraft.redcraftchat.locales.LocaleManager;
@@ -178,6 +179,7 @@ public class PlayerPreferencesManager {
         // Holograms only resend on their own when their text changes, so a
         // language change has to push corrected packets itself.
         HologramTranslator.onPreferencesUpdated(preferences.minecraftUuid);
+        LanguageSelectorManager.onPreferencesUpdated(preferences.minecraftUuid);
     }
 
     public static boolean playerSpeaksLanguage(PlayerPreferences preferences, String languageIsoCode) {
@@ -247,6 +249,9 @@ public class PlayerPreferencesManager {
             preferences.languages.add(locale);
         }
 
+        // An explicit language action in any selector counts as confirming
+        preferences.languageSelectorConfirmed = true;
+
         try {
             updatePlayerPreferences(preferences);
             triggerDiscordSync();
@@ -267,6 +272,7 @@ public class PlayerPreferencesManager {
         }
 
         preferences.mainLanguage = locale;
+        preferences.languageSelectorConfirmed = true;
 
         try {
             updatePlayerPreferences(preferences);
@@ -278,6 +284,18 @@ public class PlayerPreferencesManager {
         }
 
         return true;
+    }
+
+    /**
+     * The "keep what I have" confirm: Done on the selector surface or
+     * /lang confirm in chat. Idempotent, and never called by auto-detection.
+     */
+    public static void confirmLanguageSelection(PlayerPreferences preferences) throws IOException, InterruptedException {
+        if (preferences.languageSelectorConfirmed) {
+            return;
+        }
+        preferences.languageSelectorConfirmed = true;
+        updatePlayerPreferences(preferences);
     }
 
     public static boolean toggleCommandSpy(Player player) throws IOException, InterruptedException {

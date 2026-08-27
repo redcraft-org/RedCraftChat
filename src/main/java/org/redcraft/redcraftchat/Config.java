@@ -40,6 +40,8 @@ public class Config {
 
 	public static Map<String, String> commandAliases = new HashMap<String, String>();
 
+	public static boolean displaykitSelectorEnabled = false;
+
 	public static boolean jsonApiEnabled = false;
 	public static String jsonApiBind = "127.0.0.1";
 	public static int jsonApiPort = 8080;
@@ -112,6 +114,7 @@ public class Config {
 		defaultLocale = getString(config, "default-locale");
 
 		enableTabCompletion = getBoolean(config, "enable-tab-completion");
+		displaykitSelectorEnabled = getBoolean(config, "displaykit-selector-enabled", false);
 		pretranslateUiEnabled = getBoolean(config, "pretranslate-ui-enabled", true);
 		translateHolograms = getBoolean(config, "translate-holograms", true);
 		serverDisplayNames = getStringMap(config, "server-display-names");

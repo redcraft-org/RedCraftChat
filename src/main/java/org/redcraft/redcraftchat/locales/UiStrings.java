@@ -38,6 +38,14 @@ public class UiStrings {
     public static final String MAIL_CLICK_TO_REPLY = "Click to reply";
     public static final String MAIL_HOVER_TIP = "Tip: Hover the message to see the full text";
 
+    public static final String SELECTOR_TITLE = "Choose your language";
+    public static final String SELECTOR_FIRST_JOIN_HELP = "Click a language to make it your main language";
+    public static final String SELECTOR_DONE = "Done";
+    public static final String SELECTOR_JOIN_PROMPT = "Please confirm the language you want to play in";
+    public static final String SELECTOR_KEEP_CURRENT = "Keep %language%";
+    public static final String SELECTOR_APPEARED = "A language selector appeared in front of you";
+    public static final String SELECTOR_CONFIRMED = "Language confirmed, have fun!";
+
     public static final String DISCORD_COPY_TO_CLIPBOARD = "Copy to clipboard";
     public static final String DISCORD_RUN_COMMAND = "Please run the following command on our Discord server (click to copy): ";
     public static final String DISCORD_UNLINK = "Unlink";
@@ -55,6 +63,13 @@ public class UiStrings {
             ADD_TO_LANGUAGES,
             REMOVE_FROM_LANGUAGES,
             CHANGE_MAIN_LANGUAGE,
+            SELECTOR_TITLE,
+            SELECTOR_FIRST_JOIN_HELP,
+            SELECTOR_DONE,
+            SELECTOR_JOIN_PROMPT,
+            SELECTOR_KEEP_CURRENT,
+            SELECTOR_APPEARED,
+            SELECTOR_CONFIRMED,
             MAIL_INBOX_HEADER,
             MAIL_NO_MAILS,
             MAIL_NEXT_PAGE,
