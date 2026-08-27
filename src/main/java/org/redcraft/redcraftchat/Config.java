@@ -40,6 +40,7 @@ public class Config {
 	public static long hologramGroupingDelay = 250;
 
 	public static Map<String, String> serverDisplayNames = new HashMap<String, String>();
+	public static List<String> translatableServerNames = new ArrayList<String>();
 
 	public static Map<String, String> commandAliases = new HashMap<String, String>();
 
@@ -120,6 +121,7 @@ public class Config {
 		upstreamChatGroupingDelay = getLong(config, "upstream-chat-grouping-delay", upstreamChatGroupingDelay);
 		hologramGroupingDelay = getLong(config, "hologram-grouping-delay", hologramGroupingDelay);
 		serverDisplayNames = getStringMap(config, "server-display-names");
+		translatableServerNames = getStringList(config, "translatable-server-names");
 		commandAliases = getStringMap(config, "command-aliases");
 
 		jsonApiEnabled = getBoolean(config, "json-api-enabled", jsonApiEnabled);

@@ -51,9 +51,17 @@ server-display-names:
   hub: '&aHub'
   museum: '&6Museum'
   survival_vanilla: '&2Survival Vanilla'
-  crea_build_plot: '&bCrea Build'
-  crea_redstone_plot: '&cCrea Redstone'
+  crea_build_plot: '&bCrea Build Plot'
+  crea_redstone_plot: '&cCrea Redstone Plot'
   crea_engineer_test: '&7Crea Engineer Test'
+
+# Server names are proper nouns, and the ids above are what players type after
+# /server, so the translator is told to copy every one of them exactly rather
+# than left to guess which words are names. It guessed badly: a hologram reading
+# "Creative Build" came out as "Construction Créative" next to a sign that calls
+# it "Créatif Build". List here the names that are ordinary words after all and
+# read better translated.
+translatable-server-names: ['Museum']
 # This is to add missing players in tab completion
 enable-tab-completion: true
 # Translate every menu and button into each supported language on startup,
