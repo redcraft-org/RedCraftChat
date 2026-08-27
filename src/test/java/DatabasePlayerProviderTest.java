@@ -14,7 +14,7 @@ import org.redcraft.redcraftchat.players.providers.DatabasePlayerProvider;
  * direction. A full round trip with a distinct value in every field catches
  * that whole class of mistake.
  *
- * The provider's db field is null here, the mappers never touch it. The email
+ * No database is reachable here, and the mappers never ask for one. The email
  * field is not asserted because rcc_player_preferences has no column for it.
  */
 public class DatabasePlayerProviderTest extends TestCase {

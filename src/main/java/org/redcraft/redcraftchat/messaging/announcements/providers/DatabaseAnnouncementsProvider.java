@@ -10,14 +10,14 @@ import org.redcraft.redcraftchat.models.database.ScheduledAnnouncementDatabase;
 
 public class DatabaseAnnouncementsProvider implements AnnouncementsProvider {
 
-    Database db;
-
-    public DatabaseAnnouncementsProvider() {
-        db = DatabaseManager.getDatabase();
+    // Fetched per query, never cached: the handle only carries a usable
+    // schema once DatabaseManager has managed to migrate it
+    private Database db() {
+        return DatabaseManager.getDatabase();
     }
 
     public List<String> getAnnouncements() {
-        return transform(db.where("enabled=?", 1).results(ScheduledAnnouncementDatabase.class));
+        return transform(db().where("enabled=?", 1).results(ScheduledAnnouncementDatabase.class));
     }
 
     public List<String> transform(List<ScheduledAnnouncementDatabase> results) {

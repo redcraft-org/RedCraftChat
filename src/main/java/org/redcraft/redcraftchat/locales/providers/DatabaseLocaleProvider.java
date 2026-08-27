@@ -11,11 +11,15 @@ import com.dieselpoint.norm.Database;
 
 public class DatabaseLocaleProvider implements LocaleProvider {
 
-    Database db = DatabaseManager.getDatabase();
+    // Fetched per query, never cached: the handle only carries a usable
+    // schema once DatabaseManager has managed to migrate it
+    private Database db() {
+        return DatabaseManager.getDatabase();
+    }
 
     @Override
     public List<SupportedLocale> getSupportedLocales() throws IOException, InterruptedException {
-        return transform(db.results(SupportedLocaleDatabase.class));
+        return transform(db().results(SupportedLocaleDatabase.class));
     }
 
     private List<SupportedLocale> transform(List<SupportedLocaleDatabase> locale) {
