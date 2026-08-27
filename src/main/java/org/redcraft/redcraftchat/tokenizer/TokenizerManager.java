@@ -80,9 +80,10 @@ public class TokenizerManager {
         Pattern emojiPattern = Pattern.compile(":((\\w|)*):");
         patterns.add(emojiPattern);
 
-        // Tokenize line returns
-        Pattern lineReturnPattern = Pattern.compile("\n", Pattern.MULTILINE);
-        patterns.add(lineReturnPattern);
+        // Line returns are deliberately not tokenized: a token lands glued to
+        // the words on either side of it, which reads as one long word and
+        // hides the line structure from the engine. Every engine used here
+        // keeps line breaks of its own accord.
 
         // Tokenize Minecraft usernames
         if (tokenizePlayers) {
@@ -110,8 +111,10 @@ public class TokenizerManager {
             tokenizedMessage = tokenizedMessage.replaceAll(mapping.getKey(), mapping.getValue());
         }
 
-        // Remove non printable characters
-        tokenizedMessage = tokenizedMessage.replaceAll("\\p{C}", "");
+        // Remove non printable characters, line returns excepted: they are a
+        // control character too, and stripping them would collapse a multi
+        // line message into one line
+        tokenizedMessage = tokenizedMessage.replaceAll("[\\p{C}&&[^\n]]", "");
 
         return new TokenizedMessage(tokenizedMessage, tokenizedElements);
     }

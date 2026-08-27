@@ -1,7 +1,10 @@
 package org.redcraft.redcraftchat.listeners.packets;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -9,12 +12,14 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 
 import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.detection.DetectionManager;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
+import org.redcraft.redcraftchat.translate.LineBlock;
 import org.redcraft.redcraftchat.translate.TranslationManager;
 
 import com.github.retrooper.packetevents.event.PacketListenerAbstract;
@@ -26,8 +31,10 @@ import com.github.retrooper.packetevents.protocol.entity.data.EntityDataType;
 import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.player.User;
+import com.github.retrooper.packetevents.util.Vector3d;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerDestroyEntities;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityTeleport;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSpawnEntity;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSpawnLivingEntity;
 import com.velocitypowered.api.proxy.Player;
@@ -54,6 +61,14 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
  * translation lands. Results are kept in memory here and persistently by the
  * provider cache, so that first sight happens once per line and language ever,
  * not per boot.
+ *
+ * Translation happens a hologram at a time, not a line at a time. One hologram
+ * is a column of armor stands a quarter block apart, so its lines are grouped
+ * by position and sent to the provider as one block: the tail lines of a
+ * sentence split across a hologram are undetectable and untranslatable on
+ * their own, but obvious inside the whole text. Each line then gets its slice
+ * of the result, and the cache stays per line so the netty thread can rewrite
+ * a repeated sighting without the geometry.
  *
  * Lines whose text keeps changing, countdowns and animations, are detected by
  * their churn and left alone: translating every frame would burn provider
@@ -91,6 +106,24 @@ public class HologramTranslator extends PacketListenerAbstract {
      * Translations past it are still delivered, just not remembered.
      */
     static final int MAX_CACHED_LINES = 10_000;
+
+    /**
+     * How the lines of one hologram are recognised as one hologram: they
+     * stand in the same column within this horizontal tolerance, and each
+     * line within LINE_SPACING_LIMIT of the next. DecentHolograms stacks
+     * text lines a quarter block apart, while separate holograms stand well
+     * clear of each other.
+     */
+    public static final double COLUMN_EPSILON = 0.05;
+    public static final double LINE_SPACING_LIMIT = 0.6;
+
+    /**
+     * A first sighting waits hologram-grouping-delay before translating. The
+     * sibling lines of a freshly spawned hologram arrive together, and waiting
+     * for them means the hologram translates as one block instead of one
+     * impoverished line at a time. Nothing is held up by the wait, the client
+     * is showing the original text meanwhile either way.
+     */
 
     static TranslationManager translationManager = new TranslationManager(Config.upstreamTranslationProvider);
 
@@ -174,12 +207,16 @@ public class HologramTranslator extends PacketListenerAbstract {
         final Map<Integer, LineInfo> lastText = new ConcurrentHashMap<>();
         final Map<Integer, TextChurn> churn = new ConcurrentHashMap<>();
 
+        /** x, y, z per armor stand, the geometry the line grouping goes by. */
+        final Map<Integer, double[]> positions = new ConcurrentHashMap<>();
+
         void forget(int entityId) {
             armorStands.remove(entityId);
             holograms.remove(entityId);
             dynamic.remove(entityId);
             lastText.remove(entityId);
             churn.remove(entityId);
+            positions.remove(entityId);
         }
     }
 
@@ -246,9 +283,10 @@ public class HologramTranslator extends PacketListenerAbstract {
         /**
          * Set by the owner before the pending entry is removed, so a late
          * joiner can deliver itself even when cache admission declined the
-         * result.
+         * result. Keyed by source line, since the pending unit is the whole
+         * hologram and each waiter only wants its own line back.
          */
-        volatile CachedTranslation result;
+        volatile Map<String, CachedTranslation> results;
     }
 
     private static class Waiter {
@@ -337,6 +375,8 @@ public class HologramTranslator extends PacketListenerAbstract {
             onMetadata(event);
         } else if (event.getPacketType() == PacketType.Play.Server.DESTROY_ENTITIES) {
             onDestroy(event);
+        } else if (event.getPacketType() == PacketType.Play.Server.ENTITY_TELEPORT) {
+            onTeleport(event);
         } else if (event.getPacketType() == PacketType.Play.Server.JOIN_GAME
                 || event.getPacketType() == PacketType.Play.Server.RESPAWN) {
             // Server switch: every entity id belongs to the old backend now
@@ -363,7 +403,9 @@ public class HologramTranslator extends PacketListenerAbstract {
         WrapperPlayServerSpawnEntity wrapper = new WrapperPlayServerSpawnEntity(event);
 
         if (wrapper.getEntityType() == EntityTypes.ARMOR_STAND) {
-            trackedFor(event).armorStands.add(wrapper.getEntityId());
+            TrackedEntities state = trackedFor(event);
+            state.armorStands.add(wrapper.getEntityId());
+            state.positions.put(wrapper.getEntityId(), toPosition(wrapper.getPosition()));
         }
 
         event.markForReEncode(false);
@@ -382,7 +424,9 @@ public class HologramTranslator extends PacketListenerAbstract {
             return;
         }
 
-        trackedFor(event).armorStands.add(wrapper.getEntityId());
+        TrackedEntities state = trackedFor(event);
+        state.armorStands.add(wrapper.getEntityId());
+        state.positions.put(wrapper.getEntityId(), toPosition(wrapper.getPosition()));
 
         List<EntityData<?>> metadata = wrapper.getEntityMetadata();
         if (metadata == null || metadata.isEmpty()) {
@@ -400,6 +444,27 @@ public class HologramTranslator extends PacketListenerAbstract {
 
         WrapperPlayServerEntityMetadata wrapper = new WrapperPlayServerEntityMetadata(event);
         handleHologramMetadata(event, wrapper.getEntityId(), wrapper.getEntityMetadata());
+    }
+
+    /**
+     * A hologram moves as a whole when repositioned, and the grouping goes by
+     * position, so a teleported line keeps its recorded spot current.
+     */
+    private void onTeleport(PacketSendEvent event) {
+        TrackedEntities state = tracked.get(event.getUser());
+
+        if (state != null) {
+            WrapperPlayServerEntityTeleport wrapper = new WrapperPlayServerEntityTeleport(event);
+            if (state.armorStands.contains(wrapper.getEntityId())) {
+                state.positions.put(wrapper.getEntityId(), toPosition(wrapper.getPosition()));
+            }
+        }
+
+        event.markForReEncode(false);
+    }
+
+    private static double[] toPosition(Vector3d position) {
+        return new double[] { position.getX(), position.getY(), position.getZ() };
     }
 
     private void onDestroy(PacketSendEvent event) {
@@ -552,13 +617,17 @@ public class HologramTranslator extends PacketListenerAbstract {
                 }
             }
 
-            String key = cacheKey(languages.target, waiter.originalText);
-
-            CachedTranslation cached = translations.get(key);
+            CachedTranslation cached = translations.get(cacheKey(languages.target, waiter.originalText));
             if (cached != null) {
                 deliver(waiter, cached);
                 return;
             }
+
+            // The waiter's whole hologram is the translation unit, so the
+            // model sees every line as context for every other: the tail of
+            // a sentence split across lines is untranslatable alone
+            List<String> groupLines = contextLines(waiter);
+            String key = cacheKey(languages.target, LineBlock.join(groupLines));
 
             Long lastFailure = failedAt.get(key);
             if (lastFailure != null && System.currentTimeMillis() - lastFailure < FAILURE_RETRY_MILLIS) {
@@ -570,29 +639,33 @@ public class HologramTranslator extends PacketListenerAbstract {
             if (current != null) {
                 current.waiters.add(waiter);
                 // The owner may have flushed between the get above and this
-                // add. Its result field is set before the flush, so reading it
-                // here closes the window whatever the cache admission decided
-                CachedTranslation flushed = current.result;
+                // add. Its results field is set before the flush, so reading
+                // it here closes the window whatever the cache admission
+                // decided
+                Map<String, CachedTranslation> flushed = current.results;
                 if (flushed != null) {
-                    deliver(waiter, flushed);
+                    CachedTranslation late = flushed.get(waiter.originalText);
+                    if (late != null) {
+                        deliver(waiter, late);
+                    }
                 }
                 return;
             }
             mine.waiters.add(waiter);
 
             // Winning ownership right after the previous owner finished means
-            // the result already exists, take it rather than buying a second
-            // provider call
-            CachedTranslation result = translations.get(key);
+            // the results already exist, take them rather than buying a
+            // second provider call
+            Map<String, CachedTranslation> results = cachedGroup(groupLines, languages.target);
 
-            if (result == null) {
+            if (results == null) {
                 try {
-                    result = translate(waiter.originalText, languages.target);
+                    results = translateGroup(groupLines, languages.target);
                 } finally {
-                    if (result == null) {
+                    if (results == null) {
                         // Provider failure or an unexpected throw: never
                         // cached, and the key must not stay wedged in the
-                        // pending map or the line would be dead until restart
+                        // pending map or the group would be dead until restart
                         failedAt.put(key, System.currentTimeMillis());
                         if (failedAt.size() > MAX_FAILED_LINES) {
                             // Crude but bounded, the worst case is a retry
@@ -602,25 +675,164 @@ public class HologramTranslator extends PacketListenerAbstract {
                         pending.remove(key);
                     }
                 }
-                if (result == null) {
+                if (results == null) {
                     return;
                 }
 
                 failedAt.remove(key);
-                if (translations.size() < MAX_CACHED_LINES || translations.containsKey(key)) {
-                    translations.put(key, result);
+                for (Map.Entry<String, CachedTranslation> entry : results.entrySet()) {
+                    String lineKey = cacheKey(languages.target, entry.getKey());
+                    if (translations.size() < MAX_CACHED_LINES || translations.containsKey(lineKey)) {
+                        translations.put(lineKey, entry.getValue());
+                    }
                 }
             }
 
-            mine.result = result;
+            mine.results = results;
 
             PendingTranslation finished = pending.remove(key);
             if (finished != null) {
                 for (Waiter queued : finished.waiters) {
-                    deliver(queued, result);
+                    CachedTranslation result = results.get(queued.originalText);
+                    if (result != null) {
+                        deliver(queued, result);
+                    }
                 }
             }
-        }).schedule();
+        }).delay(Math.max(0, Config.hologramGroupingDelay), TimeUnit.MILLISECONDS).schedule();
+    }
+
+    /**
+     * The lines of the hologram the waiter's line belongs to, top first,
+     * gathered by geometry from what the player currently sees. Dynamic lines
+     * are left out because their churn would make the group key unstable, and
+     * letterless decoration because it has nothing to contribute. The line
+     * itself always rides along, its waiter's text rather than the tracked
+     * one: if the line moved on since scheduling, the delivery guard drops
+     * the result anyway, but the group has to contain the text being waited
+     * on. Any missing geometry degrades to the line alone, the old behaviour.
+     */
+    private List<String> contextLines(Waiter waiter) {
+        TrackedEntities state = tracked.get(waiter.user);
+        if (state == null || waiter.originalText.indexOf('\n') >= 0) {
+            return Collections.singletonList(waiter.originalText);
+        }
+
+        Map<Integer, String> texts = new HashMap<>();
+        for (int entityId : state.holograms) {
+            LineInfo line = state.lastText.get(entityId);
+            if (line == null || state.dynamic.contains(entityId)
+                    || !hasTranslatableText(line.legacy) || line.legacy.indexOf('\n') >= 0) {
+                continue;
+            }
+            texts.put(entityId, line.legacy);
+        }
+        texts.put(waiter.entityId, waiter.originalText);
+
+        List<String> group = groupHologramLines(waiter.entityId, state.positions, texts);
+        return group == null ? Collections.singletonList(waiter.originalText) : group;
+    }
+
+    /**
+     * One hologram's worth of lines around the given entity, top line first:
+     * the lines standing in the same column, chained while each is within
+     * LINE_SPACING_LIMIT of the next. Null when the entity's own geometry is
+     * missing.
+     */
+    public static List<String> groupHologramLines(int entityId, Map<Integer, double[]> positions,
+            Map<Integer, String> texts) {
+        double[] center = positions.get(entityId);
+        if (center == null || !texts.containsKey(entityId)) {
+            return null;
+        }
+
+        // y and entity id per line of the column, sorted top first
+        List<double[]> column = new ArrayList<>();
+        for (Integer id : texts.keySet()) {
+            double[] position = positions.get(id);
+            if (position == null
+                    || Math.abs(position[0] - center[0]) > COLUMN_EPSILON
+                    || Math.abs(position[2] - center[2]) > COLUMN_EPSILON) {
+                continue;
+            }
+            column.add(new double[] { position[1], id });
+        }
+        column.sort((a, b) -> Double.compare(b[0], a[0]));
+
+        int own = 0;
+        while ((int) column.get(own)[1] != entityId) {
+            own++;
+        }
+
+        int first = own;
+        while (first > 0 && column.get(first - 1)[0] - column.get(first)[0] <= LINE_SPACING_LIMIT) {
+            first--;
+        }
+        int last = own;
+        while (last < column.size() - 1 && column.get(last)[0] - column.get(last + 1)[0] <= LINE_SPACING_LIMIT) {
+            last++;
+        }
+
+        List<String> group = new ArrayList<>();
+        for (int i = first; i <= last; i++) {
+            group.add(texts.get((int) column.get(i)[1]));
+        }
+        return group;
+    }
+
+    /** The group rebuilt from cache alone, null unless every line is there. */
+    private static Map<String, CachedTranslation> cachedGroup(List<String> lines, String targetLanguage) {
+        Map<String, CachedTranslation> results = new LinkedHashMap<>();
+        for (String line : lines) {
+            CachedTranslation cached = translations.get(cacheKey(targetLanguage, line));
+            if (cached == null) {
+                return null;
+            }
+            results.put(line, cached);
+        }
+        return results;
+    }
+
+    /**
+     * Translates a hologram as one block and hands each line its slice back.
+     * A single line keeps the old behaviour verbatim, and a provider that
+     * reshapes the block instead of keeping its line structure falls back to
+     * line by line calls. Null on provider failure, so the caller backs the
+     * whole group off as one unit.
+     */
+    static Map<String, CachedTranslation> translateGroup(List<String> sourceLines, String targetLanguage) {
+        CachedTranslation block = translate(LineBlock.join(sourceLines), targetLanguage);
+        if (block == null) {
+            return null;
+        }
+
+        if (sourceLines.size() == 1) {
+            return Collections.singletonMap(sourceLines.get(0), block);
+        }
+
+        Map<String, String> aligned = LineBlock.align(sourceLines, block.translated);
+
+        if (aligned == null) {
+            Map<String, CachedTranslation> lineByLine = new LinkedHashMap<>();
+            for (String line : sourceLines) {
+                CachedTranslation result = translate(line, targetLanguage);
+                if (result == null) {
+                    return null;
+                }
+                lineByLine.put(line, result);
+            }
+            return lineByLine;
+        }
+
+        Map<String, CachedTranslation> results = new LinkedHashMap<>();
+        for (Map.Entry<String, String> entry : aligned.entrySet()) {
+            results.put(entry.getKey(), new CachedTranslation(block.source, entry.getValue()));
+        }
+        return results;
+    }
+
+    public static Map<String, String> alignGroupTranslation(List<String> sourceLines, String translatedBlock) {
+        return LineBlock.align(sourceLines, translatedBlock);
     }
 
     /**
@@ -797,13 +1009,8 @@ public class HologramTranslator extends PacketListenerAbstract {
         return false;
     }
 
-    /**
-     * A line with no letters, arrows and dividers mostly, would only confuse
-     * the language detector. The colour codes are stripped first, paragraph
-     * plus a letter is exactly what they look like.
-     */
     public static boolean hasTranslatableText(String legacy) {
-        return legacy.replaceAll("\u00a7.", "").codePoints().anyMatch(Character::isLetter);
+        return LineBlock.hasTranslatableText(legacy);
     }
 
     public static String cacheKey(String language, String legacy) {
