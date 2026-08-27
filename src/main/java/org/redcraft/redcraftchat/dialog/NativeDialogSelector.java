@@ -106,8 +106,23 @@ public final class NativeDialogSelector {
         return version != null && version.isNewerThanOrEquals(ClientVersion.V_1_21_6);
     }
 
-    /** Step one: one button per language. Blocking, so call it off netty. */
-    public static void showPrimary(Player player, PlayerPreferences preferences) {
+    /**
+     * Step one: one button per language. Blocking, so call it off netty.
+     *
+     * @return false when the dialog could not be built or sent, so a caller
+     * can say so instead of leaving the player looking at nothing.
+     */
+    public static boolean showPrimary(Player player, PlayerPreferences preferences) {
+        try {
+            return buildPrimary(player, preferences);
+        } catch (Exception e) {
+            RedCraftChat.getInstance().getLogger().error("Could not build the primary language dialog for {}: {}",
+                    player.getUsername(), e.getMessage());
+            return false;
+        }
+    }
+
+    private static boolean buildPrimary(Player player, PlayerPreferences preferences) {
         List<ActionButton> buttons = new ArrayList<>();
         for (SupportedLocale locale : LocaleManager.getSupportedLocales()) {
             boolean isMain = locale.code.equalsIgnoreCase(preferences.mainLanguage);
@@ -138,7 +153,10 @@ public final class NativeDialogSelector {
                 Component.text(localize(preferences, UiStrings.SELECTOR_PRIMARY_TITLE)),
                 null,
                 true,
-                true,
+                // Not a pausing dialog. PacketEvents rejects pause with an
+                // after_action that does not unpause, and this one has to
+                // stay up across a click so the answer can replace it.
+                false,
                 // NONE, not WAIT_FOR_RESPONSE: the latter freezes the client on
                 // a "Waiting for Server" screen from the moment of the click
                 // until we answer, and answering means a database write and a
@@ -148,14 +166,24 @@ public final class NativeDialogSelector {
                 body(preferences, UiStrings.SELECTOR_PRIMARY_HELP),
                 Collections.emptyList());
 
-        send(player, new MultiActionDialog(common, buttons, null, 1));
+        return send(player, new MultiActionDialog(common, buttons, null, 1));
     }
 
     /**
      * Step two: a toggle per language, with the main one left out because
      * understanding it is implied and togglePlayerLocale refuses to remove it.
      */
-    public static void showOthers(Player player, PlayerPreferences preferences) {
+    public static boolean showOthers(Player player, PlayerPreferences preferences) {
+        try {
+            return buildOthers(player, preferences);
+        } catch (Exception e) {
+            RedCraftChat.getInstance().getLogger().error("Could not build the secondary language dialog for {}: {}",
+                    player.getUsername(), e.getMessage());
+            return false;
+        }
+    }
+
+    private static boolean buildOthers(Player player, PlayerPreferences preferences) {
         List<Input> inputs = new ArrayList<>();
         for (SupportedLocale locale : LocaleManager.getSupportedLocales()) {
             if (locale.code.equalsIgnoreCase(preferences.mainLanguage)) {
@@ -190,14 +218,14 @@ public final class NativeDialogSelector {
                 Component.text(localize(preferences, UiStrings.SELECTOR_OTHERS_TITLE)),
                 null,
                 true,
-                true,
+                false,
                 // Same reason as the first step; the confirm handler sends an
                 // explicit clear, since NONE leaves the dialog standing
                 DialogAction.NONE,
                 body(preferences, UiStrings.SELECTOR_OTHERS_HELP),
                 inputs);
 
-        send(player, new MultiActionDialog(common, buttons, null, 1));
+        return send(player, new MultiActionDialog(common, buttons, null, 1));
     }
 
     /** Dismisses whatever dialog the player currently has open. */
@@ -231,9 +259,9 @@ public final class NativeDialogSelector {
         return PlayerPreferencesManager.localizeMessageForPlayer(preferences, message);
     }
 
-    private static void send(Player player, Dialog dialog) {
+    private static boolean send(Player player, Dialog dialog) {
         if (!isSupported(player)) {
-            return;
+            return false;
         }
         // Cheap, and the alternative is a disconnect: a malformed key makes
         // the client fail to decode show_dialog entirely
@@ -242,17 +270,19 @@ public final class NativeDialogSelector {
             RedCraftChat.getInstance().getLogger().error(
                     "Refusing to send a language dialog with the invalid input key '{}'; "
                             + "Minecraft only accepts [a-z0-9_.-] and would drop the connection", badKey);
-            return;
+            return false;
         }
         User user = PacketEvents.getAPI().getPlayerManager().getUser(player);
         if (user == null) {
-            return;
+            return false;
         }
         try {
             user.sendPacketSilently(new WrapperPlayServerShowDialog(dialog));
+            return true;
         } catch (Exception e) {
             RedCraftChat.getInstance().getLogger().warn("Could not show the language dialog to {}: {}",
                     player.getUsername(), e.getMessage());
+            return false;
         }
     }
 }

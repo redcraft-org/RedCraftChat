@@ -60,7 +60,10 @@ public class LangMinecraftCommand implements SimpleCommand {
                                 "Native dialogs need a 1.21.6 client or newer", NamedTextColor.RED);
                         return;
                     }
-                    NativeDialogSelector.showPrimary(player, preferences);
+                    if (!NativeDialogSelector.showPrimary(player, preferences)) {
+                        BasicMessageFormatter.sendInternalMessage(player,
+                                "The language dialog could not be shown, see the proxy log", NamedTextColor.RED);
+                    }
                     return;
                 }
 
