@@ -51,9 +51,9 @@ public class LinkDiscordAccountMinecraftCommand implements SimpleCommand {
                 }
 
                 if (preferences.discordId != null) {
-                    String message = PlayerPreferencesManager.localizeMessageForPlayer(preferences, "You already linked your Discord account. If you wish to unlink it, click on the button below");
-                    String unlink = PlayerPreferencesManager.localizeMessageForPlayer(preferences, "Unlink");
-                    String tooltip = PlayerPreferencesManager.localizeMessageForPlayer(preferences, "Unlink your Discord account");
+                    String message = PlayerPreferencesManager.localizeUiForPlayer(preferences, "You already linked your Discord account. If you wish to unlink it, click on the button below");
+                    String unlink = PlayerPreferencesManager.localizeUiForPlayer(preferences, "Unlink");
+                    String tooltip = PlayerPreferencesManager.localizeUiForPlayer(preferences, "Unlink your Discord account");
 
                     String command = "/discord-link unlink";
 
@@ -79,8 +79,8 @@ public class LinkDiscordAccountMinecraftCommand implements SimpleCommand {
 
                 AccountLinkCode code = AccountLinkManager.getLinkCode(player);
 
-                String message = PlayerPreferencesManager.localizeMessageForPlayer(preferences, "Please run the following command on our Discord server (click to copy): ");
-                String copyToClipboard = PlayerPreferencesManager.localizeMessageForPlayer(preferences, "Copy to clipboard");
+                String message = PlayerPreferencesManager.localizeUiForPlayer(preferences, "Please run the following command on our Discord server (click to copy): ");
+                String copyToClipboard = PlayerPreferencesManager.localizeUiForPlayer(preferences, "Copy to clipboard");
 
                 String command = "/minecraft-link " + code.token;
 

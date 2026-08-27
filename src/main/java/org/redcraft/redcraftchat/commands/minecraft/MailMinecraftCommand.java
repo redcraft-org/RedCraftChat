@@ -181,8 +181,8 @@ public class MailMinecraftCommand implements SimpleCommand {
                 originalNoMailsText += LegacyText.DARK_PURPLE + "\n\nTip: run the command %command% to see messages you already read";
             }
 
-            String headerText = PlayerPreferencesManager.localizeMessageForPlayer(preferences, originalHeaderText);
-            String noMailsText = PlayerPreferencesManager.localizeMessageForPlayer(preferences, originalNoMailsText).replace("%command%", "/mail listall");
+            String headerText = PlayerPreferencesManager.localizeUiForPlayer(preferences, originalHeaderText);
+            String noMailsText = PlayerPreferencesManager.localizeUiForPlayer(preferences, originalNoMailsText).replace("%command%", "/mail listall");
 
             List<Component> messages = new ArrayList<Component>();
 
@@ -218,7 +218,7 @@ public class MailMinecraftCommand implements SimpleCommand {
                     messages.add(Component.empty());
                 }
 
-                String hoverHelpMessage = PlayerPreferencesManager.localizeMessageForPlayer(preferences, "Tip: Hover the message to see the full text");
+                String hoverHelpMessage = PlayerPreferencesManager.localizeUiForPlayer(preferences, "Tip: Hover the message to see the full text");
 
                 // BungeeCord asked for italic then for yellow and the second call won,
                 // so this line renders yellow and upright, which is kept as is
@@ -229,9 +229,9 @@ public class MailMinecraftCommand implements SimpleCommand {
         }
 
         private Component getMailMessage(PlayerPreferences preferences, PlayerMail mail) {
-            String markAsReadText = PlayerPreferencesManager.localizeMessageForPlayer(preferences, "Mark as read");
-            String alreadyMarkedAsReadText = PlayerPreferencesManager.localizeMessageForPlayer(preferences, "Already marked as read");
-            String clickToReplyText = PlayerPreferencesManager.localizeMessageForPlayer(preferences, "Click to reply");
+            String markAsReadText = PlayerPreferencesManager.localizeUiForPlayer(preferences, "Mark as read");
+            String alreadyMarkedAsReadText = PlayerPreferencesManager.localizeUiForPlayer(preferences, "Already marked as read");
+            String clickToReplyText = PlayerPreferencesManager.localizeUiForPlayer(preferences, "Click to reply");
 
             Component statusTag;
             HoverEvent<Component> statusHover;
@@ -298,10 +298,10 @@ public class MailMinecraftCommand implements SimpleCommand {
             String originalNextText = "Next page";
             String originalNextTooltipText = "Click to go to the next page";
 
-            String previousText = PlayerPreferencesManager.localizeMessageForPlayer(preferences, originalPreviousText);
-            String previousTooltipText = PlayerPreferencesManager.localizeMessageForPlayer(preferences, originalPreviousTooltipText);
-            String nextText = PlayerPreferencesManager.localizeMessageForPlayer(preferences, originalNextText);
-            String nextTooltipText = PlayerPreferencesManager.localizeMessageForPlayer(preferences, originalNextTooltipText);
+            String previousText = PlayerPreferencesManager.localizeUiForPlayer(preferences, originalPreviousText);
+            String previousTooltipText = PlayerPreferencesManager.localizeUiForPlayer(preferences, originalPreviousTooltipText);
+            String nextText = PlayerPreferencesManager.localizeUiForPlayer(preferences, originalNextText);
+            String nextTooltipText = PlayerPreferencesManager.localizeUiForPlayer(preferences, originalNextTooltipText);
 
             String subCommand = unreadOnly ? "list" : "listall";
 

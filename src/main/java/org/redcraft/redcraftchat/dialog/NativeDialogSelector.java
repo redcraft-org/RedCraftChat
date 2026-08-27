@@ -288,7 +288,7 @@ public final class NativeDialogSelector {
     }
 
     private static String localize(PlayerPreferences preferences, String message) {
-        return PlayerPreferencesManager.localizeMessageForPlayer(preferences, message);
+        return PlayerPreferencesManager.localizeUiForPlayer(preferences, message);
     }
 
     private static boolean send(Player player, Dialog dialog) {

@@ -129,16 +129,16 @@ public class LangMinecraftCommand implements SimpleCommand {
         String originalDisabledText = "disabled";
         String originalEnabledText = "enabled";
 
-        String headerText = PlayerPreferencesManager.localizeMessageForPlayer(preferences, originalHeaderText);
-        String helpText = PlayerPreferencesManager.localizeMessageForPlayer(preferences, originalHelpText);
-        String captionText = PlayerPreferencesManager.localizeMessageForPlayer(preferences, originalCaptionText);
-        String disabledText = PlayerPreferencesManager.localizeMessageForPlayer(preferences, originalDisabledText);
-        String enabledText = PlayerPreferencesManager.localizeMessageForPlayer(preferences, originalEnabledText);
+        String headerText = PlayerPreferencesManager.localizeUiForPlayer(preferences, originalHeaderText);
+        String helpText = PlayerPreferencesManager.localizeUiForPlayer(preferences, originalHelpText);
+        String captionText = PlayerPreferencesManager.localizeUiForPlayer(preferences, originalCaptionText);
+        String disabledText = PlayerPreferencesManager.localizeUiForPlayer(preferences, originalDisabledText);
+        String enabledText = PlayerPreferencesManager.localizeUiForPlayer(preferences, originalEnabledText);
 
-        String alreadyMainLanguage = PlayerPreferencesManager.localizeMessageForPlayer(preferences, "This is already your main language");
-        String setAsMainLanguage = PlayerPreferencesManager.localizeMessageForPlayer(preferences, "Click to set as main language");
-        String removeFromLanguages = PlayerPreferencesManager.localizeMessageForPlayer(preferences, "Click to remove this languages");
-        String addToLanguages = PlayerPreferencesManager.localizeMessageForPlayer(preferences, "Click to add this language");
+        String alreadyMainLanguage = PlayerPreferencesManager.localizeUiForPlayer(preferences, "This is already your main language");
+        String setAsMainLanguage = PlayerPreferencesManager.localizeUiForPlayer(preferences, "Click to set as main language");
+        String removeFromLanguages = PlayerPreferencesManager.localizeUiForPlayer(preferences, "Click to remove this languages");
+        String addToLanguages = PlayerPreferencesManager.localizeUiForPlayer(preferences, "Click to add this language");
 
         List<Component> messages = new ArrayList<Component>();
 

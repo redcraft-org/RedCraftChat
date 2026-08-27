@@ -107,7 +107,7 @@ public class PrivateMessagesManager {
 
         if (replyTo != null) {
             messageComponent = messageComponent.clickEvent(ClickEvent.suggestCommand("/msg " + replyTo + " "));
-            tooltip.add(LegacyText.DARK_AQUA + PlayerPreferencesManager.localizeMessageForPlayer(player, "Click to reply"));
+            tooltip.add(LegacyText.DARK_AQUA + PlayerPreferencesManager.localizeUiForPlayer(player, "Click to reply"));
         }
 
         if (!tooltip.isEmpty()) {

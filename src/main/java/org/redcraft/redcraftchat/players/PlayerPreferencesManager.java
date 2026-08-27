@@ -271,6 +271,17 @@ public class PlayerPreferencesManager {
         }
     }
 
+    /** The interface localizer, for callers holding a Player. */
+    public static String localizeUiForPlayer(Player player, String message) {
+        try {
+            return localizeUiForPlayer(getPlayerPreferences(player), message);
+        } catch (IOException | InterruptedException e) {
+            RedCraftChat.getInstance().getLogger().warn("Could not read preferences to localize an interface string: {}",
+                    e.getMessage());
+            return message;
+        }
+    }
+
     public static String localizeMessageForPlayer(PlayerPreferences preferences, String message) {
         return localizeMessageForPlayer(preferences, message, null);
     }
