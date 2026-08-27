@@ -52,6 +52,7 @@ import org.redcraft.redcraftchat.listeners.minecraft.MinecraftConnectMailListene
 import org.redcraft.redcraftchat.listeners.minecraft.MinecraftDisplayNameListener;
 import org.redcraft.redcraftchat.listeners.minecraft.MinecraftPlayerPreferencesListener;
 import org.redcraft.redcraftchat.listeners.minecraft.MinecraftTabCompleteListener;
+import org.redcraft.redcraftchat.dialog.DialogClickListener;
 import org.redcraft.redcraftchat.displaykit.DisplayKitIntegration;
 import org.redcraft.redcraftchat.listeners.minecraft.MinecraftLanguageSelectorListener;
 import org.redcraft.redcraftchat.listeners.packets.ChatSignatureStripper;
@@ -147,6 +148,9 @@ public class RedCraftChat {
 		if (Config.translationEnabled && Config.translateHolograms) {
 			PacketEvents.getAPI().getEventManager().registerListener(new HologramTranslator());
 		}
+		// The native dialog's return channel: dialog buttons make the client
+		// send a custom click action, which crosses the proxy like any packet
+		PacketEvents.getAPI().getEventManager().registerListener(new DialogClickListener());
 		// DisplayKit registers its own packet listener, so it shares the same
 		// pre-init window; a failure degrades to the chat selector
 		DisplayKitIntegration.init(proxy);

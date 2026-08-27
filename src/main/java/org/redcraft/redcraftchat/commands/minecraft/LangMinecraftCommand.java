@@ -8,6 +8,7 @@ import java.util.Locale;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.helpers.BasicMessageFormatter;
 import org.redcraft.redcraftchat.helpers.LegacyText;
+import org.redcraft.redcraftchat.dialog.NativeDialogSelector;
 import org.redcraft.redcraftchat.displaykit.LanguageSelectorManager;
 import org.redcraft.redcraftchat.displaykit.LanguageSelectorManager.SelectorRoute;
 import org.redcraft.redcraftchat.displaykit.LanguageSelectorManager.Trigger;
@@ -49,6 +50,19 @@ public class LangMinecraftCommand implements SimpleCommand {
 
             try {
                 PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);
+
+                if (args.length == 1 && args[0].equalsIgnoreCase("dialog")) {
+                    // Prototype entry point: the same two questions as the
+                    // in-world panel, drawn by the client instead of by us,
+                    // so the two can be compared side by side in game
+                    if (!NativeDialogSelector.isSupported(player)) {
+                        BasicMessageFormatter.sendInternalMessage(player,
+                                "Native dialogs need a 1.21.6 client or newer", NamedTextColor.RED);
+                        return;
+                    }
+                    NativeDialogSelector.showPrimary(player, preferences);
+                    return;
+                }
 
                 if (args.length == 1 && args[0].equalsIgnoreCase("confirm")) {
                     // The chat prompt's "keep what I have": marks the choice
