@@ -222,15 +222,6 @@ public class PlayerPreferencesManager {
                 return message;
             }
 
-            // The interface's own words are a fixed set with hand-written
-            // translations. Using them skips a round trip and, more to the
-            // point, skips a machine translating a button label with nothing
-            // around it to tell it that is what it is.
-            String embedded = UiTranslations.lookup(message, preferences.mainLanguage);
-            if (embedded != null) {
-                return embedded;
-            }
-
             return new TranslationManager(translationProvider).translate(message, messageLanguage, preferences.mainLanguage);
         } catch (IOException | IllegalStateException | URISyntaxException | InterruptedException e) {
             // TODO Auto-generated catch block
@@ -238,6 +229,46 @@ public class PlayerPreferencesManager {
         }
 
         return message;
+    }
+
+    /**
+     * Localizes one of the interface's own strings into the player's MAIN
+     * language.
+     *
+     * Deliberately not localizeMessageForPlayer, which returns a message
+     * untouched when the player understands the language it is already in.
+     * That is right for something another player typed and wrong for a menu:
+     * a French player who also reads English would get an English interface
+     * for as long as English stayed in their list, which on the screen that
+     * picks a main language is exactly backwards.
+     *
+     * Hand-written translations win, since the interface is a fixed set of
+     * strings and a machine translating one line with nothing around it does
+     * not know it is labelling a button. Anything not covered falls through
+     * to the translator.
+     */
+    public static String localizeUiForPlayer(PlayerPreferences preferences, String message) {
+        if (preferences == null || preferences.mainLanguage == null) {
+            return message;
+        }
+
+        String embedded = UiTranslations.lookup(message, preferences.mainLanguage);
+        if (embedded != null) {
+            return embedded;
+        }
+
+        String source = Config.defaultLocale.split("-")[0];
+        if (preferences.mainLanguage.split("-")[0].equalsIgnoreCase(source)) {
+            return message;
+        }
+
+        try {
+            return new TranslationManager(Config.upstreamTranslationProvider)
+                    .translate(message, source, preferences.mainLanguage);
+        } catch (IOException | IllegalStateException | URISyntaxException | InterruptedException e) {
+            RedCraftChat.getInstance().getLogger().warn("Could not localize an interface string: {}", e.getMessage());
+            return message;
+        }
     }
 
     public static String localizeMessageForPlayer(PlayerPreferences preferences, String message) {

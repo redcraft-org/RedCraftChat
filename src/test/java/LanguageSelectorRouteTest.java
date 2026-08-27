@@ -11,8 +11,34 @@ import org.redcraft.redcraftchat.displaykit.LanguageSelectorManager.Trigger;
  */
 public class LanguageSelectorRouteTest extends TestCase {
 
+    /** No dialog support: the client predates 1.21.6. */
     private SelectorRoute route(boolean enabled, boolean lib, boolean client, boolean confirmed, Trigger trigger) {
-        return LanguageSelectorManager.decide(enabled, lib, client, confirmed, trigger);
+        return LanguageSelectorManager.decide(enabled, false, lib, client, confirmed, trigger);
+    }
+
+    private SelectorRoute withDialog(boolean enabled, boolean confirmed, Trigger trigger) {
+        return LanguageSelectorManager.decide(enabled, true, true, true, confirmed, trigger);
+    }
+
+    public void test_the_dialog_wins_wherever_the_client_can_show_one() {
+        // Its floor is lower than the panel's, so it covers strictly more
+        assertEquals(SelectorRoute.DIALOG_FIRST_JOIN, withDialog(true, false, Trigger.FIRST_JOIN));
+        assertEquals(SelectorRoute.DIALOG_MANAGE, withDialog(true, true, Trigger.LANG_NO_ARGS));
+    }
+
+    public void test_the_dialog_does_not_need_displaykit() {
+        // The client draws it, so a missing or broken library is irrelevant
+        assertEquals(SelectorRoute.DIALOG_FIRST_JOIN,
+                LanguageSelectorManager.decide(true, true, false, false, false, Trigger.FIRST_JOIN));
+    }
+
+    public void test_the_kill_switch_still_covers_the_dialog() {
+        assertEquals(SelectorRoute.NONE, withDialog(false, false, Trigger.FIRST_JOIN));
+        assertEquals(SelectorRoute.CHAT_MENU, withDialog(false, true, Trigger.LANG_NO_ARGS));
+    }
+
+    public void test_arguments_stay_on_chat_even_with_a_dialog() {
+        assertEquals(SelectorRoute.CHAT_MENU, withDialog(true, false, Trigger.LANG_WITH_ARGS));
     }
 
     public void test_confirmed_players_are_left_alone_on_join() {

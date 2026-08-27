@@ -32,12 +32,12 @@ public class LanguageSelectorPrompt {
      * "keep what I have" that confirms and ends the prompting.
      */
     public static void sendFirstJoinPrompt(Player player, PlayerPreferences preferences) {
-        String prompt = PlayerPreferencesManager.localizeMessageForPlayer(preferences, UiStrings.SELECTOR_JOIN_PROMPT);
+        String prompt = PlayerPreferencesManager.localizeUiForPlayer(preferences, UiStrings.SELECTOR_JOIN_PROMPT);
         BasicMessageFormatter.sendInternalMessage(player,
  prompt, NamedTextColor.GREEN);
 
         String endonym = currentEndonym(preferences);
-        String keepTemplate = PlayerPreferencesManager.localizeMessageForPlayer(preferences,
+        String keepTemplate = PlayerPreferencesManager.localizeUiForPlayer(preferences,
                 UiStrings.SELECTOR_KEEP_CURRENT);
         String keepLabel = keepTemplate.replace("%language%", endonym);
 
@@ -57,7 +57,7 @@ public class LanguageSelectorPrompt {
 
     /** The one-liner sent alongside the surface so nobody misses it. */
     public static void sendSurfaceHint(Player player, PlayerPreferences preferences) {
-        String hint = PlayerPreferencesManager.localizeMessageForPlayer(preferences, UiStrings.SELECTOR_APPEARED);
+        String hint = PlayerPreferencesManager.localizeUiForPlayer(preferences, UiStrings.SELECTOR_APPEARED);
         BasicMessageFormatter.sendInternalMessage(player,
  LegacyText.AQUA + hint, NamedTextColor.GREEN);
     }

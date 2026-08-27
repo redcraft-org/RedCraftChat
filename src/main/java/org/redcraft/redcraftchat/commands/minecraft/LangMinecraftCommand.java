@@ -51,6 +51,16 @@ public class LangMinecraftCommand implements SimpleCommand {
             try {
                 PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);
 
+                if (args.length == 1 && args[0].equalsIgnoreCase("panel")) {
+                    // Forces the in-world panel now that the dialog is the
+                    // default, so the two stay comparable side by side
+                    if (!LanguageSelectorManager.openSurface(player, preferences, false)) {
+                        BasicMessageFormatter.sendInternalMessage(player,
+                                "The in-world panel could not be shown, see the proxy log", NamedTextColor.RED);
+                    }
+                    return;
+                }
+
                 if (args.length == 1 && args[0].equalsIgnoreCase("dialog")) {
                     // Prototype entry point: the same two questions as the
                     // in-world panel, drawn by the client instead of by us,
@@ -73,15 +83,21 @@ public class LangMinecraftCommand implements SimpleCommand {
                     PlayerPreferencesManager.confirmLanguageSelection(preferences);
                     LanguageSelectorManager.dismiss(player.getUniqueId());
                     BasicMessageFormatter.sendInternalMessage(player,
-                            PlayerPreferencesManager.localizeMessageForPlayer(preferences, UiStrings.SELECTOR_CONFIRMED), NamedTextColor.GREEN);
+                            PlayerPreferencesManager.localizeUiForPlayer(preferences, UiStrings.SELECTOR_CONFIRMED), NamedTextColor.GREEN);
                     return;
                 }
 
                 if (args.length == 0) {
-                    // Modern clients get the in-world selector; everyone else,
-                    // and any surface failure, the chat menu below
+                    // The client's own dialog first, then the in-world panel,
+                    // then the chat menu below. Each step falls through to the
+                    // next when it cannot be shown, so nobody ends up with
+                    // nothing.
                     SelectorRoute route = LanguageSelectorManager.decideFor(player, preferences, Trigger.LANG_NO_ARGS);
-                    if (route == SelectorRoute.SURFACE_MANAGE
+                    if (route == SelectorRoute.DIALOG_MANAGE
+                            && NativeDialogSelector.showPrimary(player, preferences)) {
+                        return;
+                    }
+                    if ((route == SelectorRoute.SURFACE_MANAGE || route == SelectorRoute.DIALOG_MANAGE)
                             && LanguageSelectorManager.openSurface(player, preferences, false)) {
                         return;
                     }

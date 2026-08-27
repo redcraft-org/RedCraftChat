@@ -9,6 +9,7 @@ import com.velocitypowered.api.event.player.ServerConnectedEvent;
 import com.velocitypowered.api.proxy.Player;
 
 import org.redcraft.redcraftchat.RedCraftChat;
+import org.redcraft.redcraftchat.dialog.NativeDialogSelector;
 import org.redcraft.redcraftchat.displaykit.LanguageSelectorManager;
 import org.redcraft.redcraftchat.displaykit.LanguageSelectorManager.SelectorRoute;
 import org.redcraft.redcraftchat.displaykit.LanguageSelectorManager.Trigger;
@@ -60,6 +61,15 @@ public class MinecraftLanguageSelectorListener {
             SelectorRoute route = LanguageSelectorManager.decideFor(player, preferences, Trigger.FIRST_JOIN);
 
             switch (route) {
+                case DIALOG_FIRST_JOIN:
+                    if (!NativeDialogSelector.showPrimary(player, preferences)) {
+                        // The client can show dialogs but this one did not
+                        // reach it, so fall the whole way down rather than
+                        // leaving the player with nothing
+                        LanguageSelectorPrompt.sendFirstJoinPrompt(player, preferences);
+                    }
+                    break;
+
                 case SURFACE_FIRST_JOIN:
                     if (LanguageSelectorManager.openSurface(player, preferences, true)) {
                         LanguageSelectorPrompt.sendSurfaceHint(player, preferences);

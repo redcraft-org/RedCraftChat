@@ -170,20 +170,20 @@ public class LanguageSelectorSession {
      * alongside the page build.
      */
     private void resolveChrome(PlayerPreferences preferences, boolean others) {
-        String help = PlayerPreferencesManager.localizeMessageForPlayer(preferences,
+        String help = PlayerPreferencesManager.localizeUiForPlayer(preferences,
                 others ? UiStrings.SELECTOR_OTHERS_HELP : UiStrings.SELECTOR_PRIMARY_HELP);
         helpLines = wrap(help, SURFACE_WIDTH_PX - HELP_PADDING_PX * 2, HELP_LINES);
         navigationLabels = new ActionMenuLabels(
-                PlayerPreferencesManager.localizeMessageForPlayer(preferences, UiStrings.SELECTOR_BACK),
-                PlayerPreferencesManager.localizeMessageForPlayer(preferences, UiStrings.SELECTOR_CLOSE),
-                PlayerPreferencesManager.localizeMessageForPlayer(preferences, UiStrings.SELECTOR_PREVIOUS),
-                PlayerPreferencesManager.localizeMessageForPlayer(preferences, UiStrings.SELECTOR_NEXT));
+                PlayerPreferencesManager.localizeUiForPlayer(preferences, UiStrings.SELECTOR_BACK),
+                PlayerPreferencesManager.localizeUiForPlayer(preferences, UiStrings.SELECTOR_CLOSE),
+                PlayerPreferencesManager.localizeUiForPlayer(preferences, UiStrings.SELECTOR_PREVIOUS),
+                PlayerPreferencesManager.localizeUiForPlayer(preferences, UiStrings.SELECTOR_NEXT));
 
-        stepButtonLabel = PlayerPreferencesManager.localizeMessageForPlayer(preferences,
+        stepButtonLabel = PlayerPreferencesManager.localizeUiForPlayer(preferences,
                 others ? UiStrings.SELECTOR_DONE : UiStrings.SELECTOR_NEXT);
         closeButtonLabel = others
-                ? PlayerPreferencesManager.localizeMessageForPlayer(preferences, UiStrings.SELECTOR_BACK)
-                : PlayerPreferencesManager.localizeMessageForPlayer(preferences, UiStrings.SELECTOR_CLOSE);
+                ? PlayerPreferencesManager.localizeUiForPlayer(preferences, UiStrings.SELECTOR_BACK)
+                : PlayerPreferencesManager.localizeUiForPlayer(preferences, UiStrings.SELECTOR_CLOSE);
         primaryChosen = preferences.mainLanguage != null && !preferences.mainLanguage.isEmpty();
     }
 
@@ -337,7 +337,7 @@ public class LanguageSelectorSession {
      * answer, so picking is what advances rather than a separate confirm.
      */
     private ActionPage buildPrimaryPage(PlayerPreferences preferences) {
-        String title = PlayerPreferencesManager.localizeMessageForPlayer(preferences,
+        String title = PlayerPreferencesManager.localizeUiForPlayer(preferences,
                 UiStrings.SELECTOR_PRIMARY_TITLE);
 
         List<ActionSpec> specs = new ArrayList<>();
@@ -365,7 +365,7 @@ public class LanguageSelectorSession {
      * because togglePlayerLocale refuses to remove it.
      */
     private ActionPage buildOthersPage(PlayerPreferences preferences) {
-        String title = PlayerPreferencesManager.localizeMessageForPlayer(preferences,
+        String title = PlayerPreferencesManager.localizeUiForPlayer(preferences,
                 UiStrings.SELECTOR_OTHERS_TITLE);
         List<ActionSpec> specs = new ArrayList<>();
         for (SupportedLocale locale : LocaleManager.getSupportedLocales()) {
@@ -654,7 +654,7 @@ public class LanguageSelectorSession {
                 PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);
                 PlayerPreferencesManager.confirmLanguageSelection(preferences);
                 BasicMessageFormatter.sendInternalMessage(player,
-                        PlayerPreferencesManager.localizeMessageForPlayer(preferences, UiStrings.SELECTOR_CONFIRMED), NamedTextColor.GREEN);
+                        PlayerPreferencesManager.localizeUiForPlayer(preferences, UiStrings.SELECTOR_CONFIRMED), NamedTextColor.GREEN);
             } catch (Exception e) {
                 RedCraftChat.getInstance().getLogger().warn("Language confirm failed for {}: {}",
                         player.getUsername(), e.getMessage());

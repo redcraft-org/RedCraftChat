@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.velocitypowered.api.proxy.Player;
 
 import org.redcraft.redcraftchat.Config;
+import org.redcraft.redcraftchat.dialog.NativeDialogSelector;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 
@@ -28,6 +29,8 @@ public class LanguageSelectorManager {
 
     public enum SelectorRoute {
         NONE,
+        DIALOG_FIRST_JOIN,
+        DIALOG_MANAGE,
         SURFACE_FIRST_JOIN,
         SURFACE_MANAGE,
         CHAT_MENU,
@@ -40,8 +43,14 @@ public class LanguageSelectorManager {
         throw new IllegalStateException("This class should not be instantiated");
     }
 
-    public static SelectorRoute decide(boolean selectorEnabled, boolean libAvailable,
-            boolean clientSupported, boolean confirmed, Trigger trigger) {
+    public static SelectorRoute decide(boolean selectorEnabled, boolean dialogSupported,
+            boolean libAvailable, boolean clientSupported, boolean confirmed, Trigger trigger) {
+        // The native dialog is preferred wherever the client can show one: it
+        // is the client's own interface, and its floor is 1.21.6 against the
+        // in-world panel's 1.21.9, so it covers strictly more players. The
+        // panel is what catches a client that predates dialogs but can still
+        // render display entities, and chat catches the rest.
+        boolean dialogCapable = selectorEnabled && dialogSupported;
         boolean surfaceCapable = selectorEnabled && libAvailable && clientSupported;
 
         switch (trigger) {
@@ -56,8 +65,14 @@ public class LanguageSelectorManager {
                 if (!selectorEnabled) {
                     return SelectorRoute.NONE;
                 }
+                if (dialogCapable) {
+                    return SelectorRoute.DIALOG_FIRST_JOIN;
+                }
                 return surfaceCapable ? SelectorRoute.SURFACE_FIRST_JOIN : SelectorRoute.CHAT_PROMPT;
             case LANG_NO_ARGS:
+                if (dialogCapable) {
+                    return SelectorRoute.DIALOG_MANAGE;
+                }
                 return surfaceCapable ? SelectorRoute.SURFACE_MANAGE : SelectorRoute.CHAT_MENU;
             case LANG_WITH_ARGS:
             default:
@@ -70,6 +85,9 @@ public class LanguageSelectorManager {
     public static SelectorRoute decideFor(Player player, PlayerPreferences preferences, Trigger trigger) {
         return decide(
                 Config.displaykitSelectorEnabled,
+                // Independent of DisplayKit on purpose: the dialog is drawn by
+                // the client, so it still works when the library is missing
+                NativeDialogSelector.isSupported(player),
                 DisplayKitIntegration.isAvailable(),
                 DisplayKitIntegration.isSupported(player),
                 preferences.languageSelectorConfirmed,

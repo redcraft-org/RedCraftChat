@@ -109,7 +109,7 @@ public class DialogClickListener extends PacketListenerAbstract {
                     // The dialog closing is not an answer: without this the
                     // player is left guessing whether anything was saved
                     BasicMessageFormatter.sendInternalMessage(player,
-                            PlayerPreferencesManager.localizeMessageForPlayer(confirmed,
+                            PlayerPreferencesManager.localizeUiForPlayer(confirmed,
                                     UiStrings.SELECTOR_CONFIRMED),
                             NamedTextColor.GREEN);
                     break;
