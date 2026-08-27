@@ -25,9 +25,20 @@ public class LanguageSelectorRouteTest extends TestCase {
     }
 
     public void test_every_missing_capability_falls_to_the_chat_prompt() {
-        assertEquals(SelectorRoute.CHAT_PROMPT, route(false, true, true, false, Trigger.FIRST_JOIN));
         assertEquals(SelectorRoute.CHAT_PROMPT, route(true, false, true, false, Trigger.FIRST_JOIN));
         assertEquals(SelectorRoute.CHAT_PROMPT, route(true, true, false, false, Trigger.FIRST_JOIN));
+    }
+
+    /**
+     * The config flag is a kill switch for the feature, not for the surface
+     * alone: turning it off has to restore exactly what players saw before
+     * the selector existed, which is no join prompt of any kind.
+     */
+    public void test_the_config_flag_silences_the_chat_prompt_too() {
+        assertEquals(SelectorRoute.NONE, route(false, true, true, false, Trigger.FIRST_JOIN));
+        assertEquals(SelectorRoute.NONE, route(false, false, false, false, Trigger.FIRST_JOIN));
+        // and /lang keeps working, on the pre-existing chat menu
+        assertEquals(SelectorRoute.CHAT_MENU, route(false, true, true, false, Trigger.LANG_NO_ARGS));
     }
 
     public void test_lang_without_args_prefers_the_surface_when_capable() {

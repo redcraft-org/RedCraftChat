@@ -20,6 +20,9 @@ public class PlayerPreferenceApi extends SerializableModel {
 
     public List<PlayerProviderApi> providers;
 
+    @SerializedName(value = "language_selector_confirmed", alternate = {"languageSelectorConfirmed"})
+    public Boolean languageSelectorConfirmed;
+
     public PlayerPreferenceApi() {
         languages = new ArrayList<String>();
         providers = new ArrayList<PlayerProviderApi>();

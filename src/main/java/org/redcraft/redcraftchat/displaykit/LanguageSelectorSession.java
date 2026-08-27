@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.velocitypowered.api.proxy.Player;
 
@@ -56,7 +57,9 @@ public class LanguageSelectorSession {
 
     private ActionMenuSession actions;
     private VelocitySurfacePresentation presentation;
-    private volatile boolean closed = false;
+    // One latch for both close paths: the presentation closing itself and a
+    // dismiss racing it must run the teardown exactly once between them
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
     public LanguageSelectorSession(Player player, PlayerPreferences preferences, boolean firstJoin,
             Runnable onClosed) {
@@ -112,6 +115,21 @@ public class LanguageSelectorSession {
         return new ActionPage("rcc:language-selector", specs, title, java.util.Collections.emptyList());
     }
 
+    /**
+     * The look vector with pitch removed, normalized. Falls back to due
+     * south when the player is looking straight up or down and there is no
+     * horizontal component to keep.
+     */
+    private static Vec3d flatten(Vec3d look) {
+        double x = look.getX();
+        double z = look.getZ();
+        double length = Math.sqrt(x * x + z * z);
+        if (length < 1e-4) {
+            return new Vec3d(0.0, 0.0, 1.0);
+        }
+        return new Vec3d(x / length, 0.0, z / length);
+    }
+
     private ActionIcon languageIcon(SupportedLocale locale) {
         String code = locale.code.split("-")[0].toUpperCase(java.util.Locale.ROOT);
         return new ActionIcon.Text(code, ActionIcon.Default.INSTANCE);
@@ -119,6 +137,11 @@ public class LanguageSelectorSession {
 
     /** Presents the surface in front of the player. UI-thread hop inside. */
     public void present() {
+        if (closed.get()) {
+            // dismiss() beat us here: presenting now would spawn a surface
+            // nothing tracks and nothing can close
+            return;
+        }
         VelocityDisplayKit displayKit = DisplayKitIntegration.get();
         VelocityPlayerRef owner = displayKit.playerRef(player);
 
@@ -127,7 +150,14 @@ public class LanguageSelectorSession {
         if (eye.equals(Vec3d.Companion.getZERO())) {
             throw new IllegalStateException("No position known for the player yet");
         }
-        Vec3d center = eye.plus(look.times(ANCHOR_DISTANCE_BLOCKS));
+
+        // Flatten the look direction before anchoring. A player staring at
+        // their feet when the prompt fires would otherwise get the panel
+        // buried in the floor, where it is invisible, unclickable and
+        // (PERSISTENT lifecycle) never times out, while still eating their
+        // right-clicks through isTargetingInteractive.
+        Vec3d facing = flatten(look);
+        Vec3d center = eye.plus(facing.times(ANCHOR_DISTANCE_BLOCKS));
 
         Surface surface = new Surface(SURFACE_WIDTH_PX, SURFACE_HEIGHT_PX, Vec3d.Companion.getZERO(),
                 SURFACE_WIDTH_BLOCKS, io.schemat.displaykit.render.Billboard.FIXED);
@@ -150,7 +180,7 @@ public class LanguageSelectorSession {
         presentation = new VelocitySurfacePresentation(
                 owner,
                 surface,
-                SurfaceAnchor.Companion.facing(center, look),
+                SurfaceAnchor.Companion.facing(center, facing),
                 SurfaceLifecyclePolicy.PERSISTENT,
                 null,
                 "rcc-language-selector",
@@ -161,15 +191,33 @@ public class LanguageSelectorSession {
                 });
 
         // Repaint whenever the action model changes; close when it closes
+        // Fires synchronously on whichever thread mutated the session, which
+        // is always the UI thread by construction now
         actions.subscribe(snapshot -> {
             if (snapshot.getClosed()) {
                 closeQuietly();
-            } else if (presentation != null) {
+            } else if (presentation != null && !closed.get()) {
                 presentation.getSession().repaint();
             }
         }, false);
 
         presentation.present();
+    }
+
+    /**
+     * Runs a DisplayKit mutation on the library's UI owner thread.
+     *
+     * ActionMenuSession, the surface tree and the host are all confined to
+     * that thread and hold no locks of their own; the 50 ms ticker is
+     * already raycasting and repainting there. Anything touching them from a
+     * scheduler or event thread races it.
+     */
+    private void onUiThread(Runnable task) {
+        VelocityDisplayKit displayKit = DisplayKitIntegration.get();
+        if (displayKit == null) {
+            return;
+        }
+        displayKit.getUiThread().dispatch(task);
     }
 
     /** Language row clicked. Runs on the DisplayKit UI thread: hop off it. */
@@ -210,19 +258,25 @@ public class LanguageSelectorSession {
      * thread for the blocking label resolution.
      */
     public void refresh() {
-        if (closed) {
+        if (closed.get()) {
             return;
         }
         RedCraftChat plugin = RedCraftChat.getInstance();
         plugin.getProxy().getScheduler().buildTask(plugin, () -> {
             try {
-                if (closed) {
+                if (closed.get()) {
                     return;
                 }
                 PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);
+                // Blocking label resolution happens here, on the scheduler
                 ActionPage page = buildPage(preferences);
-                // The subscription repaints once the page is swapped
-                actions.replaceCurrent(page, true);
+                // The swap itself, and the repaint its subscription triggers,
+                // belong to the UI thread
+                onUiThread(() -> {
+                    if (!closed.get()) {
+                        actions.replaceCurrent(page, true);
+                    }
+                });
             } catch (Exception e) {
                 RedCraftChat.getInstance().getLogger().warn("Selector refresh failed for {}: {}",
                         player.getUsername(), e.getMessage());
@@ -231,29 +285,41 @@ public class LanguageSelectorSession {
     }
 
     private void markClosed() {
-        if (!closed) {
-            closed = true;
+        if (closed.compareAndSet(false, true)) {
             onClosed.run();
         }
     }
 
     public void closeQuietly() {
-        if (closed) {
+        if (!closed.compareAndSet(false, true)) {
             return;
         }
-        closed = true;
-        try {
-            if (presentation != null) {
-                presentation.close();
+        // Both the presentation and the action session are UI-thread
+        // confined; dismiss can arrive from a disconnect or server-switch
+        // event thread
+        onUiThread(() -> {
+            try {
+                if (presentation != null) {
+                    presentation.close();
+                }
+                actions.close();
+            } catch (Exception e) {
+                RedCraftChat.getInstance().getLogger().debug("Selector close raced: {}", e.getMessage());
             }
-            actions.close();
-        } catch (Exception e) {
-            RedCraftChat.getInstance().getLogger().debug("Selector close raced: {}", e.getMessage());
-        }
+        });
         onClosed.run();
     }
 
     public boolean isFirstJoin() {
         return firstJoin;
+    }
+
+    /**
+     * The client received a respawn or server switch, which destroys every
+     * entity this surface is made of. The session is dead whatever its state
+     * says, so drop it rather than leaving a panel nobody can see or close.
+     */
+    public void onWorldChanged() {
+        closeQuietly();
     }
 }

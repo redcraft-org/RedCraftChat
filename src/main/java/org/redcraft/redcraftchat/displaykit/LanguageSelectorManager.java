@@ -49,6 +49,13 @@ public class LanguageSelectorManager {
                 if (confirmed) {
                     return SelectorRoute.NONE;
                 }
+                // The config flag gates the whole feature, prompt included.
+                // Without this, turning the selector off still chat-prompts
+                // every unconfirmed player on the network, which is the
+                // opposite of a kill switch.
+                if (!selectorEnabled) {
+                    return SelectorRoute.NONE;
+                }
                 return surfaceCapable ? SelectorRoute.SURFACE_FIRST_JOIN : SelectorRoute.CHAT_PROMPT;
             case LANG_NO_ARGS:
                 return surfaceCapable ? SelectorRoute.SURFACE_MANAGE : SelectorRoute.CHAT_MENU;
@@ -79,9 +86,14 @@ public class LanguageSelectorManager {
     public static boolean openSurface(Player player, PlayerPreferences preferences, boolean firstJoin) {
         try {
             dismiss(player.getUniqueId());
+            UUID playerId = player.getUniqueId();
+            // Identity-keyed removal: a slow close from the previous session
+            // must never evict the successor that replaced it
+            LanguageSelectorSession[] self = new LanguageSelectorSession[1];
             LanguageSelectorSession session = new LanguageSelectorSession(player, preferences, firstJoin,
-                    () -> sessions.remove(player.getUniqueId()));
-            sessions.put(player.getUniqueId(), session);
+                    () -> sessions.remove(playerId, self[0]));
+            self[0] = session;
+            sessions.put(playerId, session);
             session.present();
             return true;
         } catch (Exception | LinkageError e) {
@@ -97,6 +109,17 @@ public class LanguageSelectorManager {
         LanguageSelectorSession session = sessions.remove(playerId);
         if (session != null) {
             session.closeQuietly();
+        }
+    }
+
+    /**
+     * The player respawned or changed server, so the surface's entities are
+     * gone from their client whatever the session believes.
+     */
+    public static void onWorldChanged(UUID playerId) {
+        LanguageSelectorSession session = sessions.remove(playerId);
+        if (session != null) {
+            session.onWorldChanged();
         }
     }
 
