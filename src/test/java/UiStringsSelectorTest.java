@@ -12,8 +12,9 @@ import org.redcraft.redcraftchat.locales.UiStrings;
 public class UiStringsSelectorTest extends TestCase {
 
     public void test_every_selector_string_is_warmed() {
-        assertTrue(UiStrings.ALL.contains(UiStrings.SELECTOR_TITLE));
-        assertTrue(UiStrings.ALL.contains(UiStrings.SELECTOR_FIRST_JOIN_HELP));
+        assertTrue(UiStrings.ALL.contains(UiStrings.SELECTOR_PRIMARY_TITLE));
+        assertTrue(UiStrings.ALL.contains(UiStrings.SELECTOR_OTHERS_TITLE));
+        assertTrue(UiStrings.ALL.contains(UiStrings.SELECTOR_OTHERS_HELP));
         assertTrue(UiStrings.ALL.contains(UiStrings.SELECTOR_DONE));
         assertTrue(UiStrings.ALL.contains(UiStrings.SELECTOR_JOIN_PROMPT));
         assertTrue(UiStrings.ALL.contains(UiStrings.SELECTOR_KEEP_CURRENT));

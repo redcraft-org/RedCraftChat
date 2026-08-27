@@ -38,8 +38,9 @@ public class UiStrings {
     public static final String MAIL_CLICK_TO_REPLY = "Click to reply";
     public static final String MAIL_HOVER_TIP = "Tip: Hover the message to see the full text";
 
-    public static final String SELECTOR_TITLE = "Choose your language";
-    public static final String SELECTOR_FIRST_JOIN_HELP = "Click a language to make it your main language";
+    public static final String SELECTOR_PRIMARY_TITLE = "What is your primary language?";
+    public static final String SELECTOR_OTHERS_TITLE = "Do you understand other languages?";
+    public static final String SELECTOR_OTHERS_HELP = "Tick every language you understand. Those will reach you as they were written, without being translated.";
     public static final String SELECTOR_DONE = "Done";
     public static final String SELECTOR_JOIN_PROMPT = "Please confirm the language you want to play in";
     public static final String SELECTOR_KEEP_CURRENT = "Keep %language%";
@@ -63,8 +64,9 @@ public class UiStrings {
             ADD_TO_LANGUAGES,
             REMOVE_FROM_LANGUAGES,
             CHANGE_MAIN_LANGUAGE,
-            SELECTOR_TITLE,
-            SELECTOR_FIRST_JOIN_HELP,
+            SELECTOR_PRIMARY_TITLE,
+            SELECTOR_OTHERS_TITLE,
+            SELECTOR_OTHERS_HELP,
             SELECTOR_DONE,
             SELECTOR_JOIN_PROMPT,
             SELECTOR_KEEP_CURRENT,
