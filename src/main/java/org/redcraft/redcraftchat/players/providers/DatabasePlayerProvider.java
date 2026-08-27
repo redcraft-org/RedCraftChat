@@ -127,7 +127,7 @@ public class DatabasePlayerProvider implements PlayerProvider {
 
         playerPreferences.minecraftUuid = preferences.minecraftUuid == null ? null : UUID.fromString(preferences.minecraftUuid);
         playerPreferences.lastKnownMinecraftName = preferences.lastKnownMinecraftName;
-        playerPreferences.previousKnownDiscordName = preferences.previousKnownDiscordName;
+        playerPreferences.previousKnownMinecraftName = preferences.previousKnownMinecraftName;
 
         playerPreferences.discordId = preferences.discordId;
         playerPreferences.lastKnownDiscordName = preferences.lastKnownDiscordName;
@@ -149,7 +149,7 @@ public class DatabasePlayerProvider implements PlayerProvider {
 
         playerPreferences.minecraftUuid = preferences.minecraftUuid == null ? null : preferences.minecraftUuid.toString();
         playerPreferences.lastKnownMinecraftName = preferences.lastKnownMinecraftName;
-        playerPreferences.previousKnownDiscordName = preferences.previousKnownDiscordName;
+        playerPreferences.previousKnownMinecraftName = preferences.previousKnownMinecraftName;
 
         playerPreferences.discordId = preferences.discordId;
         playerPreferences.lastKnownDiscordName = preferences.lastKnownDiscordName;
