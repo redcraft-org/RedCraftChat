@@ -20,9 +20,10 @@ import org.redcraft.redcraftchat.models.database.SupportedLocaleDatabase;
 public class DatabaseManager {
     private static Database database;
 
-    // The tables exist and every migration has run. Until then no write is
-    // safe: norm puts every mapped field in every UPDATE, so a table that
-    // predates a column rejects the whole statement.
+    // The tables exist and every migration has run. Until then the table is
+    // unusable, not merely stale: norm names every mapped field in both its
+    // SELECT list and its UPDATE, so a table that predates a column fails
+    // reads as well as writes with "Unknown column ... in 'field list'".
     private static volatile boolean schemaReady = false;
     private static long nextSchemaAttempt = 0;
 
@@ -59,8 +60,8 @@ public class DatabaseManager {
      * Creates the tables and runs the migrations, retrying on later calls if
      * the database is down right now. Boot cannot be the only chance: a proxy
      * that starts while MySQL is restarting would otherwise stay unmigrated
-     * until somebody restarts it, and every preference write would fail for
-     * as long as it ran.
+     * until somebody restarts it, and every preference read and write would
+     * fail for as long as it ran.
      */
     private static boolean ensureSchema() {
         if (schemaReady) {
@@ -111,8 +112,12 @@ public class DatabaseManager {
      * Idempotent migrations for live tables. createStructure only ever runs
      * "create table if not exists", so an existing install never picks up a
      * new column from it. A migration that fails leaves the schema not ready,
-     * which keeps the retry timer running instead of letting writes through
+     * which keeps the retry timer running instead of letting queries through
      * against a table norm cannot satisfy.
+     *
+     * Verified against MySQL 8: the ALTER lands on a populated table, a
+     * second run reports "Duplicate column name", pre-existing rows take the
+     * column default, and reads and writes both fail until it has run.
      */
     private static boolean migrate() {
         return ensureColumn("rcc_player_preferences", "`language_selector_confirmed` tinyint(1) NOT NULL DEFAULT 0");
