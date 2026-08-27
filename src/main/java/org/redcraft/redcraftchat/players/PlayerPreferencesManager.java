@@ -13,6 +13,7 @@ import org.redcraft.redcraftchat.displaykit.LanguageSelectorManager;
 import org.redcraft.redcraftchat.listeners.packets.HologramTranslator;
 import org.redcraft.redcraftchat.detection.DetectionManager;
 import org.redcraft.redcraftchat.locales.LocaleManager;
+import org.redcraft.redcraftchat.locales.UiTranslations;
 import org.redcraft.redcraftchat.models.caching.CacheCategory;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import org.redcraft.redcraftchat.players.providers.DatabasePlayerProvider;
@@ -219,6 +220,15 @@ public class PlayerPreferencesManager {
 
             if (preferences == null || playerSpeaksLanguage(preferences, messageLanguage)) {
                 return message;
+            }
+
+            // The interface's own words are a fixed set with hand-written
+            // translations. Using them skips a round trip and, more to the
+            // point, skips a machine translating a button label with nothing
+            // around it to tell it that is what it is.
+            String embedded = UiTranslations.lookup(message, preferences.mainLanguage);
+            if (embedded != null) {
+                return embedded;
             }
 
             return new TranslationManager(translationProvider).translate(message, messageLanguage, preferences.mainLanguage);

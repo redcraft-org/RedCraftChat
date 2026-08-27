@@ -84,6 +84,15 @@ public final class NativeDialogSelector {
         return UNDERSTOOD_PREFIX + localeCode.toLowerCase(java.util.Locale.ROOT).replace('-', '_');
     }
 
+    /**
+     * The language this flow filed under "understood" purely because it was
+     * picked as primary, per player. Remembered so that changing the primary
+     * takes the old trial back out, instead of leaving behind a language the
+     * player only passed through on the way to another one.
+     */
+    private static final java.util.Map<java.util.UUID, String> AUTO_ADDED =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
     private static final int BUTTON_WIDTH_PX = 150;
     private static final int BODY_WIDTH_PX = 300;
 
@@ -139,15 +148,6 @@ public final class NativeDialogSelector {
                     action));
         }
 
-        // Picking only picks. The click sets the language and this same
-        // dialog comes back translated into it, which is the confirmation,
-        // and Next is what moves on.
-        buttons.add(new ActionButton(
-                new CommonButtonData(
-                        Component.text(localize(preferences, UiStrings.SELECTOR_NEXT)),
-                        null,
-                        BUTTON_WIDTH_PX),
-                new DynamicCustomAction(GO_TO_OTHERS, null)));
 
         CommonDialogData common = new CommonDialogData(
                 Component.text(localize(preferences, UiStrings.SELECTOR_PRIMARY_TITLE)),
@@ -166,7 +166,17 @@ public final class NativeDialogSelector {
                 body(preferences, UiStrings.SELECTOR_PRIMARY_HELP),
                 Collections.emptyList());
 
-        return send(player, new MultiActionDialog(common, buttons, null, 1));
+        // The advance button goes in the exit slot rather than the grid: the
+        // client draws that one apart from the list, which is the gap between
+        // the languages and the way forward.
+        ActionButton advance = new ActionButton(
+                new CommonButtonData(
+                        Component.text(localize(preferences, UiStrings.SELECTOR_CONTINUE)),
+                        null,
+                        BUTTON_WIDTH_PX),
+                new DynamicCustomAction(GO_TO_OTHERS, null));
+
+        return send(player, new MultiActionDialog(common, buttons, advance, 1));
     }
 
     /**
@@ -200,19 +210,24 @@ public final class NativeDialogSelector {
                             "false")));
         }
 
+        // "Submit" and "Change main language" say what they do without
+        // relying on the reader knowing where they are. Next, Done and Back
+        // are each one word whose meaning lives in the surrounding screen,
+        // which is exactly what a translator never sees.
         List<ActionButton> buttons = new ArrayList<>();
         buttons.add(new ActionButton(
                 new CommonButtonData(
-                        Component.text(localize(preferences, UiStrings.SELECTOR_DONE)),
+                        Component.text(localize(preferences, UiStrings.SELECTOR_SUBMIT)),
                         null,
                         BUTTON_WIDTH_PX),
                 new DynamicCustomAction(CONFIRM_OTHERS, null)));
-        buttons.add(new ActionButton(
+
+        ActionButton back = new ActionButton(
                 new CommonButtonData(
-                        Component.text(localize(preferences, UiStrings.SELECTOR_BACK)),
+                        Component.text(localize(preferences, UiStrings.CHANGE_MAIN_LANGUAGE)),
                         null,
                         BUTTON_WIDTH_PX),
-                new DynamicCustomAction(BACK_TO_PRIMARY, null)));
+                new DynamicCustomAction(BACK_TO_PRIMARY, null));
 
         CommonDialogData common = new CommonDialogData(
                 Component.text(localize(preferences, UiStrings.SELECTOR_OTHERS_TITLE)),
@@ -225,7 +240,24 @@ public final class NativeDialogSelector {
                 body(preferences, UiStrings.SELECTOR_OTHERS_HELP),
                 inputs);
 
-        return send(player, new MultiActionDialog(common, buttons, null, 1));
+        return send(player, new MultiActionDialog(common, buttons, back, 1));
+    }
+
+    /** Records what setting this primary added on the player's behalf. */
+    public static void rememberAutoAdded(java.util.UUID playerId, String autoAdded) {
+        if (autoAdded == null) {
+            AUTO_ADDED.remove(playerId);
+        } else {
+            AUTO_ADDED.put(playerId, autoAdded);
+        }
+    }
+
+    public static String autoAdded(java.util.UUID playerId) {
+        return AUTO_ADDED.get(playerId);
+    }
+
+    public static void forget(java.util.UUID playerId) {
+        AUTO_ADDED.remove(playerId);
     }
 
     /** Dismisses whatever dialog the player currently has open. */

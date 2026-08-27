@@ -9,6 +9,7 @@ import com.github.retrooper.packetevents.event.PacketListenerPriority;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.protocol.nbt.NBT;
 import com.github.retrooper.packetevents.protocol.nbt.NBTCompound;
+import com.github.retrooper.packetevents.protocol.nbt.NBTNumber;
 import com.github.retrooper.packetevents.protocol.nbt.NBTString;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.resources.ResourceLocation;
@@ -16,10 +17,15 @@ import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientCu
 import com.velocitypowered.api.proxy.Player;
 
 import org.redcraft.redcraftchat.RedCraftChat;
+import org.redcraft.redcraftchat.displaykit.LanguageSelectorSession;
+import org.redcraft.redcraftchat.helpers.BasicMessageFormatter;
+import org.redcraft.redcraftchat.locales.UiStrings;
 import org.redcraft.redcraftchat.locales.LocaleManager;
 import org.redcraft.redcraftchat.models.locales.SupportedLocale;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
+
+import net.kyori.adventure.text.format.NamedTextColor;
 
 /**
  * The return channel for the native dialog.
@@ -79,11 +85,10 @@ public class DialogClickListener extends PacketListenerAbstract {
                 case "pick_primary":
                     String code = readString(values, NativeDialogSelector.LANGUAGE_KEY);
                     if (code != null) {
-                        PlayerPreferencesManager.setMainPlayerLocale(preferences, code);
-                        preferences = PlayerPreferencesManager.getPlayerPreferences(player);
+                        preferences = setPrimary(player, preferences, code);
                     }
                     // Back to the same question, now written in the language
-                    // just chosen. Next is what leaves this step.
+                    // just chosen. Continue is what leaves this step.
                     NativeDialogSelector.showPrimary(player, preferences);
                     break;
 
@@ -100,6 +105,13 @@ public class DialogClickListener extends PacketListenerAbstract {
                     PlayerPreferences confirmed = PlayerPreferencesManager.getPlayerPreferences(player);
                     PlayerPreferencesManager.confirmLanguageSelection(confirmed);
                     NativeDialogSelector.clear(player);
+                    NativeDialogSelector.forget(playerId);
+                    // The dialog closing is not an answer: without this the
+                    // player is left guessing whether anything was saved
+                    BasicMessageFormatter.sendInternalMessage(player,
+                            PlayerPreferencesManager.localizeMessageForPlayer(confirmed,
+                                    UiStrings.SELECTOR_CONFIRMED),
+                            NamedTextColor.GREEN);
                     break;
 
                 default:
@@ -109,6 +121,34 @@ public class DialogClickListener extends PacketListenerAbstract {
             RedCraftChat.getInstance().getLogger().warn("Language dialog action {} failed for {}: {}",
                     id.getKey(), player.getUsername(), e.getMessage());
         }
+    }
+
+    /**
+     * Sets the primary language, taking back the previous trial if this flow
+     * was the only reason it counted as understood.
+     *
+     * Without this, trying French and then English leaves French ticked on
+     * the next screen as a language the player never claimed to read.
+     */
+    private PlayerPreferences setPrimary(Player player, PlayerPreferences preferences, String code)
+            throws Exception {
+        java.util.UUID playerId = player.getUniqueId();
+        boolean alreadyUnderstood = preferences.languages != null
+                && preferences.languages.contains(code);
+        String autoAdded = NativeDialogSelector.autoAdded(playerId);
+
+        String drop = LanguageSelectorSession.languageToDropOnPrimaryChange(autoAdded, code);
+        if (drop != null && preferences.languages != null) {
+            // In memory only: setMainPlayerLocale persists straight after, so
+            // the swap costs one write rather than two
+            preferences.languages.remove(drop);
+        }
+
+        PlayerPreferencesManager.setMainPlayerLocale(preferences, code);
+        NativeDialogSelector.rememberAutoAdded(playerId,
+                LanguageSelectorSession.rememberAutoAdded(autoAdded, code, alreadyUnderstood));
+
+        return PlayerPreferencesManager.getPlayerPreferences(player);
     }
 
     /**
@@ -151,15 +191,29 @@ public class DialogClickListener extends PacketListenerAbstract {
     }
 
     /**
-     * Reads one string out of the payload. Typed lookup rather than a cast:
-     * the payload is whatever the client chose to send, and a tag of another
-     * type is simply not an answer this dialog asked for.
+     * Reads one string out of the payload.
+     *
+     * The declared on_true and on_false strings are what template
+     * substitution uses; a custom payload is free to carry the value in its
+     * own type instead, so a boolean can arrive as a byte rather than as the
+     * word. Reading only NBTString silently drops those, which reads to the
+     * player as a submit button that does nothing.
      */
     private String readString(NBTCompound values, String key) {
         if (values == null) {
             return null;
         }
-        NBTString tag = values.getTagOfTypeOrNull(key, NBTString.class);
-        return tag == null ? null : tag.getValue();
+        NBT tag = values.getTagOrNull(key);
+        if (tag == null) {
+            return null;
+        }
+        if (tag instanceof NBTString) {
+            return ((NBTString) tag).getValue();
+        }
+        if (tag instanceof NBTNumber) {
+            // Any non-zero number is the ticked state
+            return ((NBTNumber) tag).getAsInt() != 0 ? "true" : "false";
+        }
+        return null;
     }
 }

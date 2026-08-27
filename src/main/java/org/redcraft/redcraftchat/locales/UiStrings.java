@@ -47,6 +47,8 @@ public class UiStrings {
     // "Back" both have a common non-verb reading.
     public static final String SELECTOR_PRIMARY_HELP = "All chat will be translated into the language you choose";
     public static final String SELECTOR_OTHERS_HELP = "Messages in the languages you tick will not be translated";
+    public static final String SELECTOR_SUBMIT = "Submit";
+    public static final String SELECTOR_CONTINUE = "Continue";
     public static final String SELECTOR_NEXT = "Next";
     public static final String SELECTOR_BACK = "Go back";
     public static final String SELECTOR_CLOSE = "Close menu";
@@ -78,6 +80,8 @@ public class UiStrings {
             SELECTOR_OTHERS_TITLE,
             SELECTOR_PRIMARY_HELP,
             SELECTOR_OTHERS_HELP,
+            SELECTOR_SUBMIT,
+            SELECTOR_CONTINUE,
             SELECTOR_NEXT,
             SELECTOR_BACK,
             SELECTOR_CLOSE,
