@@ -313,13 +313,4 @@ public class LanguageSelectorSession {
     public boolean isFirstJoin() {
         return firstJoin;
     }
-
-    /**
-     * The client received a respawn or server switch, which destroys every
-     * entity this surface is made of. The session is dead whatever its state
-     * says, so drop it rather than leaving a panel nobody can see or close.
-     */
-    public void onWorldChanged() {
-        closeQuietly();
-    }
 }

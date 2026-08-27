@@ -113,17 +113,6 @@ public class LanguageSelectorManager {
     }
 
     /**
-     * The player respawned or changed server, so the surface's entities are
-     * gone from their client whatever the session believes.
-     */
-    public static void onWorldChanged(UUID playerId) {
-        LanguageSelectorSession session = sessions.remove(playerId);
-        if (session != null) {
-            session.onWorldChanged();
-        }
-    }
-
-    /**
      * Preference-change hook, called from updatePlayerPreferences the same
      * way HologramTranslator's is. A live selector re-renders its labels in
      * the player's new language.
