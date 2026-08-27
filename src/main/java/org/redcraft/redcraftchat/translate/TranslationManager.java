@@ -49,6 +49,12 @@ public class TranslationManager {
             throw new IllegalStateException("TranslationManager was called but translation is disabled in the configuration");
         }
 
+        if (this.translationProvider.translatesRawText()) {
+            // Nothing is hidden from the provider, it was told what the codes
+            // and placeholders mean instead
+            return this.translationProvider.translate(text, sourceLanguage.toUpperCase(), targetLanguage.toUpperCase());
+        }
+
         TokenizedMessage tokenizedMessage = TokenizerManager.tokenizeElements(text, true);
 
         String translated = this.translationProvider.translate(tokenizedMessage.getOriginalTokenizedMessage(), sourceLanguage.toUpperCase(), targetLanguage.toUpperCase());

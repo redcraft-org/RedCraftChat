@@ -24,6 +24,21 @@ public class MessageTokenizerTest extends TestCase {
         assertEquals(expectedTokenizedMessage.toString(), actualTokenizedMessage.toString());
     }
 
+    public void testLineBreaksReachTheEngine() {
+        // Line returns used to be tokenized like everything else, which left
+        // the hash glued to the words on either side and hid the line
+        // structure from the engine exactly when it mattered most: a multi
+        // line message is translated as one text so the lines give each other
+        // context, and it can only keep them apart if it can see them
+        String testMessage = "Welcome to the\nCreative Build\nserver!";
+
+        TokenizedMessage tokenized = TokenizerManager.tokenizeElements(testMessage, false);
+
+        assertEquals(testMessage, tokenized.getOriginalTokenizedMessage());
+        assertEquals(3, tokenized.getOriginalTokenizedMessage().split("\n", -1).length);
+        assertEquals(testMessage, TokenizerManager.untokenizeElements(tokenized));
+    }
+
     public void testUntokenizer() {
         String testRawMessage = "Hello 280aa0a, can you check dc20cb6 on 1d36664 please? 6d8f62c You can also use 3eccd38 if you want to 🤷‍♀️";
 

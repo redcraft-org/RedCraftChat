@@ -1,23 +1,29 @@
 package org.redcraft.redcraftchat.listeners.packets;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 
 import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.bridge.MinecraftDiscordBridge;
 import org.redcraft.redcraftchat.detection.DetectionManager;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
+import org.redcraft.redcraftchat.translate.LineBlock;
 import org.redcraft.redcraftchat.translate.TranslationManager;
 
 import com.github.retrooper.packetevents.event.PacketListenerAbstract;
 import com.github.retrooper.packetevents.event.PacketListenerPriority;
 import com.github.retrooper.packetevents.event.PacketSendEvent;
+import com.github.retrooper.packetevents.event.UserDisconnectEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.player.User;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSystemChatMessage;
@@ -36,6 +42,21 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
  * PacketEvents only sees the player facing channel on Velocity, so the packet is
  * caught on its way out: the original is dropped and a translated copy is sent
  * back to that player once the translation completed off the netty thread.
+ *
+ * A plugin printing a menu, a help page or a multi line announcement sends one
+ * packet per line, and a line pulled out of that block is a poor thing to
+ * translate: it has lost the sentence it belonged to, and a short one carries
+ * too little to even detect a language on. Messages arriving within
+ * upstream-chat-grouping-delay of each other are therefore collected and
+ * translated as one block, then handed back out one packet at a time in the
+ * order they arrived. That delay is what every system message now waits before
+ * the player sees it, which is why it belongs in the config and is measured in
+ * milliseconds rather than ticks.
+ *
+ * Only plain chat joins a block. Action bar text is a different surface that
+ * happens to share this packet, so it is translated on its own, and anything
+ * clickable is forwarded untouched, since serialising it down to legacy text
+ * would drop the click.
  */
 public class SystemChatInterceptor extends PacketListenerAbstract {
 
@@ -56,6 +77,48 @@ public class SystemChatInterceptor extends PacketListenerAbstract {
      * task and lost the order, which is visible on anything multi line.
      */
     private static final Map<UUID, CompletableFuture<Void>> pendingMessages = new ConcurrentHashMap<>();
+
+    /** Messages waiting for their block to fill, one buffer per player. */
+    private static final Map<UUID, Batch> batches = new ConcurrentHashMap<>();
+
+    private static class Batch {
+        final List<BufferedMessage> messages = new ArrayList<>();
+        boolean flushScheduled;
+    }
+
+    /**
+     * One captured packet, with the decision about how it may be translated
+     * already taken: the classification reads the component, which is work
+     * that does not belong on the netty thread twice.
+     */
+    public static class BufferedMessage {
+        public final Component message;
+        public final boolean overlay;
+
+        /** The text to translate, null when this message is forwarded as is. */
+        public final String legacy;
+
+        /** Whether it may share a block with the other messages. */
+        public final boolean groupable;
+
+        public BufferedMessage(Component message, boolean overlay) {
+            this.message = message;
+            this.overlay = overlay;
+
+            String text = null;
+            if (message instanceof TextComponent && !isInteractive(message)) {
+                String serialized = LegacyComponentSerializer.legacySection().serialize(message);
+                if (LineBlock.hasTranslatableText(serialized)) {
+                    text = serialized;
+                }
+            }
+
+            this.legacy = text;
+            // Action bar text is its own display, blocking it together with
+            // chat would translate two unrelated things as one sentence
+            this.groupable = text != null && !overlay;
+        }
+    }
 
     public SystemChatInterceptor() {
         super(PacketListenerPriority.NORMAL);
@@ -90,8 +153,67 @@ public class SystemChatInterceptor extends PacketListenerAbstract {
         // is emitted from a proxy thread instead
         event.setCancelled(true);
 
-        User user = event.getUser();
-        enqueue(player, () -> handleChatPacket(user, player, message, overlay));
+        buffer(event.getUser(), player, new BufferedMessage(message, overlay));
+    }
+
+    @Override
+    public void onUserDisconnect(UserDisconnectEvent event) {
+        UUID playerUniqueId = event.getUser().getProfile().getUUID();
+        if (playerUniqueId != null) {
+            batches.remove(playerUniqueId);
+        }
+    }
+
+    /**
+     * Adds a message to its player's block and, if this opened the block,
+     * schedules the flush that will close it. Only the message that opened it
+     * schedules, so the window runs from the first message rather than being
+     * pushed back by every one that follows.
+     */
+    private void buffer(User user, Player player, BufferedMessage message) {
+        Batch batch = batches.computeIfAbsent(player.getUniqueId(), id -> new Batch());
+
+        boolean opened;
+        synchronized (batch) {
+            batch.messages.add(message);
+            opened = !batch.flushScheduled;
+            batch.flushScheduled = true;
+        }
+
+        if (!opened) {
+            return;
+        }
+
+        RedCraftChat plugin = RedCraftChat.getInstance();
+        plugin.getProxy().getScheduler().buildTask(plugin, () -> {
+            List<BufferedMessage> drained = drain(player.getUniqueId());
+            if (!drained.isEmpty()) {
+                // The chain, not the scheduler, decides when this batch is
+                // sent: its own translation may outlast the next batch's
+                enqueue(player, () -> handleBatch(user, player, drained));
+            }
+        }).delay(Math.max(0, Config.upstreamChatGroupingDelay), TimeUnit.MILLISECONDS).schedule();
+    }
+
+    /**
+     * Empties the block in place rather than dropping it from the map: a
+     * message being buffered right now holds this same object, and taking it
+     * away would lose that message with nothing left to schedule its flush.
+     * Clearing the flag under the same lock instead means such a message finds
+     * an empty block and opens the next one itself.
+     */
+    private static List<BufferedMessage> drain(UUID playerUniqueId) {
+        Batch batch = batches.get(playerUniqueId);
+        if (batch == null) {
+            return Collections.emptyList();
+        }
+
+        synchronized (batch) {
+            List<BufferedMessage> drained = new ArrayList<>(batch.messages);
+            batch.messages.clear();
+            batch.flushScheduled = false;
+            return drained;
+        }
     }
 
     private void enqueue(Player player, Runnable task) {
@@ -110,48 +232,100 @@ public class SystemChatInterceptor extends PacketListenerAbstract {
         queued.whenComplete((result, error) -> pendingMessages.remove(playerUniqueId, queued));
     }
 
-    public static void handleChatPacket(User user, Player player, Component message, boolean overlay) {
-        Component translatedMessageComponent = message;
+    /**
+     * Translates a batch and sends every message of it, in arrival order. The
+     * groupable ones go to the provider as one block, the rest keep the one at
+     * a time behaviour.
+     */
+    static void handleBatch(User user, Player player, List<BufferedMessage> batch) {
+        Map<String, String> translated = translateLines(player, blockOf(batch));
 
-        // Translating serialises the component down to a legacy string, which
-        // keeps the colours and drops everything else. A menu that went through
-        // that came out unclickable, so anything carrying a click is forwarded
-        // untouched. RedCraftChat builds its own menus in the player's language
-        // already, so nothing is lost by leaving them alone.
-        if (isInteractive(message)) {
-            sendMessage(user, player, message, overlay);
-            return;
-        }
+        for (BufferedMessage buffered : batch) {
+            Component message = buffered.message;
 
-        // Anything else than plain text is forwarded as it came
-        if (message instanceof TextComponent) {
-            LegacyComponentSerializer serializer = LegacyComponentSerializer.legacySection();
-            String originalMessage = serializer.serialize(message);
+            if (buffered.legacy != null) {
+                String result = buffered.groupable
+                        ? translated.get(buffered.legacy)
+                        : translateLines(player, Collections.singletonList(buffered.legacy)).get(buffered.legacy);
 
-            try {
-                String sourceLanguage = DetectionManager.getLanguage(originalMessage);
-
-                if (!PlayerPreferencesManager.playerSpeaksLanguage(player, sourceLanguage)) {
-                    String targetLanguage = PlayerPreferencesManager.getMainPlayerLanguage(player);
-                    if (sourceLanguage != null && !sourceLanguage.equalsIgnoreCase(targetLanguage)) {
-                        String translatedMessage = translationManager.translate(originalMessage, sourceLanguage, targetLanguage);
-
-                        // The original text only hovers over messages that were
-                        // actually translated
-                        translatedMessageComponent = serializer.deserialize(translatedMessage)
-                                .hoverEvent(HoverEvent.showText(serializer.deserialize(originalMessage)));
-                    }
+                if (result != null && !result.equals(buffered.legacy)) {
+                    LegacyComponentSerializer serializer = LegacyComponentSerializer.legacySection();
+                    // The original text only hovers over messages that were
+                    // actually translated
+                    message = serializer.deserialize(result)
+                            .hoverEvent(HoverEvent.showText(serializer.deserialize(buffered.legacy)));
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
-                String messageTemplate = "Error while translating message [%s -> %s] %s";
-                String debugMessage = String.format(messageTemplate, MinecraftDiscordBridge.getServerName(player),
-                        player.getUsername(), originalMessage);
-                RedCraftChat.getInstance().getLogger().error(debugMessage);
+            }
+
+            sendMessage(user, player, message, buffered.overlay);
+        }
+    }
+
+    /** The lines of a batch that are translated together, in arrival order. */
+    public static List<String> blockOf(List<BufferedMessage> batch) {
+        List<String> block = new ArrayList<>();
+        for (BufferedMessage buffered : batch) {
+            if (buffered.groupable) {
+                block.add(buffered.legacy);
             }
         }
+        return block;
+    }
 
-        sendMessage(user, player, translatedMessageComponent, overlay);
+    /**
+     * Translates lines that belong together, keyed by their original text. The
+     * language is detected on the whole block, which is the point of grouping:
+     * a line reading "server!" has nothing to detect on its own. An empty map
+     * means the text stays as it is, whether because the player already speaks
+     * it or because the translation failed.
+     */
+    static Map<String, String> translateLines(Player player, List<String> lines) {
+        if (lines.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        String block = LineBlock.join(lines);
+
+        try {
+            String sourceLanguage = DetectionManager.getLanguage(block);
+
+            if (PlayerPreferencesManager.playerSpeaksLanguage(player, sourceLanguage)) {
+                return Collections.emptyMap();
+            }
+
+            String targetLanguage = PlayerPreferencesManager.getMainPlayerLanguage(player);
+            if (sourceLanguage == null || sourceLanguage.equalsIgnoreCase(targetLanguage)) {
+                return Collections.emptyMap();
+            }
+
+            if (lines.size() == 1) {
+                return Collections.singletonMap(lines.get(0),
+                        translationManager.translate(block, sourceLanguage, targetLanguage));
+            }
+
+            Map<String, String> aligned = LineBlock.align(lines,
+                    translationManager.translate(block, sourceLanguage, targetLanguage));
+
+            if (aligned != null) {
+                return aligned;
+            }
+
+            // The provider reshaped the block, so its lines cannot be matched
+            // back to the packets they came from. Translating them one by one
+            // loses the context but never shows text on the wrong line
+            Map<String, String> lineByLine = new LinkedHashMap<>();
+            for (String line : lines) {
+                lineByLine.put(line, translationManager.translate(line, sourceLanguage, targetLanguage));
+            }
+            return lineByLine;
+        } catch (Exception e) {
+            e.printStackTrace();
+            String messageTemplate = "Error while translating message [%s -> %s] %s";
+            String debugMessage = String.format(messageTemplate, MinecraftDiscordBridge.getServerName(player),
+                    player.getUsername(), block);
+            RedCraftChat.getInstance().getLogger().error(debugMessage);
+            return Collections.emptyMap();
+        }
     }
 
     private static void sendMessage(User user, Player player, Component message, boolean overlay) {
@@ -172,7 +346,7 @@ public class SystemChatInterceptor extends PacketListenerAbstract {
      * A click anywhere in the tree makes the whole message interactive, since
      * serialising any part of it would drop that child's event.
      */
-    private static boolean isInteractive(Component message) {
+    public static boolean isInteractive(Component message) {
         if (message.clickEvent() != null) {
             return true;
         }

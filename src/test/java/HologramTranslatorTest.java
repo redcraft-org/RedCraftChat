@@ -1,7 +1,9 @@
 import junit.framework.*;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.redcraft.redcraftchat.listeners.packets.HologramTranslator;
@@ -175,5 +177,76 @@ public class HologramTranslatorTest extends TestCase {
         assertFalse(HologramTranslator.cacheKey("fr", line)
                 .equals(HologramTranslator.cacheKey("de", line)));
         assertEquals(HologramTranslator.cacheKey("fr", line), HologramTranslator.cacheKey("fr", line));
+    }
+
+    private static Map<Integer, double[]> stackedColumn() {
+        // One hologram, lines a quarter block apart. The grouping must go by
+        // the geometry, never by entity id order
+        Map<Integer, double[]> positions = new HashMap<Integer, double[]>();
+        positions.put(1, new double[] {10.5, 64.50, -3.5});
+        positions.put(2, new double[] {10.5, 64.25, -3.5});
+        positions.put(3, new double[] {10.5, 64.00, -3.5});
+        return positions;
+    }
+
+    private static Map<Integer, String> welcomeTexts() {
+        Map<Integer, String> texts = new HashMap<Integer, String>();
+        texts.put(1, "Welcome to the");
+        texts.put(2, "Creative Build");
+        texts.put(3, "server!");
+        return texts;
+    }
+
+    public void testAHologramGroupsTopLineFirst() {
+        // The tail line alone is untranslatable, the group is what gives the
+        // model its context, in reading order whichever line asked
+        List<String> expected = Arrays.asList("Welcome to the", "Creative Build", "server!");
+
+        assertEquals(expected, HologramTranslator.groupHologramLines(3, stackedColumn(), welcomeTexts()));
+        assertEquals(expected, HologramTranslator.groupHologramLines(1, stackedColumn(), welcomeTexts()));
+    }
+
+    public void testANeighbouringHologramIsNotContext() {
+        // A second hologram a few blocks away must not leak into the group
+        Map<Integer, double[]> positions = stackedColumn();
+        positions.put(4, new double[] {14.5, 64.25, -3.5});
+        Map<Integer, String> texts = welcomeTexts();
+        texts.put(4, "/p auto to get your own plot");
+
+        assertEquals(Arrays.asList("Welcome to the", "Creative Build", "server!"),
+                HologramTranslator.groupHologramLines(3, positions, texts));
+    }
+
+    public void testStackedHologramsSplitOnTheGap() {
+        // Two holograms sharing a column, standing a full block apart, are
+        // separate texts and must not pollute each other's context
+        Map<Integer, double[]> positions = stackedColumn();
+        positions.put(4, new double[] {10.5, 66.00, -3.5});
+        positions.put(5, new double[] {10.5, 65.75, -3.5});
+        Map<Integer, String> texts = welcomeTexts();
+        texts.put(4, "This spawn will");
+        texts.put(5, "be rebuilt later");
+
+        assertEquals(Arrays.asList("Welcome to the", "Creative Build", "server!"),
+                HologramTranslator.groupHologramLines(1, positions, texts));
+        assertEquals(Arrays.asList("This spawn will", "be rebuilt later"),
+                HologramTranslator.groupHologramLines(5, positions, texts));
+    }
+
+    public void testMissingGeometryDegradesToNoGroup() {
+        // An entity with no recorded spawn position cannot be grouped, the
+        // caller then translates the line alone as before
+        assertNull(HologramTranslator.groupHologramLines(7, stackedColumn(), welcomeTexts()));
+    }
+
+    public void testTheGroupIsWhatGoesToTheProvider() {
+        // The alignment rules themselves live in LineBlockTest, this is the
+        // hologram's own path into them
+        Map<String, String> aligned = HologramTranslator.alignGroupTranslation(
+                Arrays.asList("Welcome to the", "Creative Build", "server!"),
+                "Добро пожаловать на\nCreative Build\nсервер!");
+
+        assertNotNull(aligned);
+        assertEquals("сервер!", aligned.get("server!"));
     }
 }
