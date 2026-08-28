@@ -1,6 +1,9 @@
 package org.redcraft.redcraftchat.commands.minecraft;
 
 import java.util.Arrays;
+import org.redcraft.redcraftchat.commands.Suggestions;
+import java.util.List;
+import java.util.ArrayList;
 
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.helpers.BasicMessageFormatter;
@@ -53,6 +56,22 @@ public class MsgMinecraftCommand implements SimpleCommand {
     public void execute(Invocation invocation) {
         var commandHandler = new MsgMinecraftCommandHandler(invocation.source(), invocation.arguments());
         RedCraftChat.getInstance().getProxy().getScheduler().buildTask(RedCraftChat.getInstance(), commandHandler).schedule();
+    }
+
+
+    @Override
+    public List<String> suggest(Invocation invocation) {
+        String[] args = invocation.arguments();
+        if (Suggestions.wordIndex(args) > 0) {
+            // Past the recipient it is free text, and guessing at message
+            // words would be noise
+            return java.util.List.of();
+        }
+        List<String> names = new ArrayList<>();
+        for (Player online : RedCraftChat.getInstance().getProxy().getAllPlayers()) {
+            names.add(online.getUsername());
+        }
+        return Suggestions.matching(names, Suggestions.currentWord(args));
     }
 
     @Override

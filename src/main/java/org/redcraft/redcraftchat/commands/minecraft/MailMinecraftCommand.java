@@ -1,6 +1,7 @@
 package org.redcraft.redcraftchat.commands.minecraft;
 
 import java.io.IOException;
+import org.redcraft.redcraftchat.commands.Suggestions;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -350,6 +351,30 @@ public class MailMinecraftCommand implements SimpleCommand {
     public void execute(Invocation invocation) {
         var commandHandler = new MailMinecraftCommandHandler(invocation.source(), invocation.arguments());
         RedCraftChat.getInstance().getProxy().getScheduler().buildTask(RedCraftChat.getInstance(), commandHandler).schedule();
+    }
+
+
+    @Override
+    public List<String> suggest(Invocation invocation) {
+        String[] args = invocation.arguments();
+        int index = Suggestions.wordIndex(args);
+        String word = Suggestions.currentWord(args);
+
+        if (index == 0) {
+            return Suggestions.matching(java.util.List.of("list", "listall", "read", "send"), word);
+        }
+        if (index == 1 && args.length > 0 && "send".equalsIgnoreCase(args[0])) {
+            return Suggestions.matching(onlinePlayerNames(), word);
+        }
+        return java.util.List.of();
+    }
+
+    private List<String> onlinePlayerNames() {
+        List<String> names = new ArrayList<>();
+        for (Player online : RedCraftChat.getInstance().getProxy().getAllPlayers()) {
+            names.add(online.getUsername());
+        }
+        return names;
     }
 
     @Override

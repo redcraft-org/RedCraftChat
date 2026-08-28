@@ -1,6 +1,7 @@
 package org.redcraft.redcraftchat.commands.minecraft;
 
 import java.io.IOException;
+import org.redcraft.redcraftchat.commands.Suggestions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -238,6 +239,33 @@ public class LangMinecraftCommand implements SimpleCommand {
     public void execute(Invocation invocation) {
         var commandHandler = new LangMinecraftCommandHandler(invocation.source(), invocation.arguments());
         RedCraftChat.getInstance().getProxy().getScheduler().buildTask(RedCraftChat.getInstance(), commandHandler).schedule();
+    }
+
+
+    /**
+     * Java clients ask per keystroke, so this can use the live locale list.
+     * Bedrock never reaches here, it completes from the hints instead.
+     */
+    @Override
+    public List<String> suggest(Invocation invocation) {
+        String[] args = invocation.arguments();
+        if (Suggestions.wordIndex(args) > 0) {
+            // Only the second word can be "main", after a locale code
+            return Suggestions.matching(java.util.List.of("main"), Suggestions.currentWord(args));
+        }
+
+        List<String> options = new ArrayList<>(java.util.List.of("confirm", "panel", "dialog"));
+        try {
+            List<SupportedLocale> locales = LocaleManager.getSupportedLocales();
+            if (locales != null) {
+                for (SupportedLocale locale : locales) {
+                    options.add(locale.code);
+                }
+            }
+        } catch (Exception e) {
+            // A provider hiccup should cost the codes, not the whole completion
+        }
+        return Suggestions.matching(options, Suggestions.currentWord(args));
     }
 
     @Override

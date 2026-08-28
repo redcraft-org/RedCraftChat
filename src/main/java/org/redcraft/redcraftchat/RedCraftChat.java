@@ -1,9 +1,13 @@
 package org.redcraft.redcraftchat;
 
+import org.redcraft.redcraftchat.models.locales.SupportedLocale;
+import org.redcraft.redcraftchat.locales.LocaleManager;
+import org.redcraft.redcraftchat.commands.CommandHints;
 import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.PacketEventsAPI;
 import com.github.retrooper.packetevents.settings.PacketEventsSettings;
 import com.google.inject.Inject;
+import com.velocitypowered.api.command.CommandMeta;
 import com.velocitypowered.api.command.CommandManager;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
@@ -19,6 +23,8 @@ import io.github.retrooper.packetevents.velocity.factory.VelocityPacketEventsBui
 import net.dv8tion.jda.api.JDA;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
@@ -176,6 +182,7 @@ public class RedCraftChat {
 		CommandManager commandManager = proxy.getCommandManager();
 		jsonApiServer.start();
 
+
 		// Aliases come from the config, so a server can be given a shortcut
 		// without shipping a command for it
 		for (Map.Entry<String, String> alias : Config.commandAliases.entrySet()) {
@@ -184,15 +191,38 @@ public class RedCraftChat {
 				new AliasMinecraftCommand(alias.getValue()));
 		}
 
-		commandManager.register(commandManager.metaBuilder("broadcast").aliases("bc", "alert").plugin(this).build(), new BroadcastMinecraftCommand());
-		commandManager.register(commandManager.metaBuilder("commandspy").aliases("cspy").plugin(this).build(), new CommandSpyMinecraftCommand());
-		commandManager.register(commandManager.metaBuilder("lang").aliases("languages").plugin(this).build(), new LangMinecraftCommand());
-		commandManager.register(commandManager.metaBuilder("discord-link").plugin(this).build(), new LinkDiscordAccountMinecraftCommand());
-		commandManager.register(commandManager.metaBuilder("mail").plugin(this).build(), new MailMinecraftCommand());
-		commandManager.register(commandManager.metaBuilder("msg").aliases("tell", "m", "w").plugin(this).build(), new MsgMinecraftCommand());
-		commandManager.register(commandManager.metaBuilder("me").plugin(this).build(), new MeMinecraftCommand());
-		commandManager.register(commandManager.metaBuilder("player-settings").plugin(this).build(), new PlayerSettingsMinecraftCommand());
-		commandManager.register(commandManager.metaBuilder("reply").aliases("r").plugin(this).build(), new ReplyMinecraftCommand());
+		// Hints are what a Bedrock client completes against: it never asks the
+		// server for suggestions, it only reads the declared tree once. They
+		// never execute, so they cannot change how anything parses.
+		commandManager.register(commandManager.metaBuilder("broadcast").aliases("bc", "alert").plugin(this)
+				.hint(CommandHints.text("message"))
+				.build(), new BroadcastMinecraftCommand());
+		commandManager.register(commandManager.metaBuilder("commandspy").aliases("cspy").plugin(this)
+				.hint(CommandHints.word("player"))
+				.build(), new CommandSpyMinecraftCommand());
+		commandManager.register(langMeta(commandManager), new LangMinecraftCommand());
+		commandManager.register(commandManager.metaBuilder("discord-link").plugin(this)
+				.hint(CommandHints.leaf("unlink"))
+				.hint(CommandHints.word("code"))
+				.build(), new LinkDiscordAccountMinecraftCommand());
+		commandManager.register(commandManager.metaBuilder("mail").plugin(this)
+				.hint(CommandHints.leaf("list"))
+				.hint(CommandHints.leaf("listall"))
+				.hint(CommandHints.leaf("read"))
+				.hint(CommandHints.verbWithWordThenText("send", "player", "message"))
+				.build(), new MailMinecraftCommand());
+		commandManager.register(commandManager.metaBuilder("msg").aliases("tell", "m", "w").plugin(this)
+				.hint(CommandHints.verbWithWordThenText("player", "player", "message").getChild("player"))
+				.build(), new MsgMinecraftCommand());
+		commandManager.register(commandManager.metaBuilder("me").plugin(this)
+				.hint(CommandHints.text("message"))
+				.build(), new MeMinecraftCommand());
+		commandManager.register(commandManager.metaBuilder("player-settings").plugin(this)
+				.hint(CommandHints.word("player"))
+				.build(), new PlayerSettingsMinecraftCommand());
+		commandManager.register(commandManager.metaBuilder("reply").aliases("r").plugin(this)
+				.hint(CommandHints.text("message"))
+				.build(), new ReplyMinecraftCommand());
 	}
 
 	private boolean setupDiscord() {
@@ -259,4 +289,40 @@ public class RedCraftChat {
 	public Path getDataDirectory() {
 		return dataDirectory;
 	}
+	/**
+	 * The /lang hints, including one literal per supported locale.
+	 *
+	 * The locale list comes from the database or the API and can be null when
+	 * the provider is down, so this degrades to the verbs alone rather than
+	 * refusing to register the command.
+	 */
+	private CommandMeta langMeta(CommandManager commandManager) {
+		CommandMeta.Builder builder = commandManager.metaBuilder("lang").aliases("languages").plugin(this)
+				.hint(CommandHints.leaf("confirm"))
+				.hint(CommandHints.leaf("panel"))
+				.hint(CommandHints.leaf("dialog"));
+
+		List<String> codes = new ArrayList<>();
+		try {
+			List<SupportedLocale> locales = LocaleManager.getSupportedLocales();
+			if (locales != null) {
+				for (SupportedLocale locale : locales) {
+					codes.add(locale.code);
+				}
+			}
+		} catch (Exception e) {
+			getLogger().warn("Could not read the supported locales for command hints: {}", e.getMessage());
+		}
+
+		for (String code : codes) {
+			builder.hint(CommandHints.leaf(code));
+		}
+		// Deliberately not a child of each code: making it one would force a
+		// Bedrock player to type main after every language
+		builder.hint(CommandHints.verbWith("main", codes));
+
+		return builder.build();
+	}
+
+
 }
