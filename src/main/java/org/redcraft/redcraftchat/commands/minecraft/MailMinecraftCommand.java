@@ -135,7 +135,7 @@ public class MailMinecraftCommand implements SimpleCommand {
             try {
                 return LanguageSelectorManager.openWorkspace(player,
                         PlayerPreferencesManager.getPlayerPreferences(player),
-                        WorkspaceSession.Tab.MAIL);
+                        WorkspaceSession.Tab.INBOX);
             } catch (IOException | InterruptedException e) {
                 return false;
             }

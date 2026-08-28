@@ -36,6 +36,11 @@ public class UiStrings {
     public static final String MAIL_MARK_AS_READ = "Mark as read";
     public static final String MAIL_ALREADY_READ = "Already marked as read";
     public static final String MAIL_CLICK_TO_REPLY = "Click to reply";
+    public static final String MAIL_SEND_TITLE = "Write a mail";
+    public static final String MAIL_TYPE_MESSAGE = "Type your message in chat for %player%";
+    public static final String MAIL_RECIPIENT = "To";
+    public static final String MAIL_MESSAGE = "Message";
+    public static final String MAIL_SOMEBODY_ELSE = "Somebody else";
     public static final String MAIL_UNKNOWN_SLOT = "That mail is not on the page you are looking at";
     public static final String MAIL_REPLY_USAGE = "Use /mail reply <number> <message>";
     public static final String MAIL_HOVER_TIP = "Type /mail show <number> to read one in full, or hover it";
@@ -102,6 +107,11 @@ public class UiStrings {
             MAIL_MARK_AS_READ,
             MAIL_ALREADY_READ,
             MAIL_CLICK_TO_REPLY,
+            MAIL_SEND_TITLE,
+            MAIL_TYPE_MESSAGE,
+            MAIL_RECIPIENT,
+            MAIL_MESSAGE,
+            MAIL_SOMEBODY_ELSE,
             MAIL_UNKNOWN_SLOT,
             MAIL_REPLY_USAGE,
             MAIL_HOVER_TIP,

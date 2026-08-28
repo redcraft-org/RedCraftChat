@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.redcraft.redcraftchat.RedCraftChat;
+import org.redcraft.redcraftchat.messaging.ChatPrompt;
 import org.redcraft.redcraftchat.bridge.MinecraftDiscordBridge;
 import org.redcraft.redcraftchat.helpers.LegacyText;
 import org.redcraft.redcraftchat.players.DisplayNameManager;
@@ -35,6 +36,13 @@ public class MinecraftChatListener {
         }
 
         Player player = event.getPlayer();
+
+        // A panel waiting on an answer takes this line instead of the room.
+        // Denied either way, so nothing reaches the backend.
+        if (ChatPrompt.offer(player, event.getMessage())) {
+            event.setResult(PlayerChatEvent.ChatResult.denied());
+            return;
+        }
 
         String message = stripUnauthorizedFormatting(player, event.getMessage());
 

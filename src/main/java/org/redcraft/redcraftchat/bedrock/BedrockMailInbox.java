@@ -64,6 +64,8 @@ public final class BedrockMailInbox {
         if (mails.isEmpty()) {
             form.content(ui(preferences, UiStrings.MAIL_NO_MAILS));
         } else {
+            // no content line when there are rows, the buttons speak for
+            // themselves and Bedrock gives the form little vertical room
             for (PlayerMail mail : mails) {
                 // Two lines per button: who it is from, then enough of the
                 // message to tell them apart. The full text is one tap away,
@@ -75,11 +77,16 @@ public final class BedrockMailInbox {
             }
         }
 
+        // Always last, so its index is stable however many mails there are
+        form.button(ui(preferences, UiStrings.MAIL_SEND_TITLE));
+
         UUID playerId = player.getUniqueId();
         List<PlayerMail> shown = new ArrayList<>(mails);
         form.validResultHandler(response -> {
             int index = response.clickedButtonId();
-            if (index >= 0 && index < shown.size()) {
+            if (index == shown.size()) {
+                onScheduler(playerId, BedrockMailInbox::showCompose);
+            } else if (index >= 0 && index < shown.size()) {
                 onScheduler(playerId, target -> showMail(target, shown.get(index)));
             }
         });
@@ -136,6 +143,94 @@ public final class BedrockMailInbox {
         form.closedOrInvalidResultHandler(() -> { });
 
         return BedrockForms.send(playerId, form);
+    }
+
+    /**
+     * Writing a mail: who, then what, in one form.
+     *
+     * A dropdown of online players plus a free text field for anyone else,
+     * because the proxy can only enumerate who is connected and mail is
+     * deliverable to people who are not.
+     */
+    public static boolean showCompose(Player player) {
+        if (!isSupported(player)) {
+            return false;
+        }
+
+        PlayerPreferences preferences;
+        try {
+            preferences = PlayerPreferencesManager.getPlayerPreferences(player);
+        } catch (Exception e) {
+            return false;
+        }
+
+        List<String> online = new ArrayList<>();
+        for (Player other : RedCraftChat.getInstance().getProxy().getAllPlayers()) {
+            if (!other.getUniqueId().equals(player.getUniqueId())) {
+                online.add(other.getUsername());
+            }
+        }
+        online.add(ui(preferences, UiStrings.MAIL_SOMEBODY_ELSE));
+
+        CustomForm.Builder form = CustomForm.builder()
+                .title(ui(preferences, UiStrings.MAIL_SEND_TITLE))
+                .dropdown(ui(preferences, UiStrings.MAIL_RECIPIENT), online)
+                .input(ui(preferences, UiStrings.MAIL_RECIPIENT))
+                .input(ui(preferences, UiStrings.MAIL_MESSAGE));
+
+        UUID playerId = player.getUniqueId();
+        int otherIndex = online.size() - 1;
+        form.validResultHandler(response -> {
+            Integer chosen = readInt(response, 0);
+            String typedName = readString(response, 1);
+            String message = readString(response, 2);
+            if (message == null || message.trim().isEmpty()) {
+                return;
+            }
+            // The dropdown wins unless they picked the escape hatch, in which
+            // case the typed name is the only thing that can be meant
+            String recipient = (chosen != null && chosen == otherIndex)
+                    ? typedName
+                    : (chosen != null && chosen >= 0 && chosen < otherIndex ? online.get(chosen) : typedName);
+            if (recipient == null || recipient.trim().isEmpty()) {
+                return;
+            }
+            onScheduler(playerId, target -> deliver(target, recipient.trim(), message.trim()));
+        });
+        form.closedOrInvalidResultHandler(() -> { });
+
+        return BedrockForms.send(playerId, form);
+    }
+
+    private static void deliver(Player player, String recipient, String message) throws Exception {
+        PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);
+        PlayerPreferences target = PlayerPreferencesManager.getPlayerPreferences(recipient, true, false);
+        if (target == null) {
+            BasicMessageFormatter.sendInternalError(player, "That player was not found");
+            return;
+        }
+        MailMessagesManager.sendMail(player, target.minecraftUuid, message);
+        BasicMessageFormatter.sendInternalMessage(player,
+                PlayerPreferencesManager.localizeUiForPlayer(preferences, "Mail sent to ") + recipient,
+                NamedTextColor.GREEN);
+    }
+
+    private static Integer readInt(org.geysermc.cumulus.response.CustomFormResponse response, int index) {
+        try {
+            Object value = response.valueAt(index);
+            return value instanceof Integer ? (Integer) value : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static String readString(org.geysermc.cumulus.response.CustomFormResponse response, int index) {
+        try {
+            Object value = response.valueAt(index);
+            return value instanceof String ? (String) value : null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /** A text box, which is the one thing chat could never offer here. */

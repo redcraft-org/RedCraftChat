@@ -29,6 +29,8 @@ import io.schemat.displaykit.velocity.player.VelocityPlayerRef;
 import io.schemat.displaykit.velocity.surface.VelocitySurfacePresentation;
 
 import org.redcraft.redcraftchat.RedCraftChat;
+import org.redcraft.redcraftchat.messaging.ChatPrompt;
+import org.redcraft.redcraftchat.helpers.BasicMessageFormatter;
 import org.redcraft.redcraftchat.locales.LocaleManager;
 import org.redcraft.redcraftchat.locales.UiStrings;
 import org.redcraft.redcraftchat.messaging.MailMessagesManager;
@@ -39,13 +41,19 @@ import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 
 import kotlin.Unit;
+import net.kyori.adventure.text.format.NamedTextColor;
 
 /**
- * One in-world window holding the player's mail and their languages, as tabs.
+ * The mail window: an inbox and a way to write one, as tabs.
  *
- * The chat menus each opened their own thing, and the in-world panel only
- * ever knew about languages. This is the same two features behind one frame:
- * a vanilla window, a tab strip down the side, and a menu per tab.
+ * Languages are deliberately not here. They have their own selector, they are
+ * set once and rarely touched, and putting them behind a mail window would
+ * only make both harder to find.
+ *
+ * Writing needs two answers, and the two clients give them differently. The
+ * recipient is a list of buttons either way. The message is a text box on
+ * Bedrock, which has one, and a chat prompt on Java, which does not: a
+ * display entity cannot be typed into.
  *
  * Threading follows the same rule as the language panel. DisplayKit callbacks
  * arrive on its UI owner thread and everything here blocks on preferences,
@@ -56,8 +64,8 @@ public class WorkspaceSession {
 
     /** The tabs. Values are the switch keys, so they must stay distinct. */
     public enum Tab {
-        MAIL,
-        LANGUAGE
+        INBOX,
+        SEND
     }
 
     private static final double ANCHOR_DISTANCE_BLOCKS = 2.5;
@@ -73,7 +81,7 @@ public class WorkspaceSession {
 
     private volatile Tab selected;
     private volatile ActionMenuSession mailActions;
-    private volatile ActionMenuSession languageActions;
+    private volatile ActionMenuSession sendActions;
     private volatile VelocitySurfacePresentation presentation;
     private volatile ActionMenuLabels navigationLabels = new ActionMenuLabels();
 
@@ -86,7 +94,7 @@ public class WorkspaceSession {
         // built the session rather than lazily while painting
         resolveChrome(preferences);
         this.mailActions = new ActionMenuSession(buildMailPage(preferences));
-        this.languageActions = new ActionMenuSession(buildLanguagePage(preferences));
+        this.sendActions = new ActionMenuSession(buildSendPage(preferences));
     }
 
     /** Mail rows, newest first, each opening its body in place. */
@@ -139,34 +147,40 @@ public class WorkspaceSession {
                 ui(preferences, UiStrings.MAIL_INBOX_HEADER), java.util.Collections.emptyList());
     }
 
-    /** One row per language, the main one ticked. */
-    private ActionPage buildLanguagePage(PlayerPreferences preferences) {
+    /**
+     * Who to write to: one row per online player.
+     *
+     * Only online players, because that is the only list the proxy can
+     * enumerate. Somebody offline is still reachable by typing their name
+     * into /mail send, which the empty row says.
+     */
+    private ActionPage buildSendPage(PlayerPreferences preferences) {
         List<ActionSpec> specs = new ArrayList<>();
-        for (SupportedLocale locale : supportedLocales()) {
-            boolean isMain = locale.code.equalsIgnoreCase(preferences.mainLanguage);
-            boolean understood = isMain || (preferences.languages != null
-                    && preferences.languages.contains(locale.code));
-            String code = locale.code;
-
+        for (Player online : RedCraftChat.getInstance().getProxy().getAllPlayers()) {
+            if (online.getUniqueId().equals(player.getUniqueId())) {
+                continue;
+            }
+            String name = online.getUsername();
             specs.add(new ActionSpec(
-                    "language/" + code,
-                    LocaleManager.getEndonym(locale),
-                    new ActionIcon.Text(code.split("-")[0].toUpperCase(java.util.Locale.ROOT),
-                            ActionIcon.Default.INSTANCE),
+                    "send/" + name,
+                    name,
+                    ActionIcon.Default.INSTANCE,
                     null,
                     true,
-                    // The main language cannot be untoggled, so it is shown
-                    // ticked and not clickable rather than offering an action
-                    // that would only ever fail
-                    !isMain,
-                    understood,
+                    true,
+                    false,
                     false,
                     null,
-                    context -> onLanguageClicked(code)));
+                    context -> onRecipientChosen(name)));
         }
 
-        return new ActionPage("rcc:workspace/language", specs,
-                ui(preferences, UiStrings.SELECTOR_PRIMARY_TITLE), java.util.Collections.emptyList());
+        if (specs.isEmpty()) {
+            specs.add(new ActionSpec("send/empty", "/mail send <player> <message>",
+                    ActionIcon.Default.INSTANCE, null, true, false, false, false, null, null));
+        }
+
+        return new ActionPage("rcc:workspace/send", specs,
+                ui(preferences, UiStrings.MAIL_SEND_TITLE), java.util.Collections.emptyList());
     }
 
     /** Opens the window in front of the player. UI-thread hop inside. */
@@ -194,12 +208,11 @@ public class WorkspaceSession {
 
         UUID playerId = player.getUniqueId();
         ActionMenuView mailView = menuView("rcc-workspace-mail", mailActions, playerId);
-        ActionMenuView languageView = menuView("rcc-workspace-language", languageActions, playerId);
+        ActionMenuView sendView = menuView("rcc-workspace-send", sendActions, playerId);
 
         List<TabbedPage<Tab>> pages = new ArrayList<>();
-        pages.add(new TabbedPage<>(Tab.MAIL, tabLabel(UiStrings.MAIL_INBOX_HEADER), mailView.getNode()));
-        pages.add(new TabbedPage<>(Tab.LANGUAGE, tabLabel(UiStrings.SELECTOR_PRIMARY_TITLE),
-                languageView.getNode()));
+        pages.add(new TabbedPage<>(Tab.INBOX, tabLabel(UiStrings.MAIL_INBOX_HEADER), mailView.getNode()));
+        pages.add(new TabbedPage<>(Tab.SEND, tabLabel(UiStrings.MAIL_SEND_TITLE), sendView.getNode()));
 
         TabbedView<Tab> tabs = new TabbedView<>(
                 "rcc-workspace-tabs",
@@ -237,7 +250,7 @@ public class WorkspaceSession {
                 });
 
         repaintOnChange(mailActions);
-        repaintOnChange(languageActions);
+        repaintOnChange(sendActions);
 
         presentation.present();
 
@@ -324,17 +337,41 @@ public class WorkspaceSession {
                 MailMessagesManager.getMailSenderDisplayName(mail), java.util.Collections.emptyList());
     }
 
-    private void onLanguageClicked(String code) {
+    /**
+     * Recipient picked, so now the message.
+     *
+     * The panel cannot take typed input, so the question moves to chat and
+     * the window closes: leaving it open over a player who is typing would
+     * put a wall between them and what they are writing.
+     */
+    private void onRecipientChosen(String recipient) {
         onScheduler(() -> {
             PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);
-            try {
-                PlayerPreferencesManager.togglePlayerLocale(preferences, code);
-            } catch (IllegalArgumentException e) {
-                // Trying to drop the main language, which the manager refuses
+            closeQuietly();
+
+            BasicMessageFormatter.sendInternalMessage(player,
+                    ui(preferences, UiStrings.MAIL_TYPE_MESSAGE).replace("%player%", recipient),
+                    NamedTextColor.AQUA);
+
+            ChatPrompt.await(player, message -> sendMailTo(recipient, message));
+        });
+    }
+
+    private void sendMailTo(String recipient, String message) {
+        try {
+            PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);
+            PlayerPreferences target = PlayerPreferencesManager.getPlayerPreferences(recipient, true, false);
+            if (target == null) {
+                BasicMessageFormatter.sendInternalError(player, "That player was not found");
                 return;
             }
-            refresh();
-        });
+            MailMessagesManager.sendMail(player, target.minecraftUuid, message);
+            BasicMessageFormatter.sendInternalMessage(player,
+                    ui(preferences, "Mail sent to ") + recipient, NamedTextColor.GREEN);
+        } catch (Exception e) {
+            RedCraftChat.getInstance().getLogger().warn("Could not send mail for {}: {}",
+                    player.getUsername(), e.getMessage());
+        }
     }
 
     /** Rebuilds both tabs in the player's current language. */
@@ -346,14 +383,14 @@ public class WorkspaceSession {
             PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);
             resolveChrome(preferences);
             ActionPage mail = buildMailPage(preferences);
-            ActionPage language = buildLanguagePage(preferences);
+            ActionPage send = buildSendPage(preferences);
             onUiThread(() -> {
                 if (closed.get()) {
                     return;
                 }
                 mailActions.popToRoot();
                 mailActions.replaceCurrent(mail, true);
-                languageActions.replaceCurrent(language, true);
+                sendActions.replaceCurrent(send, true);
             });
         });
     }
@@ -387,7 +424,7 @@ public class WorkspaceSession {
                     presentation.close();
                 }
                 mailActions.close();
-                languageActions.close();
+                sendActions.close();
             } catch (Exception e) {
                 RedCraftChat.getInstance().getLogger().debug("Workspace close raced: {}", e.getMessage());
             }
