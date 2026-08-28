@@ -213,6 +213,12 @@ public class RedCraftChat {
 				.hint(CommandHints.leaf("list"))
 				.hint(CommandHints.leaf("listall"))
 				.hint(CommandHints.leaf("read"))
+				.hint(CommandHints.leaf("next"))
+				.hint(CommandHints.leaf("prev"))
+				.hint(CommandHints.verbWith("show", MAIL_SLOTS))
+				.hint(CommandHints.verbWith("open", MAIL_SLOTS))
+				.hint(CommandHints.verbWith("page", MAIL_SLOTS))
+				.hint(CommandHints.verbWithWordThenText("reply", "number", "message"))
 				.hint(CommandHints.verbWithWordThenText("send", "player", "message"))
 				.build(), new MailMinecraftCommand());
 		commandManager.register(commandManager.metaBuilder("msg").aliases("tell", "m", "w").plugin(this)
@@ -300,6 +306,12 @@ public class RedCraftChat {
 	 * the provider is down, so this degrades to the verbs alone rather than
 	 * refusing to register the command.
 	 */
+	/**
+	 * Slot numbers, as literals so a Bedrock client can offer them. A page
+	 * holds five rows, so these are the only values that can ever be valid.
+	 */
+	private static final List<String> MAIL_SLOTS = List.of("1", "2", "3", "4", "5");
+
 	private CommandMeta langMeta(CommandManager commandManager) {
 		CommandMeta.Builder builder = commandManager.metaBuilder("lang").aliases("languages").plugin(this)
 				.hint(CommandHints.leaf("confirm"))
