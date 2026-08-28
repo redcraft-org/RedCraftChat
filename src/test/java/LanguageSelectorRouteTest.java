@@ -13,16 +13,16 @@ public class LanguageSelectorRouteTest extends TestCase {
 
     /** No dialog support: the client predates 1.21.6. */
     private SelectorRoute route(boolean enabled, boolean lib, boolean client, boolean confirmed, Trigger trigger) {
-        return LanguageSelectorManager.decide(enabled, false, lib, client, false, confirmed, trigger);
+        return LanguageSelectorManager.decide(enabled, false, lib, client, false, false, confirmed, trigger);
     }
 
     private SelectorRoute withDialog(boolean enabled, boolean confirmed, Trigger trigger) {
-        return LanguageSelectorManager.decide(enabled, true, true, true, false, confirmed, trigger);
+        return LanguageSelectorManager.decide(enabled, true, true, true, false, false, confirmed, trigger);
     }
 
     /** Every capability reports true, because Geyser says so, and all of them lie. */
     private SelectorRoute bedrock(boolean enabled, boolean confirmed, Trigger trigger) {
-        return LanguageSelectorManager.decide(enabled, true, true, true, true, confirmed, trigger);
+        return LanguageSelectorManager.decide(enabled, true, true, true, true, false, confirmed, trigger);
     }
 
     public void test_bedrock_never_gets_a_surface_it_cannot_draw() {
@@ -42,6 +42,28 @@ public class LanguageSelectorRouteTest extends TestCase {
         assertEquals(SelectorRoute.CHAT_MENU, bedrock(true, false, Trigger.LANG_WITH_ARGS));
     }
 
+    /** Bedrock with Floodgate present: its own UI, not a text fallback. */
+    private SelectorRoute bedrockWithForms(boolean enabled, boolean confirmed, Trigger trigger) {
+        return LanguageSelectorManager.decide(enabled, true, true, true, true, true, confirmed, trigger);
+    }
+
+    public void test_bedrock_gets_its_own_ui_when_floodgate_is_there() {
+        assertEquals(SelectorRoute.FORM_FIRST_JOIN, bedrockWithForms(true, false, Trigger.FIRST_JOIN));
+        assertEquals(SelectorRoute.FORM_MANAGE, bedrockWithForms(true, true, Trigger.LANG_NO_ARGS));
+    }
+
+    public void test_bedrock_falls_to_chat_without_floodgate() {
+        // The form is the good path, not the only one: a proxy without
+        // Floodgate still has to leave Bedrock players able to choose
+        assertEquals(SelectorRoute.CHAT_PROMPT, bedrock(true, false, Trigger.FIRST_JOIN));
+        assertEquals(SelectorRoute.CHAT_MENU, bedrock(true, true, Trigger.LANG_NO_ARGS));
+    }
+
+    public void test_the_kill_switch_covers_the_form_too() {
+        assertEquals(SelectorRoute.NONE, bedrockWithForms(false, false, Trigger.FIRST_JOIN));
+        assertEquals(SelectorRoute.CHAT_MENU, bedrockWithForms(false, true, Trigger.LANG_NO_ARGS));
+    }
+
     public void test_java_is_untouched_by_the_bedrock_rule() {
         // The same inputs with bedrock=false must still reach the dialog
         assertEquals(SelectorRoute.DIALOG_FIRST_JOIN, withDialog(true, false, Trigger.FIRST_JOIN));
@@ -57,7 +79,7 @@ public class LanguageSelectorRouteTest extends TestCase {
     public void test_the_dialog_does_not_need_displaykit() {
         // The client draws it, so a missing or broken library is irrelevant
         assertEquals(SelectorRoute.DIALOG_FIRST_JOIN,
-                LanguageSelectorManager.decide(true, true, false, false, false, false, Trigger.FIRST_JOIN));
+                LanguageSelectorManager.decide(true, true, false, false, false, false, false, Trigger.FIRST_JOIN));
     }
 
     public void test_the_kill_switch_still_covers_the_dialog() {

@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.velocitypowered.api.proxy.Player;
 
 import org.redcraft.redcraftchat.Config;
+import org.redcraft.redcraftchat.bedrock.BedrockLanguageSelector;
 import org.redcraft.redcraftchat.dialog.NativeDialogSelector;
 import org.redcraft.redcraftchat.minecraft.BedrockPlayers;
 import org.redcraft.redcraftchat.RedCraftChat;
@@ -30,6 +31,8 @@ public class LanguageSelectorManager {
 
     public enum SelectorRoute {
         NONE,
+        FORM_FIRST_JOIN,
+        FORM_MANAGE,
         DIALOG_FIRST_JOIN,
         DIALOG_MANAGE,
         SURFACE_FIRST_JOIN,
@@ -45,8 +48,8 @@ public class LanguageSelectorManager {
     }
 
     public static SelectorRoute decide(boolean selectorEnabled, boolean dialogSupported,
-            boolean libAvailable, boolean clientSupported, boolean bedrock, boolean confirmed,
-            Trigger trigger) {
+            boolean libAvailable, boolean clientSupported, boolean bedrock, boolean formSupported,
+            boolean confirmed, Trigger trigger) {
         // The native dialog is preferred wherever the client can show one: it
         // is the client's own interface, and its floor is 1.21.6 against the
         // in-world panel's 1.21.9, so it covers strictly more players. The
@@ -61,6 +64,10 @@ public class LanguageSelectorManager {
         // surface that was never drawn.
         boolean dialogCapable = selectorEnabled && dialogSupported && !bedrock;
         boolean surfaceCapable = selectorEnabled && libAvailable && clientSupported && !bedrock;
+        // Bedrock has its own UI, and Floodgate can drive it. That is a real
+        // interface rather than a text fallback, so it outranks the chat menu
+        // wherever Floodgate is actually present.
+        boolean formCapable = selectorEnabled && bedrock && formSupported;
 
         switch (trigger) {
             case FIRST_JOIN:
@@ -74,11 +81,17 @@ public class LanguageSelectorManager {
                 if (!selectorEnabled) {
                     return SelectorRoute.NONE;
                 }
+                if (formCapable) {
+                    return SelectorRoute.FORM_FIRST_JOIN;
+                }
                 if (dialogCapable) {
                     return SelectorRoute.DIALOG_FIRST_JOIN;
                 }
                 return surfaceCapable ? SelectorRoute.SURFACE_FIRST_JOIN : SelectorRoute.CHAT_PROMPT;
             case LANG_NO_ARGS:
+                if (formCapable) {
+                    return SelectorRoute.FORM_MANAGE;
+                }
                 if (dialogCapable) {
                     return SelectorRoute.DIALOG_MANAGE;
                 }
@@ -100,6 +113,7 @@ public class LanguageSelectorManager {
                 DisplayKitIntegration.isAvailable(),
                 DisplayKitIntegration.isSupported(player),
                 BedrockPlayers.isBedrock(player),
+                BedrockLanguageSelector.isSupported(player),
                 preferences.languageSelectorConfirmed,
                 trigger);
     }

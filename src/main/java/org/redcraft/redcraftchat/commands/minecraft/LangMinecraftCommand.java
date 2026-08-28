@@ -9,6 +9,7 @@ import java.util.Locale;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.helpers.BasicMessageFormatter;
 import org.redcraft.redcraftchat.helpers.LegacyText;
+import org.redcraft.redcraftchat.bedrock.BedrockLanguageSelector;
 import org.redcraft.redcraftchat.dialog.NativeDialogSelector;
 import org.redcraft.redcraftchat.displaykit.LanguageSelectorManager;
 import org.redcraft.redcraftchat.minecraft.BedrockPlayers;
@@ -101,6 +102,10 @@ public class LangMinecraftCommand implements SimpleCommand {
                     // next when it cannot be shown, so nobody ends up with
                     // nothing.
                     SelectorRoute route = LanguageSelectorManager.decideFor(player, preferences, Trigger.LANG_NO_ARGS);
+                    if (route == SelectorRoute.FORM_MANAGE
+                            && BedrockLanguageSelector.showPrimary(player, preferences)) {
+                        return;
+                    }
                     if (route == SelectorRoute.DIALOG_MANAGE
                             && NativeDialogSelector.showPrimary(player, preferences)) {
                         return;

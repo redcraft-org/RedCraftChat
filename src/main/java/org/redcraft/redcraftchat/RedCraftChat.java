@@ -12,6 +12,7 @@ import com.velocitypowered.api.command.CommandManager;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
+import com.velocitypowered.api.plugin.Dependency;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.PluginContainer;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
@@ -73,7 +74,10 @@ import org.redcraft.redcraftchat.runnables.ScheduledAnnouncementsTask;
 import org.slf4j.Logger;
 
 @Plugin(id = "redcraftchat", name = RedCraftChat.PLUGIN_NAME, version = "0.1.6-SNAPSHOT", url = "https://redcraft.org", description = "Multi language chat and Discord bridge", authors = {
-		"RedCraft" })
+		"RedCraft" },
+		// Soft: Floodgate drives the native Bedrock forms, and the
+		// plugin has to load on a proxy that does not run it
+		dependencies = { @Dependency(id = "floodgate", optional = true) })
 public class RedCraftChat {
 
 	public static final String PLUGIN_NAME = "RedCraftChat";
