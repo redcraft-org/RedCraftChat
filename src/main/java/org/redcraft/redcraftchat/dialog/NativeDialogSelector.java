@@ -36,6 +36,8 @@ import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 
 /**
  * The language selector as a native Minecraft dialog.
@@ -146,19 +148,23 @@ public final class NativeDialogSelector {
             String label = isMain
                     ? LocaleManager.getEndonym(locale) + " ✔"
                     : LocaleManager.getEndonym(locale);
+            Component text = isMain
+                    ? Component.text(label, NamedTextColor.GREEN).decorate(TextDecoration.BOLD)
+                    : Component.text(label, NamedTextColor.WHITE);
 
             NBTCompound additions = new NBTCompound();
             additions.setTag(LANGUAGE_KEY, new NBTString(locale.code));
 
             Action action = new DynamicCustomAction(PICK_PRIMARY, additions);
             buttons.add(new ActionButton(
-                    new CommonButtonData(Component.text(label), null, BUTTON_WIDTH_PX),
+                    new CommonButtonData(text, null, BUTTON_WIDTH_PX),
                     action));
         }
 
 
         CommonDialogData common = new CommonDialogData(
-                Component.text(localize(preferences, UiStrings.SELECTOR_PRIMARY_TITLE)),
+                Component.text(localize(preferences, UiStrings.SELECTOR_PRIMARY_TITLE),
+                        NamedTextColor.GOLD).decorate(TextDecoration.BOLD),
                 null,
                 true,
                 // Not a pausing dialog. PacketEvents rejects pause with an
@@ -174,17 +180,32 @@ public final class NativeDialogSelector {
                 body(preferences, UiStrings.SELECTOR_PRIMARY_HELP),
                 Collections.emptyList());
 
-        // The advance button goes in the exit slot rather than the grid: the
-        // client draws that one apart from the list, which is the gap between
-        // the languages and the way forward.
-        ActionButton advance = new ActionButton(
+        // No gap in front of it, because a dialog cannot express one: body
+        // and inputs are separate lists from the buttons and the client draws
+        // them in that order, so nothing can sit between two buttons. A
+        // blank button was the only thing that fit there and it read as a
+        // bug, so the way forward is set apart by being the green one.
+        buttons.add(new ActionButton(
                 new CommonButtonData(
-                        Component.text(localize(preferences, UiStrings.SELECTOR_CONTINUE)),
+                        Component.text(localize(preferences, UiStrings.SELECTOR_CONTINUE),
+                                NamedTextColor.GREEN).decorate(TextDecoration.BOLD),
                         null,
                         BUTTON_WIDTH_PX),
-                new DynamicCustomAction(GO_TO_OTHERS, null));
+                new DynamicCustomAction(GO_TO_OTHERS, null)));
 
-        return send(player, new MultiActionDialog(common, buttons, advance, 1));
+        // The exit slot is drawn apart from the list at the bottom, so it
+        // holds the way out. It used to hold the way forward, which put the
+        // one button that leaves the flow where the eye looks for the one
+        // that continues it.
+        ActionButton close = new ActionButton(
+                new CommonButtonData(
+                        Component.text(localize(preferences, UiStrings.SELECTOR_CLOSE),
+                                NamedTextColor.GRAY),
+                        null,
+                        BUTTON_WIDTH_PX),
+                null);
+
+        return send(player, new MultiActionDialog(common, buttons, close, 1));
     }
 
     /**
@@ -212,7 +233,8 @@ public final class NativeDialogSelector {
             inputs.add(new Input(
                     understoodKey(locale.code),
                     new BooleanInputControl(
-                            Component.text(LocaleManager.getEndonym(locale)),
+                            Component.text(LocaleManager.getEndonym(locale),
+                                    understood ? NamedTextColor.GREEN : NamedTextColor.WHITE),
                             understood,
                             "true",
                             "false")));
@@ -225,20 +247,23 @@ public final class NativeDialogSelector {
         List<ActionButton> buttons = new ArrayList<>();
         buttons.add(new ActionButton(
                 new CommonButtonData(
-                        Component.text(localize(preferences, UiStrings.SELECTOR_SUBMIT)),
+                        Component.text(localize(preferences, UiStrings.SELECTOR_SUBMIT),
+                                NamedTextColor.GREEN).decorate(TextDecoration.BOLD),
                         null,
                         BUTTON_WIDTH_PX),
                 new DynamicCustomAction(CONFIRM_OTHERS, null)));
 
         ActionButton back = new ActionButton(
                 new CommonButtonData(
-                        Component.text(localize(preferences, UiStrings.CHANGE_MAIN_LANGUAGE)),
+                        Component.text(localize(preferences, UiStrings.CHANGE_MAIN_LANGUAGE),
+                                NamedTextColor.GRAY),
                         null,
                         BUTTON_WIDTH_PX),
                 new DynamicCustomAction(BACK_TO_PRIMARY, null));
 
         CommonDialogData common = new CommonDialogData(
-                Component.text(localize(preferences, UiStrings.SELECTOR_OTHERS_TITLE)),
+                Component.text(localize(preferences, UiStrings.SELECTOR_OTHERS_TITLE),
+                        NamedTextColor.GOLD).decorate(TextDecoration.BOLD),
                 null,
                 true,
                 false,
@@ -279,7 +304,9 @@ public final class NativeDialogSelector {
 
     private static List<DialogBody> body(PlayerPreferences preferences, String key) {
         return Collections.singletonList(new PlainMessageDialogBody(
-                new PlainMessage(Component.text(localize(preferences, key)), BODY_WIDTH_PX)));
+                new PlainMessage(
+                        Component.text(localize(preferences, key), NamedTextColor.GRAY),
+                        BODY_WIDTH_PX)));
     }
 
     /** The first input key the client would reject, or null when all are fine. */
