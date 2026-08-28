@@ -2,6 +2,9 @@ package org.redcraft.redcraftchat.commands.minecraft;
 
 import java.io.IOException;
 import org.redcraft.redcraftchat.commands.Suggestions;
+import org.redcraft.redcraftchat.displaykit.WorkspaceSession;
+import org.redcraft.redcraftchat.displaykit.LanguageSelectorManager;
+import org.redcraft.redcraftchat.displaykit.DisplayKitIntegration;
 import org.redcraft.redcraftchat.locales.UiStrings;
 import org.redcraft.redcraftchat.messaging.MailView;
 import org.redcraft.redcraftchat.bedrock.BedrockMailInbox;
@@ -52,6 +55,13 @@ public class MailMinecraftCommand implements SimpleCommand {
             if (args.length > 0) {
                 // Bedrock first: its inbox is a form, and the chat one is
                 // inert there in every direction
+                // The in-world window first for clients that can render it,
+                // then the Bedrock form, then the chat inbox below
+                if (isListing(args) && DisplayKitIntegration.isSupported(player)
+                        && openWorkspace(player)) {
+                    return;
+                }
+
                 if (BedrockMailInbox.isSupported(player) && isListing(args)) {
                     boolean unreadOnly = args.length == 0 || !"listall".equalsIgnoreCase(args[0]);
                     if (BedrockMailInbox.showInbox(player, unreadOnly)) {
@@ -118,6 +128,17 @@ public class MailMinecraftCommand implements SimpleCommand {
             }
 
             handleUsage(player);
+        }
+
+        /** The window, or false so the caller falls to the next rung. */
+        private boolean openWorkspace(Player player) {
+            try {
+                return LanguageSelectorManager.openWorkspace(player,
+                        PlayerPreferencesManager.getPlayerPreferences(player),
+                        WorkspaceSession.Tab.MAIL);
+            } catch (IOException | InterruptedException e) {
+                return false;
+            }
         }
 
         /** Bare /mail, /mail list and /mail listall all open the inbox. */
