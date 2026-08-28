@@ -5,6 +5,7 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 
 import org.redcraft.redcraftchat.Config;
+import org.redcraft.redcraftchat.minecraft.BedrockPlayers;
 import org.redcraft.redcraftchat.RedCraftChat;
 
 import io.schemat.displaykit.velocity.VelocityDisplayKit;
@@ -69,6 +70,11 @@ public class DisplayKitIntegration {
 
     /** Whether this player's client can render a DisplayKit surface at all. */
     public static boolean isSupported(Player player) {
+        // Same reason as the dialog's own gate: Geyser reports a modern Java
+        // client for a Bedrock player, and then renders no display entities.
+        if (BedrockPlayers.isBedrock(player)) {
+            return false;
+        }
         return displayKit != null && displayKit.getVersionGate().isSupported(player);
     }
 }

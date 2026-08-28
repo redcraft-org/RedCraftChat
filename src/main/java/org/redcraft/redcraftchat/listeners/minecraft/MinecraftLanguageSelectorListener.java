@@ -30,6 +30,10 @@ public class MinecraftLanguageSelectorListener {
 
     private static final long PROMPT_DELAY_SECONDS = 3;
 
+    // Long enough that somebody reading the dialog is not interrupted, short
+    // enough that somebody staring at nothing is not stranded
+    private static final long DIALOG_FALLBACK_SECONDS = 30;
+
     @Subscribe(order = PostOrder.NORMAL)
     public void onServerConnected(ServerConnectedEvent event) {
         Player player = event.getPlayer();
@@ -51,6 +55,35 @@ public class MinecraftLanguageSelectorListener {
         LanguageSelectorManager.dismiss(event.getPlayer().getUniqueId());
     }
 
+    /**
+     * The rung the ladder was missing.
+     *
+     * A dialog that is sent and never answered leaves the player unconfirmed
+     * with nothing on screen and no way to know it. Every other route either
+     * draws something or falls through immediately; this one waits on a reply
+     * that may never come, so it needs a deadline of its own.
+     */
+    private void scheduleDialogFallback(Player player) {
+        RedCraftChat plugin = RedCraftChat.getInstance();
+        plugin.getProxy().getScheduler().buildTask(plugin, () -> {
+            if (!player.isActive()) {
+                return;
+            }
+            try {
+                PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);
+                if (preferences.languageSelectorConfirmed) {
+                    return;
+                }
+                // Still unanswered, so the dialog either never drew or was
+                // dismissed. Either way the player should be able to act.
+                LanguageSelectorPrompt.sendFirstJoinPrompt(player, preferences);
+            } catch (Exception e) {
+                RedCraftChat.getInstance().getLogger().warn("Language dialog fallback failed for {}: {}",
+                        player.getUsername(), e.getMessage());
+            }
+        }).delay(DIALOG_FALLBACK_SECONDS, TimeUnit.SECONDS).schedule();
+    }
+
     private void promptIfUnconfirmed(Player player) {
         if (!player.isActive()) {
             return;
@@ -62,7 +95,9 @@ public class MinecraftLanguageSelectorListener {
 
             switch (route) {
                 case DIALOG_FIRST_JOIN:
-                    if (!NativeDialogSelector.showPrimary(player, preferences)) {
+                    if (NativeDialogSelector.showPrimary(player, preferences)) {
+                        scheduleDialogFallback(player);
+                    } else {
                         // The client can show dialogs but this one did not
                         // reach it, so fall the whole way down rather than
                         // leaving the player with nothing

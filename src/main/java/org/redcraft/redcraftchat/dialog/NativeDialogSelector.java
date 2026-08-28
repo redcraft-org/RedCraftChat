@@ -29,6 +29,7 @@ import com.velocitypowered.api.proxy.Player;
 
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.locales.LocaleManager;
+import org.redcraft.redcraftchat.minecraft.BedrockPlayers;
 import org.redcraft.redcraftchat.locales.UiStrings;
 import org.redcraft.redcraftchat.models.locales.SupportedLocale;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
@@ -107,6 +108,13 @@ public final class NativeDialogSelector {
      * between an old client and a kick.
      */
     public static boolean isSupported(Player player) {
+        // Checked here as well as in the routing table on purpose. This is a
+        // second door into the same packet, reached by /lang dialog, and the
+        // version check below cannot catch a Bedrock player: Geyser reports a
+        // modern Java version on their behalf and then renders no dialog.
+        if (BedrockPlayers.isBedrock(player)) {
+            return false;
+        }
         User user = PacketEvents.getAPI().getPlayerManager().getUser(player);
         if (user == null) {
             return false;

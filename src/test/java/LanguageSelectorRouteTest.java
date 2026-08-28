@@ -13,11 +13,39 @@ public class LanguageSelectorRouteTest extends TestCase {
 
     /** No dialog support: the client predates 1.21.6. */
     private SelectorRoute route(boolean enabled, boolean lib, boolean client, boolean confirmed, Trigger trigger) {
-        return LanguageSelectorManager.decide(enabled, false, lib, client, confirmed, trigger);
+        return LanguageSelectorManager.decide(enabled, false, lib, client, false, confirmed, trigger);
     }
 
     private SelectorRoute withDialog(boolean enabled, boolean confirmed, Trigger trigger) {
-        return LanguageSelectorManager.decide(enabled, true, true, true, confirmed, trigger);
+        return LanguageSelectorManager.decide(enabled, true, true, true, false, confirmed, trigger);
+    }
+
+    /** Every capability reports true, because Geyser says so, and all of them lie. */
+    private SelectorRoute bedrock(boolean enabled, boolean confirmed, Trigger trigger) {
+        return LanguageSelectorManager.decide(enabled, true, true, true, true, confirmed, trigger);
+    }
+
+    public void test_bedrock_never_gets_a_surface_it_cannot_draw() {
+        // The regression test for the live bug. Geyser presents Bedrock as a
+        // modern Java client, so dialogSupported and clientSupported are both
+        // true here and both are wrong: it renders neither, and the dialog's
+        // reply never arrives, so the player waits on nothing.
+        assertEquals(SelectorRoute.CHAT_PROMPT, bedrock(true, false, Trigger.FIRST_JOIN));
+        assertEquals(SelectorRoute.CHAT_MENU, bedrock(true, true, Trigger.LANG_NO_ARGS));
+        assertEquals(SelectorRoute.CHAT_MENU, bedrock(true, false, Trigger.LANG_NO_ARGS));
+    }
+
+    public void test_bedrock_still_obeys_the_other_rules() {
+        // Confirmed players are left alone, and the kill switch still kills
+        assertEquals(SelectorRoute.NONE, bedrock(true, true, Trigger.FIRST_JOIN));
+        assertEquals(SelectorRoute.NONE, bedrock(false, false, Trigger.FIRST_JOIN));
+        assertEquals(SelectorRoute.CHAT_MENU, bedrock(true, false, Trigger.LANG_WITH_ARGS));
+    }
+
+    public void test_java_is_untouched_by_the_bedrock_rule() {
+        // The same inputs with bedrock=false must still reach the dialog
+        assertEquals(SelectorRoute.DIALOG_FIRST_JOIN, withDialog(true, false, Trigger.FIRST_JOIN));
+        assertEquals(SelectorRoute.DIALOG_MANAGE, withDialog(true, true, Trigger.LANG_NO_ARGS));
     }
 
     public void test_the_dialog_wins_wherever_the_client_can_show_one() {
@@ -29,7 +57,7 @@ public class LanguageSelectorRouteTest extends TestCase {
     public void test_the_dialog_does_not_need_displaykit() {
         // The client draws it, so a missing or broken library is irrelevant
         assertEquals(SelectorRoute.DIALOG_FIRST_JOIN,
-                LanguageSelectorManager.decide(true, true, false, false, false, Trigger.FIRST_JOIN));
+                LanguageSelectorManager.decide(true, true, false, false, false, false, Trigger.FIRST_JOIN));
     }
 
     public void test_the_kill_switch_still_covers_the_dialog() {

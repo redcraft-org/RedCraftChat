@@ -8,6 +8,7 @@ import com.velocitypowered.api.proxy.Player;
 
 import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.dialog.NativeDialogSelector;
+import org.redcraft.redcraftchat.minecraft.BedrockPlayers;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 
@@ -44,14 +45,22 @@ public class LanguageSelectorManager {
     }
 
     public static SelectorRoute decide(boolean selectorEnabled, boolean dialogSupported,
-            boolean libAvailable, boolean clientSupported, boolean confirmed, Trigger trigger) {
+            boolean libAvailable, boolean clientSupported, boolean bedrock, boolean confirmed,
+            Trigger trigger) {
         // The native dialog is preferred wherever the client can show one: it
         // is the client's own interface, and its floor is 1.21.6 against the
         // in-world panel's 1.21.9, so it covers strictly more players. The
         // panel is what catches a client that predates dialogs but can still
         // render display entities, and chat catches the rest.
-        boolean dialogCapable = selectorEnabled && dialogSupported;
-        boolean surfaceCapable = selectorEnabled && libAvailable && clientSupported;
+        //
+        // Bedrock is excluded from both regardless of what it reports.
+        // Geyser presents those players as a modern Java client, so
+        // dialogSupported and clientSupported are both true for them and both
+        // are wrong: Geyser renders neither a dialog nor a display entity, and
+        // the dialog's reply never comes back, so the player waits on a
+        // surface that was never drawn.
+        boolean dialogCapable = selectorEnabled && dialogSupported && !bedrock;
+        boolean surfaceCapable = selectorEnabled && libAvailable && clientSupported && !bedrock;
 
         switch (trigger) {
             case FIRST_JOIN:
@@ -90,6 +99,7 @@ public class LanguageSelectorManager {
                 NativeDialogSelector.isSupported(player),
                 DisplayKitIntegration.isAvailable(),
                 DisplayKitIntegration.isSupported(player),
+                BedrockPlayers.isBedrock(player),
                 preferences.languageSelectorConfirmed,
                 trigger);
     }

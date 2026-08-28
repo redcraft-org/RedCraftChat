@@ -41,6 +41,11 @@ public class LanguageSelectorPrompt {
                 UiStrings.SELECTOR_KEEP_CURRENT);
         String keepLabel = keepTemplate.replace("%language%", endonym);
 
+        // The command is printed, not just attached. This prompt is exactly
+        // where a Bedrock player lands, and Geyser serialises components
+        // through the legacy serialiser, so the click and the hover are both
+        // gone by the time it reaches them. A button whose command appears
+        // only inside the button is a button they can read and not press.
         Component keep = Component.text("[", NamedTextColor.GRAY)
                 .append(Component.text(keepLabel, NamedTextColor.GREEN, TextDecoration.BOLD))
                 .append(Component.text("]", NamedTextColor.GRAY))
@@ -53,6 +58,16 @@ public class LanguageSelectorPrompt {
                 .clickEvent(ClickEvent.runCommand("/lang"));
 
         player.sendMessage(Component.empty().append(keep).append(Component.text(" ")).append(choose));
+
+        player.sendMessage(Component.text("  ", NamedTextColor.GRAY)
+                .append(Component.text("/lang confirm", NamedTextColor.AQUA))
+                .append(Component.text("  ", NamedTextColor.GRAY))
+                .append(Component.text(keepLabel, NamedTextColor.GRAY)));
+        player.sendMessage(Component.text("  ", NamedTextColor.GRAY)
+                .append(Component.text("/lang", NamedTextColor.AQUA))
+                .append(Component.text("  ", NamedTextColor.GRAY))
+                .append(Component.text(PlayerPreferencesManager.localizeUiForPlayer(preferences,
+                        UiStrings.SELECTOR_PRIMARY_TITLE), NamedTextColor.GRAY)));
     }
 
     /** The one-liner sent alongside the surface so nobody misses it. */

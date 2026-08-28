@@ -10,6 +10,7 @@ import org.redcraft.redcraftchat.helpers.BasicMessageFormatter;
 import org.redcraft.redcraftchat.helpers.LegacyText;
 import org.redcraft.redcraftchat.dialog.NativeDialogSelector;
 import org.redcraft.redcraftchat.displaykit.LanguageSelectorManager;
+import org.redcraft.redcraftchat.minecraft.BedrockPlayers;
 import org.redcraft.redcraftchat.displaykit.LanguageSelectorManager.SelectorRoute;
 import org.redcraft.redcraftchat.displaykit.LanguageSelectorManager.Trigger;
 import org.redcraft.redcraftchat.locales.LocaleManager;
@@ -66,8 +67,14 @@ public class LangMinecraftCommand implements SimpleCommand {
                     // in-world panel, drawn by the client instead of by us,
                     // so the two can be compared side by side in game
                     if (!NativeDialogSelector.isSupported(player)) {
+                        // Two different reasons, and telling a Bedrock player
+                        // to update their client would send them chasing a
+                        // version that will never help
                         BasicMessageFormatter.sendInternalMessage(player,
-                                "Native dialogs need a 1.21.6 client or newer", NamedTextColor.RED);
+                                BedrockPlayers.isBedrock(player)
+                                        ? "Bedrock cannot show these dialogs, use /lang instead"
+                                        : "Native dialogs need a 1.21.6 client or newer",
+                                NamedTextColor.RED);
                         return;
                     }
                     if (!NativeDialogSelector.showPrimary(player, preferences)) {
