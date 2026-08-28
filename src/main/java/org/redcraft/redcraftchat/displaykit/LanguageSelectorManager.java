@@ -42,7 +42,6 @@ public class LanguageSelectorManager {
     }
 
     private static final Map<UUID, LanguageSelectorSession> sessions = new ConcurrentHashMap<>();
-    private static final Map<UUID, WorkspaceSession> workspaces = new ConcurrentHashMap<>();
 
     private LanguageSelectorManager() {
         throw new IllegalStateException("This class should not be instantiated");
@@ -148,40 +147,6 @@ public class LanguageSelectorManager {
         }
     }
 
-    /**
-     * Opens the in-world window on a tab.
-     *
-     * Same identity-keyed eviction as the selector: a slow close from a
-     * previous window must never evict the one that replaced it.
-     */
-    public static boolean openWorkspace(Player player, PlayerPreferences preferences,
-            WorkspaceSession.Tab tab) {
-        try {
-            dismissWorkspace(player.getUniqueId());
-            UUID playerId = player.getUniqueId();
-            WorkspaceSession[] self = new WorkspaceSession[1];
-            WorkspaceSession session = new WorkspaceSession(player, preferences, tab,
-                    () -> workspaces.remove(playerId, self[0]));
-            self[0] = session;
-            workspaces.put(playerId, session);
-            session.present();
-            return true;
-        } catch (Exception | LinkageError e) {
-            workspaces.remove(player.getUniqueId());
-            RedCraftChat.getInstance().getLogger().warn(
-                    "Could not open the workspace for {}, falling back: {}",
-                    player.getUsername(), e.getMessage());
-            return false;
-        }
-    }
-
-    public static void dismissWorkspace(UUID playerId) {
-        WorkspaceSession session = workspaces.remove(playerId);
-        if (session != null) {
-            session.closeQuietly();
-        }
-    }
-
     public static void dismiss(UUID playerId) {
         LanguageSelectorSession session = sessions.remove(playerId);
         if (session != null) {
@@ -201,10 +166,6 @@ public class LanguageSelectorManager {
         LanguageSelectorSession session = sessions.get(playerId);
         if (session != null) {
             session.refresh();
-        }
-        WorkspaceSession workspace = workspaces.get(playerId);
-        if (workspace != null) {
-            workspace.refresh();
         }
     }
 }

@@ -299,7 +299,11 @@ public final class NativeDialogSelector {
         return PlayerPreferencesManager.localizeUiForPlayer(preferences, message);
     }
 
-    private static boolean send(Player player, Dialog dialog) {
+    /**
+     * Package-visible: the mail dialogs go out through the same door, so the
+     * version gate and the input-key guard cover them too.
+     */
+    static boolean send(Player player, Dialog dialog) {
         if (!isSupported(player)) {
             return false;
         }

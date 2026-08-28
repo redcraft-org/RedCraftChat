@@ -17,6 +17,8 @@ import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientCu
 import com.velocitypowered.api.proxy.Player;
 
 import org.redcraft.redcraftchat.RedCraftChat;
+import org.redcraft.redcraftchat.models.players.PlayerMail;
+import org.redcraft.redcraftchat.messaging.MailMessagesManager;
 import org.redcraft.redcraftchat.displaykit.LanguageSelectorSession;
 import org.redcraft.redcraftchat.helpers.BasicMessageFormatter;
 import org.redcraft.redcraftchat.locales.UiStrings;
@@ -114,6 +116,38 @@ public class DialogClickListener extends PacketListenerAbstract {
                             NamedTextColor.GREEN);
                     break;
 
+                case "mail_inbox":
+                    MailDialog.showInbox(player);
+                    break;
+
+                case "mail_open": {
+                    PlayerMail opened = findMail(player, readString(values, MailDialog.MAIL_ID_KEY));
+                    if (opened != null) {
+                        if (opened.readAt == null) {
+                            MailMessagesManager.markMailAsRead(opened);
+                        }
+                        MailDialog.showMail(player, opened);
+                    }
+                    break;
+                }
+
+                case "mail_compose":
+                    MailDialog.showCompose(player, null);
+                    break;
+
+                case "mail_reply": {
+                    PlayerMail replying = findMail(player, readString(values, MailDialog.MAIL_ID_KEY));
+                    if (replying != null) {
+                        MailDialog.showCompose(player,
+                                MailMessagesManager.getMailSenderDisplayName(replying));
+                    }
+                    break;
+                }
+
+                case "mail_send":
+                    sendMail(player, values);
+                    break;
+
                 default:
                     break;
             }
@@ -121,6 +155,57 @@ public class DialogClickListener extends PacketListenerAbstract {
             RedCraftChat.getInstance().getLogger().warn("Language dialog action {} failed for {}: {}",
                     id.getKey(), player.getUsername(), e.getMessage());
         }
+    }
+
+    private PlayerMail findMail(Player player, String internalId) throws Exception {
+        if (internalId == null) {
+            return null;
+        }
+        for (PlayerMail mail : MailMessagesManager.getPlayerMail(player, false)) {
+            if (internalId.equals(mail.internalId)) {
+                return mail;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Sends what the compose form was filled with.
+     *
+     * The recipient can arrive three ways: baked into the button when
+     * replying, picked from the dropdown, or typed. The typed field wins only
+     * when the dropdown was left on its "somebody else" entry, so picking a
+     * player and also typing something cannot send to the wrong one.
+     */
+    private void sendMail(Player player, NBTCompound values) throws Exception {
+        String message = readString(values, MailDialog.MESSAGE_INPUT);
+        if (message == null || message.trim().isEmpty()) {
+            return;
+        }
+
+        String picked = readString(values, MailDialog.RECIPIENT_PICK);
+        String typed = readString(values, MailDialog.RECIPIENT_INPUT);
+        boolean pickedSomebodyElse = picked == null
+                || picked.isEmpty()
+                || MailDialog.RECIPIENT_OTHER.equals(picked);
+        String recipient = pickedSomebodyElse ? typed : picked;
+        if (recipient == null || recipient.trim().isEmpty()) {
+            BasicMessageFormatter.sendInternalError(player, "Nobody to send that to");
+            return;
+        }
+
+        PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);
+        PlayerPreferences target = PlayerPreferencesManager.getPlayerPreferences(recipient.trim(), true, false);
+        if (target == null) {
+            BasicMessageFormatter.sendInternalError(player, "That player was not found");
+            return;
+        }
+
+        MailMessagesManager.sendMail(player, target.minecraftUuid, message.trim());
+        BasicMessageFormatter.sendInternalMessage(player,
+                PlayerPreferencesManager.localizeUiForPlayer(preferences, "Mail sent to ") + recipient.trim(),
+                NamedTextColor.GREEN);
+        MailDialog.showInbox(player);
     }
 
     /**

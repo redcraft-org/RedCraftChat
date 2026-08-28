@@ -2,9 +2,7 @@ package org.redcraft.redcraftchat.commands.minecraft;
 
 import java.io.IOException;
 import org.redcraft.redcraftchat.commands.Suggestions;
-import org.redcraft.redcraftchat.displaykit.WorkspaceSession;
-import org.redcraft.redcraftchat.displaykit.LanguageSelectorManager;
-import org.redcraft.redcraftchat.displaykit.DisplayKitIntegration;
+import org.redcraft.redcraftchat.dialog.MailDialog;
 import org.redcraft.redcraftchat.locales.UiStrings;
 import org.redcraft.redcraftchat.messaging.MailView;
 import org.redcraft.redcraftchat.bedrock.BedrockMailInbox;
@@ -52,23 +50,15 @@ public class MailMinecraftCommand implements SimpleCommand {
 
             Player player = (Player) sender;
 
+            // Bare /mail opens the mailbox. Printing usage instead made the
+            // interface something you had to already know the name of.
+            if (openInterface(player, args)) {
+                return;
+            }
+
             if (args.length > 0) {
                 // Bedrock first: its inbox is a form, and the chat one is
                 // inert there in every direction
-                // The in-world window first for clients that can render it,
-                // then the Bedrock form, then the chat inbox below
-                if (isListing(args) && DisplayKitIntegration.isSupported(player)
-                        && openWorkspace(player)) {
-                    return;
-                }
-
-                if (BedrockMailInbox.isSupported(player) && isListing(args)) {
-                    boolean unreadOnly = args.length == 0 || !"listall".equalsIgnoreCase(args[0]);
-                    if (BedrockMailInbox.showInbox(player, unreadOnly)) {
-                        return;
-                    }
-                }
-
                 switch (args[0].toLowerCase(java.util.Locale.ROOT)) {
                     case "show":
                     case "open":
@@ -130,15 +120,28 @@ public class MailMinecraftCommand implements SimpleCommand {
             handleUsage(player);
         }
 
-        /** The window, or false so the caller falls to the next rung. */
-        private boolean openWorkspace(Player player) {
-            try {
-                return LanguageSelectorManager.openWorkspace(player,
-                        PlayerPreferencesManager.getPlayerPreferences(player),
-                        WorkspaceSession.Tab.INBOX);
-            } catch (IOException | InterruptedException e) {
+        /**
+         * The mailbox, on whichever surface this client can show.
+         *
+         * Dialog for a modern Java client, the Bedrock form for Bedrock, and
+         * the chat inbox for everything else. Only for the bare command and
+         * the list verbs: anything with its own arguments means the player
+         * already knows what they want and should get it.
+         */
+        private boolean openInterface(Player player, String[] args) {
+            if (!isListing(args)) {
                 return false;
             }
+            if (MailDialog.isSupported(player) && MailDialog.showInbox(player)) {
+                return true;
+            }
+            if (BedrockMailInbox.isSupported(player)) {
+                boolean unreadOnly = args.length == 0 || !"listall".equalsIgnoreCase(args[0]);
+                if (BedrockMailInbox.showInbox(player, unreadOnly)) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         /** Bare /mail, /mail list and /mail listall all open the inbox. */
