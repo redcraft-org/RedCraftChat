@@ -9,7 +9,9 @@ There are three tiers, and a string is in exactly one of them.
 
 Hand-written translations live in `UiTranslations`. `localizeUiForPlayer` checks them first and returns immediately on a hit. No network, no cache, no cost, and the wording is whatever you decided it should be.
 
-Machine translation is the fallback. A string with no hand-written entry goes to the configured provider (Claude by default), gets cached, and `TranslationWarmer` pre-translates every constant in `UiStrings.ALL` at boot so the first player doesn't pay for it.
+Machine translation is the fallback, and it's meant to stay. A string with no hand-written entry goes to the configured provider (Claude by default), gets cached, and `TranslationWarmer` pre-translates every constant in `UiStrings.ALL` at boot so the first player doesn't pay for it.
+
+:warning: The fallback is a permanent part of the design, not a gap waiting to be closed. A language must work with zero hand-written strings, and it must work with some of them. Adding a language to `rcc_supported_locales` and nothing else has to leave you with a fully usable, fully translated interface, just a machine-translated one. Never make a hand-written entry a requirement for a language to function.
 
 Untranslated is the third tier, and it's not a decision anyone made. Ten `sendInternalMessage` calls pass a raw English literal and never touch a localizer at all, so they're English for everyone forever.
 
@@ -44,7 +46,11 @@ Some other things to keep in mind:
 
 ## The plan
 
-Four steps, in this order, because each one makes the next smaller.
+The goal isn't a hand-written translation for every string. The machine does a decent job on whole sentences, which is why join and leave messages, restart notices and the rest read fine today. Where it falls down is short interface chrome, where there's no sentence to get context from.
+
+So: hand-write the chrome, leave the prose to the machine, and stop paying to pre-translate what's already hand-written.
+
+Five steps, in this order, because each one makes the next smaller.
 
 #### Make the registry the only source of truth
 
@@ -54,20 +60,28 @@ Replace the 15 inline literals with their `UiStrings` constants, and add `DISCOR
 
 The mail command has seven, `/linkdiscord` two, `/settings` one. Each needs a constant in `UiStrings`, an entry in `ALL`, and a `localizeUiForPlayer` call. Watch `Mail sent to ` and `Current settings: `, which are prefixes concatenated with a value, so keep the trailing space in the constant or move the value into a placeholder.
 
-#### Write the remaining 27 by hand
+#### Stop warming what's already hand-written
 
-27 strings across 5 languages is 135 lines. That's an afternoon, and it's the whole point: the interface stops depending on a translator's guess about context it can't see.
+This is the token fix. `TranslationWarmer` walks `UiStrings.ALL` for every language and translates all of it, including the 13 strings that now have hand-written entries. Those cached results are never read, because `localizeUiForPlayer` checks the hand-written table first and returns before it ever looks at the cache.
 
-Do the buttons and short labels first, since they're the ones a machine gets wrong most often and the ones players see most.
+Skip a string when `UiTranslations.lookup` already answers for that language. It's one condition in the inner loop, and it gets cheaper with every string you translate by hand.
+
+#### Hand-write the chrome, not everything
+
+Buttons, labels and fragments first. Those are the ones a machine gets wrong, because "Close" and "Legend:" and "enabled" carry no sentence to take context from, and they're also what players look at most.
+
+Whole sentences can stay on the machine path as long as they read well. `You have no mails.` and `Please confirm the language you want to play in` are complete thoughts and translate fine. There's no prize for hand-writing those, and every one you add is a line somebody has to maintain.
 
 #### Guard it with tests
 
 `UiTranslationsTest` already checks that every language covers the buttons. Extend it so the build fails on:
 
-- a constant in `ALL` with no hand-written entry, once you intend full coverage
+- a button or label string missing from a language that has a table, since those are the ones the machine gets wrong
 - a translation that still equals the English
 - a translation missing a placeholder its source has
 - a translation more than roughly twice the length of its source, which catches the ones that will be ellipsized in the panel
+
+Notice what isn't on that list. Don't fail the build because a language lacks an entry for every constant, and don't fail it because a language has no table at all. Both are supported states, and a test that forbids them turns the fallback into a lie.
 
 The length rule wants a generous threshold. It's there to catch a runaway, not to enforce brevity.
 
@@ -78,7 +92,11 @@ Say you're adding Portuguese.
 Add it to the database, since the supported locale list comes from `rcc_supported_locales` and not from the code:
 `insert into rcc_supported_locales (code, name) values ('pt-BR', 'Portuguese');`
 
-Add its table in `UiTranslations.build()`, copying an existing block and translating every value. The key is the language part only, so `pt`, not `pt-BR`. Regions don't get their own tables, because these words don't differ between Portugal and Brazil in any way that matters on a button.
+That's enough. The interface works in Portuguese from here, machine translated, and you can stop if that's good enough for you.
+
+If you want the buttons hand-written, add a table in `UiTranslations.build()`, copying an existing block. The key is the language part only, so `pt`, not `pt-BR`. Regions don't get their own tables, because these words don't differ between Portugal and Brazil in any way that matters on a button.
+
+You don't have to fill the whole table. Translate what you're sure of, leave the rest out, and every missing string keeps going to the machine as before.
 
 Check the endonym looks right. `getEndonym` asks the JDK for the language's name in its own language and falls back to the `name` column when the JDK doesn't know it, so a bad `name` value only shows up for obscure locales. For `pt-BR` you'll get "Português".
 
@@ -92,8 +110,8 @@ Restart the proxy. `TranslationWarmer` will pre-translate anything still on the 
 
 - Add the constant to `UiStrings`
 - Add it to `ALL` so the warmer picks it up
-- Add its translations to every language in `UiTranslations`
 - Use `localizeUiForPlayer` for it, never `localizeMessageForPlayer`
+- Add hand-written translations only if it's a button or a short label. A full sentence is fine on the machine path.
 
 Write the English so it survives being read alone. No pronouns pointing at another string, no single words whose meaning comes from the screen around them. `Close menu` instead of `Close`. It costs a word and saves a mistranslation in every language you don't speak.
 
