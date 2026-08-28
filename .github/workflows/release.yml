@@ -26,7 +26,7 @@ jobs:
 
       - name: Build DisplayKit into the local Maven repository
         env:
-          DISPLAYKIT_REF: feat/velocity-platform
+          DISPLAYKIT_REF: main
         run: |
           git clone --depth 1 --branch "$DISPLAYKIT_REF" https://github.com/Nano112/DisplayKit /tmp/displaykit
           cd /tmp/displaykit

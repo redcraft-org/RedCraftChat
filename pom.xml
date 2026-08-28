@@ -178,7 +178,7 @@
 		<dependency>
 			<groupId>io.schemat.displaykit</groupId>
 			<artifactId>displaykit-velocity</artifactId>
-			<version>0.1.0</version>
+			<version>0.2.0</version>
 		</dependency>
 		<!--
 			Depth one on purpose: lingua drags kotlin-stdlib 1.6.21 in
