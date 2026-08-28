@@ -29,6 +29,13 @@ public class PlayerPreferences {
     public String lastKnownDiscordName;
     public String previousKnownDiscordName;
 
+    /**
+     * True once the player has explicitly chosen or confirmed a language in
+     * any selector. Auto-detection at account creation never sets it, which
+     * is what makes the first-join prompt reach everyone exactly once.
+     */
+    public boolean languageSelectorConfirmed;
+
     public boolean commandSpyEnabled;
 
     public PlayerPreferences() {

@@ -18,12 +18,16 @@ import net.dv8tion.jda.api.entities.User;
 
 public class DatabasePlayerProvider implements PlayerProvider {
 
-    Database db = DatabaseManager.getDatabase();
+    // Fetched per query, never cached: the handle only carries a usable
+    // schema once DatabaseManager has managed to migrate it
+    private Database db() {
+        return DatabaseManager.getDatabase();
+    }
 
     public PlayerPreferences getPlayerPreferences(Player player, boolean createIfNotFound) throws IOException, InterruptedException {
         UUID playerUniqueId = player.getUniqueId();
 
-        PlayerPreferencesDatabase result = db.where("minecraft_uuid=?", playerUniqueId.toString()).first(PlayerPreferencesDatabase.class);
+        PlayerPreferencesDatabase result = db().where("minecraft_uuid=?", playerUniqueId.toString()).first(PlayerPreferencesDatabase.class);
 
         if (result == null) {
             if (createIfNotFound) {
@@ -38,7 +42,7 @@ public class DatabasePlayerProvider implements PlayerProvider {
     }
 
     public PlayerPreferences getPlayerPreferences(User user, boolean createIfNotFound) throws IOException, InterruptedException {
-        PlayerPreferencesDatabase result = db.where("discord_id=?", user.getId()).first(PlayerPreferencesDatabase.class);
+        PlayerPreferencesDatabase result = db().where("discord_id=?", user.getId()).first(PlayerPreferencesDatabase.class);
 
         if (result == null) {
             if (createIfNotFound) {
@@ -53,7 +57,7 @@ public class DatabasePlayerProvider implements PlayerProvider {
     }
 
     public PlayerPreferences getPlayerPreferences(UUID player) throws IOException, InterruptedException {
-        PlayerPreferencesDatabase result = db.where("minecraft_uuid=?", player.toString()).first(PlayerPreferencesDatabase.class);
+        PlayerPreferencesDatabase result = db().where("minecraft_uuid=?", player.toString()).first(PlayerPreferencesDatabase.class);
 
         if (result == null) {
             return null;
@@ -66,11 +70,11 @@ public class DatabasePlayerProvider implements PlayerProvider {
         PlayerPreferencesDatabase result = null;
 
         if (searchMinecraft) {
-            result = db.where("last_known_minecraft_name=?", username).first(PlayerPreferencesDatabase.class);
+            result = db().where("last_known_minecraft_name=?", username).first(PlayerPreferencesDatabase.class);
         }
 
         if (result == null && searchDiscord) {
-            result = db.where("last_known_discord_name=?", username).first(PlayerPreferencesDatabase.class);
+            result = db().where("last_known_discord_name=?", username).first(PlayerPreferencesDatabase.class);
         }
 
         if (result == null) {
@@ -83,7 +87,7 @@ public class DatabasePlayerProvider implements PlayerProvider {
     public void deletePlayerPreferences(PlayerPreferences playerPreferences) throws IOException, InterruptedException {
         String debugMessage = "Deleting player preferences for Minecraft " + playerPreferences.minecraftUuid + " and Discord " + playerPreferences.discordId;
         RedCraftChat.getInstance().getLogger().info(debugMessage);
-        db.delete(transformToDatabase(playerPreferences));
+        db().delete(transformToDatabase(playerPreferences));
     }
 
     public void updatePlayerPreferences(PlayerPreferences preferences) throws IOException, InterruptedException {
@@ -104,14 +108,14 @@ public class DatabasePlayerProvider implements PlayerProvider {
             throw new IllegalStateException("No unique identifier found for player preferences");
         }
 
-        boolean playerAlreadyExists = !db.where(query, params).results(PlayerPreferencesDatabase.class).isEmpty();
+        boolean playerAlreadyExists = !db().where(query, params).results(PlayerPreferencesDatabase.class).isEmpty();
 
         // upsert is not supported with MySQL
         if (playerAlreadyExists) {
-            db.update(transformedPreferences);
+            db().update(transformedPreferences);
         } else {
             try {
-                db.insert(transformedPreferences);
+                db().insert(transformedPreferences);
             } catch (Exception e) {
                 if (!e.getMessage().contains("Could not set value into pojo.")) {
                     throw e;
@@ -138,6 +142,7 @@ public class DatabasePlayerProvider implements PlayerProvider {
         playerPreferences.mainLanguage = preferences.mainLanguage;
 
         playerPreferences.commandSpyEnabled = preferences.commandSpyEnabled;
+        playerPreferences.languageSelectorConfirmed = preferences.languageSelectorConfirmed;
 
         return playerPreferences;
     }
@@ -160,6 +165,7 @@ public class DatabasePlayerProvider implements PlayerProvider {
         playerPreferences.mainLanguage = preferences.mainLanguage;
 
         playerPreferences.commandSpyEnabled = preferences.commandSpyEnabled;
+        playerPreferences.languageSelectorConfirmed = preferences.languageSelectorConfirmed;
 
         return playerPreferences;
     }

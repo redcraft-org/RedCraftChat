@@ -85,4 +85,21 @@ public class LocaleManager {
         }
         return locales.stream().anyMatch(l -> l.code.equals(locale));
     }
+
+    /**
+     * The name of a language as its own speakers write it, so a French
+     * speaker looks for "Francais" and not for whatever the reader's
+     * language calls it. Falls back to the stored name when the JVM has no
+     * display name for the tag.
+     */
+    public static String getEndonym(SupportedLocale locale) {
+        java.util.Locale localeTag = java.util.Locale.forLanguageTag(locale.code.replace('_', '-'));
+        String endonym = localeTag.getDisplayLanguage(localeTag);
+
+        if (endonym.isEmpty() || endonym.equalsIgnoreCase(localeTag.getLanguage())) {
+            return locale.name;
+        }
+
+        return endonym.substring(0, 1).toUpperCase(localeTag) + endonym.substring(1);
+    }
 }

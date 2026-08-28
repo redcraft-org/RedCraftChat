@@ -38,6 +38,7 @@ public class TranslationWarmer implements Runnable {
 
         int translated = 0;
         int failed = 0;
+        int skipped = 0;
 
         for (SupportedLocale locale : locales) {
             String targetLanguage = locale.code.split("-")[0].toLowerCase();
@@ -51,6 +52,10 @@ public class TranslationWarmer implements Runnable {
             TranslationManager translationManager = new TranslationManager(Config.chatTranslationProvider);
 
             for (String uiString : UiStrings.ALL) {
+                if (!needsWarming(uiString, targetLanguage)) {
+                    skipped++;
+                    continue;
+                }
                 try {
                     translationManager.translate(uiString, sourceLanguage, targetLanguage);
                     translated++;
@@ -62,7 +67,24 @@ public class TranslationWarmer implements Runnable {
             }
         }
 
-        String summary = String.format("Pre-translated %d interface strings (%d failed)", translated, failed);
+        String summary = String.format(
+                "Pre-translated %d interface strings (%d failed, %d already translated by hand)",
+                translated, failed, skipped);
         plugin.getLogger().info(summary);
+    }
+
+    /**
+     * Whether a string still has to be paid for in [targetLanguage].
+     *
+     * A hand-written translation is served straight out of UiTranslations by
+     * localizeUiForPlayer, which returns before it ever reaches the cache, so
+     * warming that string buys a cache entry nothing will ever read. The
+     * saving grows with every string translated by hand, which is the right
+     * way round.
+     *
+     * @param targetLanguage the language part of a locale, lowercased
+     */
+    public static boolean needsWarming(String uiString, String targetLanguage) {
+        return UiTranslations.lookup(uiString, targetLanguage) == null;
     }
 }

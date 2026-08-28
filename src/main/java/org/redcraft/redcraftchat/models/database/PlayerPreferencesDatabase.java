@@ -9,7 +9,7 @@ import javax.persistence.Transient;
 @Table(name = "rcc_player_preferences")
 public class PlayerPreferencesDatabase extends DatabaseModel {
     @Transient
-    public String sqlCreationQuery = "create table `rcc_player_preferences` (`id` bigint(20) NOT NULL AUTO_INCREMENT, `minecraft_uuid` varchar(255) DEFAULT NULL, `last_known_minecraft_name` varchar(255) DEFAULT NULL, `previous_known_minecraft_name` varchar(255) DEFAULT NULL, `discord_id` varchar(255) DEFAULT NULL, `last_known_discord_name` varchar(255) DEFAULT NULL, `previous_known_discord_name` varchar(255) DEFAULT NULL, `languages` text DEFAULT NULL, `main_language` varchar(255) DEFAULT NULL, `command_spy_enabled` tinyint(1) NOT NULL DEFAULT 0, PRIMARY KEY (`id`), UNIQUE KEY `minecraft_uuid` (`minecraft_uuid`), UNIQUE KEY `discord_id` (`discord_id`));";
+    public String sqlCreationQuery = "create table `rcc_player_preferences` (`id` bigint(20) NOT NULL AUTO_INCREMENT, `minecraft_uuid` varchar(255) DEFAULT NULL, `last_known_minecraft_name` varchar(255) DEFAULT NULL, `previous_known_minecraft_name` varchar(255) DEFAULT NULL, `discord_id` varchar(255) DEFAULT NULL, `last_known_discord_name` varchar(255) DEFAULT NULL, `previous_known_discord_name` varchar(255) DEFAULT NULL, `languages` text DEFAULT NULL, `main_language` varchar(255) DEFAULT NULL, `command_spy_enabled` tinyint(1) NOT NULL DEFAULT 0, `language_selector_confirmed` tinyint(1) NOT NULL DEFAULT 0, PRIMARY KEY (`id`), UNIQUE KEY `minecraft_uuid` (`minecraft_uuid`), UNIQUE KEY `discord_id` (`discord_id`));";
 
     @Id
     @GeneratedValue
@@ -37,4 +37,7 @@ public class PlayerPreferencesDatabase extends DatabaseModel {
 
     @Column(name = "command_spy_enabled", nullable = false)
     public boolean commandSpyEnabled = false;
+
+    @Column(name = "language_selector_confirmed", nullable = false)
+    public boolean languageSelectorConfirmed = false;
 }

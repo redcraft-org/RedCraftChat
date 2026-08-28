@@ -27,7 +27,21 @@ public class UiStrings {
     public static final String REMOVE_FROM_LANGUAGES = "Click to remove this languages";
     public static final String CHANGE_MAIN_LANGUAGE = "Change main language";
 
+    public static final String MAIL_TITLE = "Mail";
     public static final String MAIL_INBOX_HEADER = "MAIL INBOX";
+    public static final String MAIL_OPEN_INBOX = "Inbox";
+    /** %count% is substituted with a number, so it must survive translation. */
+    public static final String MAIL_UNREAD_COUNT = "%count% unread";
+    public static final String MAIL_ALL_READ = "All read";
+    public static final String MAIL_FROM = "from";
+    /**
+     * The name is a placeholder rather than something concatenated on the
+     * end: a trailing space does not survive translation, which is how
+     * "Mail sent to " became "Mail envoye a" and printed against the name.
+     */
+    public static final String MAIL_SENT_TO = "Mail sent to %player%";
+    public static final String MAIL_NO_RECIPIENT = "Nobody to send that to";
+    public static final String MAIL_PLAYER_NOT_FOUND = "That player was not found";
     public static final String MAIL_NO_MAILS = "You have no mails.";
     public static final String MAIL_NEXT_PAGE = "Next page";
     public static final String MAIL_PREVIOUS_PAGE = "Previous page";
@@ -36,10 +50,37 @@ public class UiStrings {
     public static final String MAIL_MARK_AS_READ = "Mark as read";
     public static final String MAIL_ALREADY_READ = "Already marked as read";
     public static final String MAIL_CLICK_TO_REPLY = "Click to reply";
-    public static final String MAIL_HOVER_TIP = "Tip: Hover the message to see the full text";
+    public static final String MAIL_REPLY = "Reply";
+    public static final String MAIL_SEND_TITLE = "Write a mail";
+    public static final String MAIL_RECIPIENT_NAME = "Player name";
+    public static final String MAIL_MESSAGE = "Message";
+    public static final String MAIL_UNKNOWN_SLOT = "That mail is not on the page you are looking at";
+    public static final String MAIL_REPLY_USAGE = "Use /mail reply <number> <message>";
+    public static final String MAIL_HOVER_TIP = "Type /mail show <number> to read one in full, or hover it";
+
+    public static final String SELECTOR_PRIMARY_TITLE = "What is your primary language?";
+    public static final String SELECTOR_OTHERS_TITLE = "Do you understand other languages?";
+    // Each of these is translated on its own, with nothing around it, so a
+    // pronoun has no antecedent to point at: "translated into it" came back
+    // in French as "traduit dedans". Every line here has to make sense read
+    // cold, and single words have to be the sense we mean, since "Close" and
+    // "Back" both have a common non-verb reading.
+    public static final String SELECTOR_PRIMARY_HELP = "All chat will be translated into the language you choose";
+    public static final String SELECTOR_OTHERS_HELP = "Messages in the languages you tick will not be translated";
+    public static final String SELECTOR_SUBMIT = "Submit";
+    public static final String SELECTOR_CONTINUE = "Continue";
+    public static final String SELECTOR_NEXT = "Next";
+    public static final String SELECTOR_BACK = "Go back";
+    public static final String SELECTOR_CLOSE = "Close menu";
+    public static final String SELECTOR_PREVIOUS = "Previous";
+    public static final String SELECTOR_DONE = "Done";
+    public static final String SELECTOR_JOIN_PROMPT = "Please confirm the language you want to play in";
+    public static final String SELECTOR_KEEP_CURRENT = "Keep %language%";
+    public static final String SELECTOR_APPEARED = "A language selector appeared in front of you";
+    public static final String SELECTOR_CONFIRMED = "Language confirmed, have fun!";
 
     public static final String DISCORD_COPY_TO_CLIPBOARD = "Copy to clipboard";
-    public static final String DISCORD_RUN_COMMAND = "Please run the following command on our Discord server (click to copy): ";
+    public static final String DISCORD_RUN_COMMAND = "Please run the following command on our Discord server (click to copy):";
     public static final String DISCORD_UNLINK = "Unlink";
     public static final String DISCORD_UNLINK_ACCOUNT = "Unlink your Discord account";
     public static final String DISCORD_ALREADY_LINKED = "You already linked your Discord account. If you wish to unlink it, click on the button below";
@@ -55,7 +96,30 @@ public class UiStrings {
             ADD_TO_LANGUAGES,
             REMOVE_FROM_LANGUAGES,
             CHANGE_MAIN_LANGUAGE,
+            SELECTOR_PRIMARY_TITLE,
+            SELECTOR_OTHERS_TITLE,
+            SELECTOR_PRIMARY_HELP,
+            SELECTOR_OTHERS_HELP,
+            SELECTOR_SUBMIT,
+            SELECTOR_CONTINUE,
+            SELECTOR_NEXT,
+            SELECTOR_BACK,
+            SELECTOR_CLOSE,
+            SELECTOR_PREVIOUS,
+            SELECTOR_DONE,
+            SELECTOR_JOIN_PROMPT,
+            SELECTOR_KEEP_CURRENT,
+            SELECTOR_APPEARED,
+            SELECTOR_CONFIRMED,
+            MAIL_TITLE,
             MAIL_INBOX_HEADER,
+            MAIL_OPEN_INBOX,
+            MAIL_UNREAD_COUNT,
+            MAIL_ALL_READ,
+            MAIL_FROM,
+            MAIL_SENT_TO,
+            MAIL_NO_RECIPIENT,
+            MAIL_PLAYER_NOT_FOUND,
             MAIL_NO_MAILS,
             MAIL_NEXT_PAGE,
             MAIL_PREVIOUS_PAGE,
@@ -64,6 +128,12 @@ public class UiStrings {
             MAIL_MARK_AS_READ,
             MAIL_ALREADY_READ,
             MAIL_CLICK_TO_REPLY,
+            MAIL_REPLY,
+            MAIL_SEND_TITLE,
+            MAIL_RECIPIENT_NAME,
+            MAIL_MESSAGE,
+            MAIL_UNKNOWN_SLOT,
+            MAIL_REPLY_USAGE,
             MAIL_HOVER_TIP,
             DISCORD_COPY_TO_CLIPBOARD,
             DISCORD_RUN_COMMAND,

@@ -2,6 +2,7 @@ package org.redcraft.redcraftchat.messaging;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,6 +27,25 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import org.redcraft.redcraftchat.helpers.LegacyText;
 
 public class MailMessagesManager {
+
+    /**
+     * When a mail arrived, written yyyy/MM/dd HH:mm.
+     *
+     * Big end first, so there is no reading it as a month-first date and no
+     * wondering which of two numbers is the day. The year is always there
+     * rather than only on old mails: players come back after years away, and
+     * a bare day and month says nothing about which year it belongs to.
+     *
+     * Numeric on purpose. A date written this way means the same thing in
+     * every language, so showing it costs no translation.
+     */
+    public static String formatSentAt(LocalDateTime at) {
+        // yyyy, never YYYY: the capital is the week-based year, which reports
+        // the next year for the last days of December
+        return at == null ? null : SENT_AT.format(at);
+    }
+
+    private static final DateTimeFormatter SENT_AT = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm");
 
     private MailMessagesManager() {
         throw new IllegalStateException("This class should not be instantiated");

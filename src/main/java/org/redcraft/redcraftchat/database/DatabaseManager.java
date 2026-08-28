@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 
 import com.dieselpoint.norm.Database;
 
@@ -19,6 +20,22 @@ import org.redcraft.redcraftchat.models.database.SupportedLocaleDatabase;
 
 public class DatabaseManager {
     private static Database database;
+
+    // The tables exist and every migration has run. Until then the table is
+    // unusable, not merely stale: norm names every mapped field in both its
+    // SELECT list and its UPDATE, so a table that predates a column fails
+    // reads as well as writes with "Unknown column ... in 'field list'".
+    private static volatile boolean schemaReady = false;
+    private static volatile long nextSchemaAttempt = 0;
+
+    // tryLock, never lock: getDatabase() is on every query path, and a probe
+    // against a host that drops packets rather than refusing them blocks for
+    // as long as the OS lets it. One thread does the work, everyone else
+    // carries on and fails their own query the way they did before this
+    // guard existed, instead of queueing behind it.
+    private static final ReentrantLock schemaLock = new ReentrantLock();
+
+    private static final long SCHEMA_RETRY_INTERVAL_MILLIS = 30_000;
 
     private DatabaseManager() {
         throw new IllegalStateException("This class should not be instantiated");
@@ -39,13 +56,61 @@ public class DatabaseManager {
         database.setUser(Config.databaseUsername);
         database.setPassword(Config.databasePassword);
 
+        schemaReady = false;
+        nextSchemaAttempt = 0;
+
+        if (!ensureSchema()) {
+            RedCraftChat.getInstance().getLogger().warn("Database is unreachable, features that need it will fail until it is back");
+        }
+    }
+
+    /**
+     * Creates the tables and runs the migrations, retrying on later calls if
+     * the database is down right now. Boot cannot be the only chance: a proxy
+     * that starts while MySQL is restarting would otherwise stay unmigrated
+     * until somebody restarts it, and every preference read and write would
+     * fail for as long as it ran.
+     */
+    private static boolean ensureSchema() {
+        if (schemaReady) {
+            return true;
+        }
+        // Every failed attempt costs a connection and a log line, so a
+        // database that stays down is retried on a timer rather than on
+        // every query
+        if (System.currentTimeMillis() < nextSchemaAttempt) {
+            return false;
+        }
+        if (!schemaLock.tryLock()) {
+            // Another thread is already attempting; this one is not going to
+            // learn anything by waiting for it
+            return false;
+        }
+        try {
+            return attemptSchema();
+        } finally {
+            // Measured from when the attempt ENDED. Timing it from the start
+            // means a probe that outlasts the interval leaves the deadline
+            // already expired, so retries run back to back with no gap.
+            nextSchemaAttempt = System.currentTimeMillis() + SCHEMA_RETRY_INTERVAL_MILLIS;
+            schemaLock.unlock();
+        }
+    }
+
+    private static boolean attemptSchema() {
+        if (schemaReady) {
+            return true;
+        }
+        if (database == null) {
+            return false;
+        }
         // Probe the database before norm spins up a connection pool,
         // a Hikari pool that fails to start dumps a stack trace in the log
         try (Connection probe = DriverManager.getConnection(Config.databaseUri, Config.databaseUsername, Config.databasePassword)) {
             RedCraftChat.getInstance().getLogger().debug("Database probe succeeded");
         } catch (SQLException ex) {
             RedCraftChat.getInstance().getLogger().warn("Database is unreachable, features that need it will fail until it is back: {}", ex.getMessage());
-            return;
+            return false;
         }
 
         List<Class<?>> classes = new ArrayList<Class<?>>();
@@ -54,10 +119,45 @@ public class DatabaseManager {
         classes.add(ScheduledAnnouncementDatabase.class);
         classes.add(SupportedLocaleDatabase.class);
 
-        if (createStructure(classes)) {
-            RedCraftChat.getInstance().getLogger().info("Connected to database!");
-        } else {
-            RedCraftChat.getInstance().getLogger().warn("Database is unreachable, features that need it will fail until it is back");
+        if (!createStructure(classes) || !migrate()) {
+            return false;
+        }
+
+        schemaReady = true;
+        RedCraftChat.getInstance().getLogger().info("Connected to database!");
+        return true;
+    }
+
+    /**
+     * Idempotent migrations for live tables. createStructure only ever runs
+     * "create table if not exists", so an existing install never picks up a
+     * new column from it. A migration that fails leaves the schema not ready,
+     * which keeps the retry timer running instead of letting queries through
+     * against a table norm cannot satisfy.
+     *
+     * Verified against MySQL 8: the ALTER lands on a populated table, a
+     * second run reports "Duplicate column name", pre-existing rows take the
+     * column default, and reads and writes both fail until it has run.
+     */
+    private static boolean migrate() {
+        return ensureColumn("rcc_player_preferences", "`language_selector_confirmed` tinyint(1) NOT NULL DEFAULT 0");
+    }
+
+    private static boolean ensureColumn(String table, String columnDefinition) {
+        try {
+            database.sql("ALTER TABLE `" + table + "` ADD COLUMN " + columnDefinition).execute();
+            RedCraftChat.getInstance().getLogger().info("Added column to {}: {}", table, columnDefinition);
+            return true;
+        } catch (Exception ex) {
+            String message = ex.getMessage() == null ? "" : ex.getMessage().toLowerCase();
+            // MySQL says "Duplicate column name", SQLite "duplicate column
+            // name", both covered: the column is already there, which is
+            // exactly what the migration wanted
+            if (message.contains("duplicate column")) {
+                return true;
+            }
+            RedCraftChat.getInstance().getLogger().error("Could not add column to {}: {}", table, ex.getMessage());
+            return false;
         }
     }
 
@@ -89,7 +189,14 @@ public class DatabaseManager {
         return true;
     }
 
+    /**
+     * The database handle, with the schema brought up to date first if an
+     * earlier attempt could not reach the server. Callers must fetch it per
+     * use rather than cache it, otherwise the first caller to run before the
+     * database came back would keep querying an unmigrated schema.
+     */
     public static Database getDatabase() {
+        ensureSchema();
         return database;
     }
 

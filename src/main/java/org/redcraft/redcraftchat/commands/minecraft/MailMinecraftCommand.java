@@ -1,6 +1,11 @@
 package org.redcraft.redcraftchat.commands.minecraft;
 
 import java.io.IOException;
+import org.redcraft.redcraftchat.commands.Suggestions;
+import org.redcraft.redcraftchat.dialog.MailDialog;
+import org.redcraft.redcraftchat.locales.UiStrings;
+import org.redcraft.redcraftchat.messaging.MailView;
+import org.redcraft.redcraftchat.bedrock.BedrockMailInbox;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -24,6 +29,9 @@ import net.kyori.adventure.text.format.NamedTextColor;
 
 public class MailMinecraftCommand implements SimpleCommand {
 
+    private static final String MAIL_UNKNOWN_SLOT = UiStrings.MAIL_UNKNOWN_SLOT;
+    private static final String MAIL_REPLY_USAGE = UiStrings.MAIL_REPLY_USAGE;
+
     public class MailMinecraftCommandHandler implements Runnable {
         CommandSource sender;
         String[] args;
@@ -42,8 +50,38 @@ public class MailMinecraftCommand implements SimpleCommand {
 
             Player player = (Player) sender;
 
+            // Bare /mail opens the mailbox. Printing usage instead made the
+            // interface something you had to already know the name of.
+            if (openInterface(player, args)) {
+                return;
+            }
+
             if (args.length > 0) {
-                switch (args[0]) {
+                // Bedrock first: its inbox is a form, and the chat one is
+                // inert there in every direction
+                switch (args[0].toLowerCase(java.util.Locale.ROOT)) {
+                    case "show":
+                    case "open":
+                        handleShow(player, args.length > 1 ? args[1] : null,
+                                "open".equalsIgnoreCase(args[0]));
+                        break;
+
+                    case "next":
+                        handlePageStep(player, 1);
+                        break;
+
+                    case "prev":
+                        handlePageStep(player, -1);
+                        break;
+
+                    case "page":
+                        handlePageJump(player, args.length > 1 ? args[1] : null);
+                        break;
+
+                    case "reply":
+                        handleSlotReply(player, args);
+                        break;
+
                     case "read":
                         String messageId = args.length > 1 ? args[1] : null;
                         handleMessageRead(player, messageId);
@@ -80,6 +118,159 @@ public class MailMinecraftCommand implements SimpleCommand {
             }
 
             handleUsage(player);
+        }
+
+        /**
+         * The mailbox, on whichever surface this client can show.
+         *
+         * Dialog for a modern Java client, the Bedrock form for Bedrock, and
+         * the chat inbox for everything else. Only for the bare command and
+         * the list verbs: anything with its own arguments means the player
+         * already knows what they want and should get it.
+         */
+        private boolean openInterface(Player player, String[] args) {
+            if (!isListing(args)) {
+                return false;
+            }
+            if (MailDialog.isSupported(player) && MailDialog.showMenu(player)) {
+                return true;
+            }
+            if (BedrockMailInbox.isSupported(player)) {
+                // Bare /mail opens the menu, the same as the Java dialog.
+                // Naming a list verb says which list is wanted, so that skips
+                // the menu and goes straight to it.
+                boolean opened = args.length == 0
+                        ? BedrockMailInbox.showMenu(player)
+                        : BedrockMailInbox.showInbox(player, !"listall".equalsIgnoreCase(args[0]));
+                if (opened) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /** Bare /mail, /mail list and /mail listall all open the inbox. */
+        private boolean isListing(String[] args) {
+            if (args.length == 0) {
+                return true;
+            }
+            String verb = args[0].toLowerCase(java.util.Locale.ROOT);
+            return "list".equals(verb) || "listall".equals(verb);
+        }
+
+        /**
+         * Prints one mail in full.
+         *
+         * The list can only ever show a preview, and the rest used to live in
+         * a hover, which is invisible to anyone without a mouse and to every
+         * Bedrock player. This is the path that makes the body readable.
+         */
+        private void handleShow(Player player, String rawSlot, boolean markRead) {
+            try {
+            PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);
+            MailView view = MailView.of(player.getUniqueId());
+
+            Integer slot = parseSlot(rawSlot);
+            String internalId = slot == null ? null : view.internalId(slot);
+            if (internalId == null) {
+                BasicMessageFormatter.sendInternalMessage(player,
+                        PlayerPreferencesManager.localizeUiForPlayer(preferences, MAIL_UNKNOWN_SLOT),
+                        NamedTextColor.RED);
+                return;
+            }
+
+            PlayerMail mail = null;
+            for (PlayerMail candidate : MailMessagesManager.getPlayerMail(player)) {
+                if (internalId.equals(candidate.internalId)) {
+                    mail = candidate;
+                    break;
+                }
+            }
+            if (mail == null) {
+                BasicMessageFormatter.sendInternalMessage(player,
+                        PlayerPreferencesManager.localizeUiForPlayer(preferences, MAIL_UNKNOWN_SLOT),
+                        NamedTextColor.RED);
+                return;
+            }
+
+            String sender = MailMessagesManager.getMailSenderDisplayName(mail);
+            String body = PlayerPreferencesManager.localizeMessageForPlayer(preferences, mail.message);
+
+            player.sendMessage(Component.text(sender + " -> ", NamedTextColor.AQUA));
+            player.sendMessage(Component.text(body, NamedTextColor.WHITE));
+            if (mail.originalLanguage != null && !body.equals(mail.message)) {
+                // The original used to be hover-only, so it was lost to
+                // exactly the players who most needed the translation shown
+                player.sendMessage(Component.text(
+                        "[" + mail.originalLanguage.toUpperCase() + "] " + mail.message,
+                        NamedTextColor.DARK_GRAY));
+            }
+            player.sendMessage(Component.text("/mail reply " + slot + " ", NamedTextColor.GRAY));
+
+            if (markRead && mail.readAt == null) {
+                MailMessagesManager.markMailAsRead(mail);
+            }
+            } catch (IOException | InterruptedException e) {
+                BasicMessageFormatter.sendInternalError(player, "Could not read that mail");
+            }
+        }
+
+        private void handlePageStep(Player player, int delta) {
+            MailView view = MailView.of(player.getUniqueId());
+            handleMailList(player, Math.max(1, view.page() + delta), view.unreadOnly());
+        }
+
+        private void handlePageJump(Player player, String rawPage) {
+            MailView view = MailView.of(player.getUniqueId());
+            int page = 1;
+            try {
+                page = rawPage == null ? 1 : Integer.parseInt(rawPage);
+            } catch (NumberFormatException e) {
+                page = 1;
+            }
+            handleMailList(player, Math.max(1, page), view.unreadOnly());
+        }
+
+        /** Reply by slot, so the sender's name never has to be typed. */
+        private void handleSlotReply(Player player, String[] args) {
+            try {
+            PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);
+            MailView view = MailView.of(player.getUniqueId());
+
+            Integer slot = args.length > 1 ? parseSlot(args[1]) : null;
+            String internalId = slot == null ? null : view.internalId(slot);
+            if (internalId == null || args.length < 3) {
+                BasicMessageFormatter.sendInternalMessage(player,
+                        PlayerPreferencesManager.localizeUiForPlayer(preferences, MAIL_REPLY_USAGE),
+                        NamedTextColor.RED);
+                return;
+            }
+
+            for (PlayerMail mail : MailMessagesManager.getPlayerMail(player)) {
+                if (internalId.equals(mail.internalId)) {
+                    String message = String.join(" ", Arrays.asList(args).subList(2, args.length));
+                    MailMessagesManager.sendMail(player, mail.senderUuid, message);
+                    BasicMessageFormatter.sendInternalMessage(player,
+                            PlayerPreferencesManager.localizeUiForPlayer(preferences, "Mail sent to ")
+                                    + MailMessagesManager.getMailSenderDisplayName(mail),
+                            NamedTextColor.GREEN);
+                    return;
+                }
+            }
+            } catch (IOException | InterruptedException e) {
+                BasicMessageFormatter.sendInternalError(player, "Could not send that reply");
+            }
+        }
+
+        private Integer parseSlot(String raw) {
+            if (raw == null) {
+                return null;
+            }
+            try {
+                return Integer.parseInt(raw.trim());
+            } catch (NumberFormatException e) {
+                return null;
+            }
         }
 
         private void handleUsage(Player player) {
@@ -158,6 +349,9 @@ public class MailMinecraftCommand implements SimpleCommand {
             }
 
             List<PlayerMail> mailsToDisplay = mails.subList(start, end);
+            // Recorded before rendering, so the numbers printed on the rows
+            // and the numbers /mail show accepts are the same list
+            MailView.of(player.getUniqueId()).record(page, unreadOnly, mailsToDisplay);
 
             List<Component> menu;
             try {
@@ -181,8 +375,8 @@ public class MailMinecraftCommand implements SimpleCommand {
                 originalNoMailsText += LegacyText.DARK_PURPLE + "\n\nTip: run the command %command% to see messages you already read";
             }
 
-            String headerText = PlayerPreferencesManager.localizeMessageForPlayer(preferences, originalHeaderText);
-            String noMailsText = PlayerPreferencesManager.localizeMessageForPlayer(preferences, originalNoMailsText).replace("%command%", "/mail listall");
+            String headerText = PlayerPreferencesManager.localizeUiForPlayer(preferences, originalHeaderText);
+            String noMailsText = PlayerPreferencesManager.localizeUiForPlayer(preferences, originalNoMailsText).replace("%command%", "/mail listall");
 
             List<Component> messages = new ArrayList<Component>();
 
@@ -210,15 +404,16 @@ public class MailMinecraftCommand implements SimpleCommand {
                 messages.add(Component.empty());
                 messages.add(Component.empty());
             } else {
+                int slotNumber = 0;
                 for (PlayerMail mail : mailsToDisplay) {
-                    messages.add(getMailMessage(preferences, mail));
+                    messages.add(getMailMessage(preferences, mail, ++slotNumber));
                 }
                 // Pad to always have the same number of lines
                 for (int i = 0; i < elementsPerPage - mailsToDisplay.size(); i++) {
                     messages.add(Component.empty());
                 }
 
-                String hoverHelpMessage = PlayerPreferencesManager.localizeMessageForPlayer(preferences, "Tip: Hover the message to see the full text");
+                String hoverHelpMessage = PlayerPreferencesManager.localizeUiForPlayer(preferences, "Tip: Hover the message to see the full text");
 
                 // BungeeCord asked for italic then for yellow and the second call won,
                 // so this line renders yellow and upright, which is kept as is
@@ -228,10 +423,15 @@ public class MailMinecraftCommand implements SimpleCommand {
             return messages;
         }
 
-        private Component getMailMessage(PlayerPreferences preferences, PlayerMail mail) {
-            String markAsReadText = PlayerPreferencesManager.localizeMessageForPlayer(preferences, "Mark as read");
-            String alreadyMarkedAsReadText = PlayerPreferencesManager.localizeMessageForPlayer(preferences, "Already marked as read");
-            String clickToReplyText = PlayerPreferencesManager.localizeMessageForPlayer(preferences, "Click to reply");
+        private Component getMailMessage(PlayerPreferences preferences, PlayerMail mail, int slot) {
+            // The number is the handle. Before this the only way to name one
+            // mail was its internal id, which lived inside a click event and
+            // was never printed, so a player without a mouse could not act on
+            // a single mail at all.
+            Component slotTag = Component.text(slot + " ", NamedTextColor.DARK_AQUA);
+            String markAsReadText = PlayerPreferencesManager.localizeUiForPlayer(preferences, "Mark as read");
+            String alreadyMarkedAsReadText = PlayerPreferencesManager.localizeUiForPlayer(preferences, "Already marked as read");
+            String clickToReplyText = PlayerPreferencesManager.localizeUiForPlayer(preferences, "Click to reply");
 
             Component statusTag;
             HoverEvent<Component> statusHover;
@@ -285,6 +485,7 @@ public class MailMinecraftCommand implements SimpleCommand {
                     .clickEvent(ClickEvent.suggestCommand("/mail send " + senderDisplayName + " "));
 
             return Component.text()
+                    .append(slotTag)
                     .append(statusTag)
                     .append(senderName)
                     .append(arrow)
@@ -298,10 +499,10 @@ public class MailMinecraftCommand implements SimpleCommand {
             String originalNextText = "Next page";
             String originalNextTooltipText = "Click to go to the next page";
 
-            String previousText = PlayerPreferencesManager.localizeMessageForPlayer(preferences, originalPreviousText);
-            String previousTooltipText = PlayerPreferencesManager.localizeMessageForPlayer(preferences, originalPreviousTooltipText);
-            String nextText = PlayerPreferencesManager.localizeMessageForPlayer(preferences, originalNextText);
-            String nextTooltipText = PlayerPreferencesManager.localizeMessageForPlayer(preferences, originalNextTooltipText);
+            String previousText = PlayerPreferencesManager.localizeUiForPlayer(preferences, originalPreviousText);
+            String previousTooltipText = PlayerPreferencesManager.localizeUiForPlayer(preferences, originalPreviousTooltipText);
+            String nextText = PlayerPreferencesManager.localizeUiForPlayer(preferences, originalNextText);
+            String nextTooltipText = PlayerPreferencesManager.localizeUiForPlayer(preferences, originalNextTooltipText);
 
             String subCommand = unreadOnly ? "list" : "listall";
 
@@ -350,6 +551,42 @@ public class MailMinecraftCommand implements SimpleCommand {
     public void execute(Invocation invocation) {
         var commandHandler = new MailMinecraftCommandHandler(invocation.source(), invocation.arguments());
         RedCraftChat.getInstance().getProxy().getScheduler().buildTask(RedCraftChat.getInstance(), commandHandler).schedule();
+    }
+
+
+    @Override
+    public List<String> suggest(Invocation invocation) {
+        String[] args = invocation.arguments();
+        int index = Suggestions.wordIndex(args);
+        String word = Suggestions.currentWord(args);
+
+        if (index == 0) {
+            return Suggestions.matching(java.util.List.of(
+                    "list", "listall", "read", "next", "prev", "page", "show", "open", "reply", "send"), word);
+        }
+        if (index == 1 && args.length > 0) {
+            String verb = args[0].toLowerCase(java.util.Locale.ROOT);
+            if ("show".equals(verb) || "open".equals(verb) || "reply".equals(verb)) {
+                // Only the slots actually on screen, so a suggestion cannot
+                // point at a row the player is not looking at
+                if (invocation.source() instanceof Player) {
+                    return Suggestions.matching(
+                            MailView.of(((Player) invocation.source()).getUniqueId()).slotNumbers(), word);
+                }
+            }
+        }
+        if (index == 1 && args.length > 0 && "send".equalsIgnoreCase(args[0])) {
+            return Suggestions.matching(onlinePlayerNames(), word);
+        }
+        return java.util.List.of();
+    }
+
+    private List<String> onlinePlayerNames() {
+        List<String> names = new ArrayList<>();
+        for (Player online : RedCraftChat.getInstance().getProxy().getAllPlayers()) {
+            names.add(online.getUsername());
+        }
+        return names;
     }
 
     @Override

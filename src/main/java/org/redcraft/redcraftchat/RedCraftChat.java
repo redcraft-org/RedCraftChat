@@ -1,13 +1,18 @@
 package org.redcraft.redcraftchat;
 
+import org.redcraft.redcraftchat.models.locales.SupportedLocale;
+import org.redcraft.redcraftchat.locales.LocaleManager;
+import org.redcraft.redcraftchat.commands.CommandHints;
 import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.PacketEventsAPI;
 import com.github.retrooper.packetevents.settings.PacketEventsSettings;
 import com.google.inject.Inject;
+import com.velocitypowered.api.command.CommandMeta;
 import com.velocitypowered.api.command.CommandManager;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
+import com.velocitypowered.api.plugin.Dependency;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.PluginContainer;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
@@ -19,6 +24,8 @@ import io.github.retrooper.packetevents.velocity.factory.VelocityPacketEventsBui
 import net.dv8tion.jda.api.JDA;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
@@ -52,6 +59,9 @@ import org.redcraft.redcraftchat.listeners.minecraft.MinecraftConnectMailListene
 import org.redcraft.redcraftchat.listeners.minecraft.MinecraftDisplayNameListener;
 import org.redcraft.redcraftchat.listeners.minecraft.MinecraftPlayerPreferencesListener;
 import org.redcraft.redcraftchat.listeners.minecraft.MinecraftTabCompleteListener;
+import org.redcraft.redcraftchat.dialog.DialogClickListener;
+import org.redcraft.redcraftchat.displaykit.DisplayKitIntegration;
+import org.redcraft.redcraftchat.listeners.minecraft.MinecraftLanguageSelectorListener;
 import org.redcraft.redcraftchat.listeners.packets.ChatSignatureStripper;
 import org.redcraft.redcraftchat.listeners.packets.HologramTranslator;
 import org.redcraft.redcraftchat.listeners.packets.SystemChatInterceptor;
@@ -63,8 +73,11 @@ import org.redcraft.redcraftchat.runnables.ScheduledAnnouncementsTask;
 
 import org.slf4j.Logger;
 
-@Plugin(id = "redcraftchat", name = RedCraftChat.PLUGIN_NAME, version = "0.1.7-SNAPSHOT", url = "https://redcraft.org", description = "Multi language chat and Discord bridge", authors = {
-		"RedCraft" })
+@Plugin(id = "redcraftchat", name = RedCraftChat.PLUGIN_NAME, version = "0.1.8-SNAPSHOT", url = "https://redcraft.org", description = "Multi language chat and Discord bridge", authors = {
+		"RedCraft" },
+		// Soft: Floodgate drives the native Bedrock forms, and the
+		// plugin has to load on a proxy that does not run it
+		dependencies = { @Dependency(id = "floodgate", optional = true) })
 public class RedCraftChat {
 
 	public static final String PLUGIN_NAME = "RedCraftChat";
@@ -145,6 +158,12 @@ public class RedCraftChat {
 		if (Config.translationEnabled && Config.translateHolograms) {
 			PacketEvents.getAPI().getEventManager().registerListener(new HologramTranslator());
 		}
+		// The native dialog's return channel: dialog buttons make the client
+		// send a custom click action, which crosses the proxy like any packet
+		PacketEvents.getAPI().getEventManager().registerListener(new DialogClickListener());
+		// DisplayKit registers its own packet listener, so it shares the same
+		// pre-init window; a failure degrades to the chat selector
+		DisplayKitIntegration.init(proxy);
 		PacketEvents.getAPI().init();
 
 		// Game listeners
@@ -153,6 +172,7 @@ public class RedCraftChat {
 		proxy.getEventManager().register(this, new MinecraftConnectDisconnectMessageListener());
 		proxy.getEventManager().register(this, new MinecraftConnectMailListener());
 		proxy.getEventManager().register(this, new MinecraftPlayerPreferencesListener());
+		proxy.getEventManager().register(this, new MinecraftLanguageSelectorListener());
 		if (Config.enableTabCompletion) {
 			proxy.getEventManager().register(this, new MinecraftTabCompleteListener());
 		}
@@ -166,6 +186,7 @@ public class RedCraftChat {
 		CommandManager commandManager = proxy.getCommandManager();
 		jsonApiServer.start();
 
+
 		// Aliases come from the config, so a server can be given a shortcut
 		// without shipping a command for it
 		for (Map.Entry<String, String> alias : Config.commandAliases.entrySet()) {
@@ -174,15 +195,44 @@ public class RedCraftChat {
 				new AliasMinecraftCommand(alias.getValue()));
 		}
 
-		commandManager.register(commandManager.metaBuilder("broadcast").aliases("bc", "alert").plugin(this).build(), new BroadcastMinecraftCommand());
-		commandManager.register(commandManager.metaBuilder("commandspy").aliases("cspy").plugin(this).build(), new CommandSpyMinecraftCommand());
-		commandManager.register(commandManager.metaBuilder("lang").aliases("languages").plugin(this).build(), new LangMinecraftCommand());
-		commandManager.register(commandManager.metaBuilder("discord-link").plugin(this).build(), new LinkDiscordAccountMinecraftCommand());
-		commandManager.register(commandManager.metaBuilder("mail").plugin(this).build(), new MailMinecraftCommand());
-		commandManager.register(commandManager.metaBuilder("msg").aliases("tell", "m", "w").plugin(this).build(), new MsgMinecraftCommand());
-		commandManager.register(commandManager.metaBuilder("me").plugin(this).build(), new MeMinecraftCommand());
-		commandManager.register(commandManager.metaBuilder("player-settings").plugin(this).build(), new PlayerSettingsMinecraftCommand());
-		commandManager.register(commandManager.metaBuilder("reply").aliases("r").plugin(this).build(), new ReplyMinecraftCommand());
+		// Hints are what a Bedrock client completes against: it never asks the
+		// server for suggestions, it only reads the declared tree once. They
+		// never execute, so they cannot change how anything parses.
+		commandManager.register(commandManager.metaBuilder("broadcast").aliases("bc", "alert").plugin(this)
+				.hint(CommandHints.text("message"))
+				.build(), new BroadcastMinecraftCommand());
+		commandManager.register(commandManager.metaBuilder("commandspy").aliases("cspy").plugin(this)
+				.hint(CommandHints.word("player"))
+				.build(), new CommandSpyMinecraftCommand());
+		commandManager.register(langMeta(commandManager), new LangMinecraftCommand());
+		commandManager.register(commandManager.metaBuilder("discord-link").plugin(this)
+				.hint(CommandHints.leaf("unlink"))
+				.hint(CommandHints.word("code"))
+				.build(), new LinkDiscordAccountMinecraftCommand());
+		commandManager.register(commandManager.metaBuilder("mail").plugin(this)
+				.hint(CommandHints.leaf("list"))
+				.hint(CommandHints.leaf("listall"))
+				.hint(CommandHints.leaf("read"))
+				.hint(CommandHints.leaf("next"))
+				.hint(CommandHints.leaf("prev"))
+				.hint(CommandHints.verbWith("show", MAIL_SLOTS))
+				.hint(CommandHints.verbWith("open", MAIL_SLOTS))
+				.hint(CommandHints.verbWith("page", MAIL_SLOTS))
+				.hint(CommandHints.verbWithWordThenText("reply", "number", "message"))
+				.hint(CommandHints.verbWithWordThenText("send", "player", "message"))
+				.build(), new MailMinecraftCommand());
+		commandManager.register(commandManager.metaBuilder("msg").aliases("tell", "m", "w").plugin(this)
+				.hint(CommandHints.verbWithWordThenText("player", "player", "message").getChild("player"))
+				.build(), new MsgMinecraftCommand());
+		commandManager.register(commandManager.metaBuilder("me").plugin(this)
+				.hint(CommandHints.text("message"))
+				.build(), new MeMinecraftCommand());
+		commandManager.register(commandManager.metaBuilder("player-settings").plugin(this)
+				.hint(CommandHints.word("player"))
+				.build(), new PlayerSettingsMinecraftCommand());
+		commandManager.register(commandManager.metaBuilder("reply").aliases("r").plugin(this)
+				.hint(CommandHints.text("message"))
+				.build(), new ReplyMinecraftCommand());
 	}
 
 	private boolean setupDiscord() {
@@ -225,6 +275,7 @@ public class RedCraftChat {
 		jsonApiServer.stop();
 		RedisCache.close();
 		if (PacketEvents.getAPI() != null && PacketEvents.getAPI().isInitialized()) {
+			DisplayKitIntegration.shutdown();
 			PacketEvents.getAPI().terminate();
 		}
 	}
@@ -248,4 +299,46 @@ public class RedCraftChat {
 	public Path getDataDirectory() {
 		return dataDirectory;
 	}
+	/**
+	 * The /lang hints, including one literal per supported locale.
+	 *
+	 * The locale list comes from the database or the API and can be null when
+	 * the provider is down, so this degrades to the verbs alone rather than
+	 * refusing to register the command.
+	 */
+	/**
+	 * Slot numbers, as literals so a Bedrock client can offer them. A page
+	 * holds five rows, so these are the only values that can ever be valid.
+	 */
+	private static final List<String> MAIL_SLOTS = List.of("1", "2", "3", "4", "5");
+
+	private CommandMeta langMeta(CommandManager commandManager) {
+		CommandMeta.Builder builder = commandManager.metaBuilder("lang").aliases("languages").plugin(this)
+				.hint(CommandHints.leaf("confirm"))
+				.hint(CommandHints.leaf("panel"))
+				.hint(CommandHints.leaf("dialog"));
+
+		List<String> codes = new ArrayList<>();
+		try {
+			List<SupportedLocale> locales = LocaleManager.getSupportedLocales();
+			if (locales != null) {
+				for (SupportedLocale locale : locales) {
+					codes.add(locale.code);
+				}
+			}
+		} catch (Exception e) {
+			getLogger().warn("Could not read the supported locales for command hints: {}", e.getMessage());
+		}
+
+		for (String code : codes) {
+			builder.hint(CommandHints.leaf(code));
+		}
+		// Deliberately not a child of each code: making it one would force a
+		// Bedrock player to type main after every language
+		builder.hint(CommandHints.verbWith("main", codes));
+
+		return builder.build();
+	}
+
+
 }

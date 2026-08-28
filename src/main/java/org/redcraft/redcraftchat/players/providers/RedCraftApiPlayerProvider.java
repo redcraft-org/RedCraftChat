@@ -206,6 +206,10 @@ public class RedCraftApiPlayerProvider implements PlayerProvider {
 
         playerPreferences.mainLanguage = preferences.mainLanguage;
 
+        // An api backend that does not know the field yet sends null, which
+        // reads as unconfirmed and re-prompts once rather than never
+        playerPreferences.languageSelectorConfirmed = Boolean.TRUE.equals(preferences.languageSelectorConfirmed);
+
         // TODO missing stuff
         return playerPreferences;
     }
@@ -228,6 +232,8 @@ public class RedCraftApiPlayerProvider implements PlayerProvider {
         playerPreferences.languages = preferences.languages;
 
         playerPreferences.mainLanguage = preferences.mainLanguage;
+
+        playerPreferences.languageSelectorConfirmed = preferences.languageSelectorConfirmed;
 
         // TODO missing stuff
         return playerPreferences;

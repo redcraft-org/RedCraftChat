@@ -8,12 +8,22 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Set up JDK 25
+      - name: Set up JDK 21 and 25
         uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: 25
+          java-version: |
+            21
+            25
           cache: maven
+
+      - name: Build DisplayKit into the local Maven repository
+        env:
+          DISPLAYKIT_REF: feat/velocity-platform
+        run: |
+          git clone --depth 1 --branch "$DISPLAYKIT_REF" https://github.com/Nano112/DisplayKit /tmp/displaykit
+          cd /tmp/displaykit
+          ./gradlew --no-daemon publishToMavenLocal
 
       - name: Test with Maven
         run: mvn -B test

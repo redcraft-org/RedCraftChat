@@ -49,6 +49,27 @@ public class TranslationManager {
             throw new IllegalStateException("TranslationManager was called but translation is disabled in the configuration");
         }
 
+        // Numbers come out before anything else, so a message that only
+        // differs by a counter is one cache entry instead of one translation
+        // per tick. See NumericTemplate for the case that prompted it.
+        NumericTemplate numbers = NumericTemplate.of(text);
+        if (numbers.isTemplated() && !numbers.hasWordsLeft()) {
+            // Nothing but the numbers, so there is nothing to translate
+            return text;
+        }
+
+        String toTranslate = numbers.template();
+        String translated = translateThroughProvider(toTranslate, sourceLanguage, targetLanguage);
+
+        String restored = numbers.restore(translated);
+        // A translation that dropped a placeholder cannot be put back
+        // together, and showing the original beats showing a stray
+        // %number_b% to a player
+        return restored != null ? restored : text;
+    }
+
+    private String translateThroughProvider(String text, String sourceLanguage, String targetLanguage)
+            throws IllegalStateException, URISyntaxException, IOException, InterruptedException {
         if (this.translationProvider.translatesRawText()) {
             // Nothing is hidden from the provider, it was told what the codes
             // and placeholders mean instead

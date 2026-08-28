@@ -14,10 +14,10 @@ import org.redcraft.redcraftchat.models.players.PlayerMail;
 
 public class DatabaseMailProvider implements MailProvider {
 
-    Database db;
-
-    public DatabaseMailProvider() {
-        db = DatabaseManager.getDatabase();
+    // Fetched per query, never cached: the handle only carries a usable
+    // schema once DatabaseManager has managed to migrate it
+    private Database db() {
+        return DatabaseManager.getDatabase();
     }
 
     public List<PlayerMail> getMails(UUID recipientUuid, boolean unreadOnly) {
@@ -25,14 +25,14 @@ public class DatabaseMailProvider implements MailProvider {
         if (unreadOnly) {
             where += " and read_at is null";
         }
-        Query query = db.where(where, recipientUuid.toString());
+        Query query = db().where(where, recipientUuid.toString());
         return transform(query.results(PlayerMailDatabase.class));
     }
 
     public void sendMail(PlayerMail mail) {
         PlayerMailDatabase mailToSend = transformToDatabase(mail);
         try {
-            db.insert(mailToSend);
+            db().insert(mailToSend);
         } catch (Exception e) {
             if (!e.getMessage().contains("Could not set value into pojo.")) {
                 throw e;
@@ -41,7 +41,7 @@ public class DatabaseMailProvider implements MailProvider {
     }
 
     public void updateMail(PlayerMail mail) {
-        db.update(transformToDatabase(mail));
+        db().update(transformToDatabase(mail));
     }
 
     public List<PlayerMail> transform(List<PlayerMailDatabase> mailDatabase) {

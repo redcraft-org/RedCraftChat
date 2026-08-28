@@ -9,9 +9,11 @@ import java.util.concurrent.TimeUnit;
 import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.caching.CacheManager;
+import org.redcraft.redcraftchat.displaykit.LanguageSelectorManager;
 import org.redcraft.redcraftchat.listeners.packets.HologramTranslator;
 import org.redcraft.redcraftchat.detection.DetectionManager;
 import org.redcraft.redcraftchat.locales.LocaleManager;
+import org.redcraft.redcraftchat.locales.UiTranslations;
 import org.redcraft.redcraftchat.models.caching.CacheCategory;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import org.redcraft.redcraftchat.players.providers.DatabasePlayerProvider;
@@ -178,6 +180,7 @@ public class PlayerPreferencesManager {
         // Holograms only resend on their own when their text changes, so a
         // language change has to push corrected packets itself.
         HologramTranslator.onPreferencesUpdated(preferences.minecraftUuid);
+        LanguageSelectorManager.onPreferencesUpdated(preferences.minecraftUuid);
     }
 
     public static boolean playerSpeaksLanguage(PlayerPreferences preferences, String languageIsoCode) {
@@ -228,6 +231,57 @@ public class PlayerPreferencesManager {
         return message;
     }
 
+    /**
+     * Localizes one of the interface's own strings into the player's MAIN
+     * language.
+     *
+     * Deliberately not localizeMessageForPlayer, which returns a message
+     * untouched when the player understands the language it is already in.
+     * That is right for something another player typed and wrong for a menu:
+     * a French player who also reads English would get an English interface
+     * for as long as English stayed in their list, which on the screen that
+     * picks a main language is exactly backwards.
+     *
+     * Hand-written translations win, since the interface is a fixed set of
+     * strings and a machine translating one line with nothing around it does
+     * not know it is labelling a button. Anything not covered falls through
+     * to the translator.
+     */
+    public static String localizeUiForPlayer(PlayerPreferences preferences, String message) {
+        if (preferences == null || preferences.mainLanguage == null) {
+            return message;
+        }
+
+        String embedded = UiTranslations.lookup(message, preferences.mainLanguage);
+        if (embedded != null) {
+            return embedded;
+        }
+
+        String source = Config.defaultLocale.split("-")[0];
+        if (preferences.mainLanguage.split("-")[0].equalsIgnoreCase(source)) {
+            return message;
+        }
+
+        try {
+            return new TranslationManager(Config.upstreamTranslationProvider)
+                    .translate(message, source, preferences.mainLanguage);
+        } catch (IOException | IllegalStateException | URISyntaxException | InterruptedException e) {
+            RedCraftChat.getInstance().getLogger().warn("Could not localize an interface string: {}", e.getMessage());
+            return message;
+        }
+    }
+
+    /** The interface localizer, for callers holding a Player. */
+    public static String localizeUiForPlayer(Player player, String message) {
+        try {
+            return localizeUiForPlayer(getPlayerPreferences(player), message);
+        } catch (IOException | InterruptedException e) {
+            RedCraftChat.getInstance().getLogger().warn("Could not read preferences to localize an interface string: {}",
+                    e.getMessage());
+            return message;
+        }
+    }
+
     public static String localizeMessageForPlayer(PlayerPreferences preferences, String message) {
         return localizeMessageForPlayer(preferences, message, null);
     }
@@ -246,6 +300,9 @@ public class PlayerPreferencesManager {
         } else {
             preferences.languages.add(locale);
         }
+
+        // An explicit language action in any selector counts as confirming
+        preferences.languageSelectorConfirmed = true;
 
         try {
             updatePlayerPreferences(preferences);
@@ -267,6 +324,7 @@ public class PlayerPreferencesManager {
         }
 
         preferences.mainLanguage = locale;
+        preferences.languageSelectorConfirmed = true;
 
         try {
             updatePlayerPreferences(preferences);
@@ -278,6 +336,18 @@ public class PlayerPreferencesManager {
         }
 
         return true;
+    }
+
+    /**
+     * The "keep what I have" confirm: Done on the selector surface or
+     * /lang confirm in chat. Idempotent, and never called by auto-detection.
+     */
+    public static void confirmLanguageSelection(PlayerPreferences preferences) throws IOException, InterruptedException {
+        if (preferences.languageSelectorConfirmed) {
+            return;
+        }
+        preferences.languageSelectorConfirmed = true;
+        updatePlayerPreferences(preferences);
     }
 
     public static boolean toggleCommandSpy(Player player) throws IOException, InterruptedException {

@@ -75,6 +75,12 @@ pretranslate-ui-enabled: true
 # that it is served from cache. Only effective when translation-enabled is on.
 translate-holograms: true
 
+# In-world language selector rendered with DisplayKit for modern clients
+# (1.21.9+); older clients keep the clickable chat menu, and any surface
+# failure falls back to it too. First joins are prompted until a language is
+# explicitly chosen or confirmed.
+displaykit-selector-enabled: true
+
 # A plugin printing several lines sends each one as its own packet, and a line
 # on its own is often too short to even detect a language on, let alone
 # translate ("server!" under "Welcome to the"). Text arriving within this many
