@@ -116,20 +116,13 @@ public class DialogClickListener extends PacketListenerAbstract {
                             NamedTextColor.GREEN);
                     break;
 
+                case "mail_menu":
+                    MailDialog.showMenu(player);
+                    break;
+
                 case "mail_inbox":
                     MailDialog.showInbox(player);
                     break;
-
-                case "mail_open": {
-                    PlayerMail opened = findMail(player, readString(values, MailDialog.MAIL_ID_KEY));
-                    if (opened != null) {
-                        if (opened.readAt == null) {
-                            MailMessagesManager.markMailAsRead(opened);
-                        }
-                        MailDialog.showMail(player, opened);
-                    }
-                    break;
-                }
 
                 case "mail_compose":
                     MailDialog.showCompose(player, null);
@@ -141,6 +134,16 @@ public class DialogClickListener extends PacketListenerAbstract {
                         MailDialog.showCompose(player,
                                 MailMessagesManager.getMailSenderDisplayName(replying));
                     }
+                    break;
+                }
+
+                case "mail_mark_read": {
+                    for (PlayerMail mail : MailMessagesManager.getPlayerMail(player, false)) {
+                        if (mail.readAt == null) {
+                            MailMessagesManager.markMailAsRead(mail);
+                        }
+                    }
+                    MailDialog.showInbox(player);
                     break;
                 }
 
@@ -172,38 +175,39 @@ public class DialogClickListener extends PacketListenerAbstract {
     /**
      * Sends what the compose form was filled with.
      *
-     * The recipient can arrive three ways: baked into the button when
-     * replying, picked from the dropdown, or typed. The typed field wins only
-     * when the dropdown was left on its "somebody else" entry, so picking a
-     * player and also typing something cannot send to the wrong one.
+     * The recipient is either baked into the button, when replying, or typed.
+     * There is no picker of online players: mail is for reaching someone who
+     * is not connected, and the ones the proxy can list are exactly the ones
+     * you would /msg instead.
      */
     private void sendMail(Player player, NBTCompound values) throws Exception {
+        // Read up front: every path out of here says something to the
+        // player, and all of it is said in their own language
+        PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);
+
         String message = readString(values, MailDialog.MESSAGE_INPUT);
         if (message == null || message.trim().isEmpty()) {
             return;
         }
 
-        String picked = readString(values, MailDialog.RECIPIENT_PICK);
-        String typed = readString(values, MailDialog.RECIPIENT_INPUT);
-        boolean pickedSomebodyElse = picked == null
-                || picked.isEmpty()
-                || MailDialog.RECIPIENT_OTHER.equals(picked);
-        String recipient = pickedSomebodyElse ? typed : picked;
+        String recipient = readString(values, MailDialog.RECIPIENT_INPUT);
         if (recipient == null || recipient.trim().isEmpty()) {
-            BasicMessageFormatter.sendInternalError(player, "Nobody to send that to");
+            BasicMessageFormatter.sendInternalError(player,
+                    PlayerPreferencesManager.localizeUiForPlayer(preferences, UiStrings.MAIL_NO_RECIPIENT));
             return;
         }
 
-        PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);
         PlayerPreferences target = PlayerPreferencesManager.getPlayerPreferences(recipient.trim(), true, false);
         if (target == null) {
-            BasicMessageFormatter.sendInternalError(player, "That player was not found");
+            BasicMessageFormatter.sendInternalError(player,
+                    PlayerPreferencesManager.localizeUiForPlayer(preferences, UiStrings.MAIL_PLAYER_NOT_FOUND));
             return;
         }
 
         MailMessagesManager.sendMail(player, target.minecraftUuid, message.trim());
         BasicMessageFormatter.sendInternalMessage(player,
-                PlayerPreferencesManager.localizeUiForPlayer(preferences, "Mail sent to ") + recipient.trim(),
+                PlayerPreferencesManager.localizeUiForPlayer(preferences, UiStrings.MAIL_SENT_TO)
+                        .replace("%player%", recipient.trim()),
                 NamedTextColor.GREEN);
         MailDialog.showInbox(player);
     }

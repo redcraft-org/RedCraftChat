@@ -5,6 +5,7 @@ import org.redcraft.redcraftchat.discord.AccountLinkManager;
 import org.redcraft.redcraftchat.helpers.BasicMessageFormatter;
 import org.redcraft.redcraftchat.models.caching.AccountLinkCode;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
+import org.redcraft.redcraftchat.locales.UiStrings;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 
 import com.velocitypowered.api.command.CommandSource;
@@ -79,13 +80,13 @@ public class LinkDiscordAccountMinecraftCommand implements SimpleCommand {
 
                 AccountLinkCode code = AccountLinkManager.getLinkCode(player);
 
-                String message = PlayerPreferencesManager.localizeUiForPlayer(preferences, "Please run the following command on our Discord server (click to copy): ");
+                String message = PlayerPreferencesManager.localizeUiForPlayer(preferences, UiStrings.DISCORD_RUN_COMMAND);
                 String copyToClipboard = PlayerPreferencesManager.localizeUiForPlayer(preferences, "Copy to clipboard");
 
                 String command = "/minecraft-link " + code.token;
 
                 Component formattedMessage = Component.text()
-                        .append(Component.text(message, NamedTextColor.GREEN))
+                        .append(Component.text(message + " ", NamedTextColor.GREEN))
                         .append(Component.text(command, NamedTextColor.GOLD)
                                 .clickEvent(ClickEvent.copyToClipboard(command))
                                 .hoverEvent(HoverEvent.showText(Component.text(copyToClipboard, NamedTextColor.GREEN))))

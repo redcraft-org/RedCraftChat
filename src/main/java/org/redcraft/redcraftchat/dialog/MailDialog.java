@@ -2,7 +2,9 @@ package org.redcraft.redcraftchat.dialog;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.github.retrooper.packetevents.protocol.dialog.CommonDialogData;
 import com.github.retrooper.packetevents.protocol.dialog.DialogAction;
@@ -14,7 +16,6 @@ import com.github.retrooper.packetevents.protocol.dialog.body.PlainMessageDialog
 import com.github.retrooper.packetevents.protocol.dialog.button.ActionButton;
 import com.github.retrooper.packetevents.protocol.dialog.button.CommonButtonData;
 import com.github.retrooper.packetevents.protocol.dialog.input.Input;
-import com.github.retrooper.packetevents.protocol.dialog.input.SingleOptionInputControl;
 import com.github.retrooper.packetevents.protocol.dialog.input.TextInputControl;
 import com.github.retrooper.packetevents.protocol.nbt.NBTCompound;
 import com.github.retrooper.packetevents.protocol.nbt.NBTString;
@@ -29,6 +30,8 @@ import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 
 /**
  * The mailbox as a native dialog, the same surface the language selector uses.
@@ -43,28 +46,26 @@ import net.kyori.adventure.text.Component;
  */
 public final class MailDialog {
 
-    public static final ResourceLocation OPEN_MAIL = new ResourceLocation("redcraftchat", "mail_open");
+    public static final ResourceLocation MENU = new ResourceLocation("redcraftchat", "mail_menu");
     public static final ResourceLocation BACK_TO_INBOX = new ResourceLocation("redcraftchat", "mail_inbox");
     public static final ResourceLocation COMPOSE = new ResourceLocation("redcraftchat", "mail_compose");
     public static final ResourceLocation SEND = new ResourceLocation("redcraftchat", "mail_send");
     public static final ResourceLocation REPLY = new ResourceLocation("redcraftchat", "mail_reply");
+    public static final ResourceLocation MARK_READ = new ResourceLocation("redcraftchat", "mail_mark_read");
 
     public static final String MAIL_ID_KEY = "mail";
     public static final String RECIPIENT_INPUT = "recipient";
-    public static final String RECIPIENT_PICK = "pick";
 
-    /**
-     * The dropdown entry meaning "not one of these, read the typed field".
-     * A real id rather than an empty string, because nothing promises the
-     * client accepts an empty option id and a rejected dialog is a kick.
-     */
-    public static final String RECIPIENT_OTHER = "other";
     public static final String MESSAGE_INPUT = "message";
 
     private static final int BUTTON_WIDTH_PX = 200;
     private static final int BODY_WIDTH_PX = 320;
     private static final int INPUT_WIDTH_PX = 300;
     private static final int MESSAGE_MAX_LENGTH = 512;
+
+    /** A dialog is not a scrollable inbox, so the list is capped and says so. */
+    private static final int MAX_SHOWN = 6;
+
 
     private MailDialog() {
         throw new IllegalStateException("This class should not be instantiated");
@@ -74,7 +75,78 @@ public final class MailDialog {
         return NativeDialogSelector.isSupported(player);
     }
 
-    /** The list: one button per mail, then a way to write one. */
+    /**
+     * The front door: what is waiting, and the two things you can do.
+     *
+     * /mail used to open the list directly, which meant the unread count was
+     * only ever visible by reading the list itself, and writing a mail meant
+     * going through the inbox first to reach the button.
+     */
+    public static boolean showMenu(Player player) {
+        if (!isSupported(player)) {
+            return false;
+        }
+        try {
+            PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);
+            List<PlayerMail> mails = MailMessagesManager.getPlayerMail(player, false);
+
+            int unread = 0;
+            for (PlayerMail mail : mails) {
+                if (mail.readAt == null) {
+                    unread++;
+                }
+            }
+
+            // The count is the whole reason this screen exists, so it is said
+            // in the button rather than buried in the body
+            Component inboxLabel = Component.text()
+                    .append(Component.text(ui(preferences, UiStrings.MAIL_OPEN_INBOX), NamedTextColor.WHITE))
+                    .append(Component.text("  "))
+                    .append(unread > 0
+                            ? Component.text(unreadLabel(preferences, unread), NamedTextColor.GOLD)
+                                    .decorate(TextDecoration.BOLD)
+                            : Component.text(ui(preferences, UiStrings.MAIL_ALL_READ), NamedTextColor.DARK_GRAY))
+                    .build();
+
+            List<ActionButton> buttons = new ArrayList<>();
+            buttons.add(new ActionButton(new CommonButtonData(inboxLabel, null, BUTTON_WIDTH_PX),
+                    new DynamicCustomAction(BACK_TO_INBOX, null)));
+            buttons.add(new ActionButton(
+                    new CommonButtonData(
+                            Component.text(ui(preferences, UiStrings.MAIL_SEND_TITLE), NamedTextColor.WHITE),
+                            null, BUTTON_WIDTH_PX),
+                    new DynamicCustomAction(COMPOSE, null)));
+
+            ActionButton close = new ActionButton(
+                    new CommonButtonData(
+                            Component.text(ui(preferences, UiStrings.SELECTOR_CLOSE), NamedTextColor.GRAY),
+                            null, BUTTON_WIDTH_PX),
+                    null);
+
+            CommonDialogData common = new CommonDialogData(
+                    Component.text(ui(preferences, UiStrings.MAIL_TITLE), NamedTextColor.GOLD)
+                            .decorate(TextDecoration.BOLD),
+                    null, true, false, DialogAction.CLOSE, Collections.emptyList(), Collections.emptyList());
+
+            return NativeDialogSelector.send(player, new MultiActionDialog(common, buttons, close, 1));
+        } catch (Exception e) {
+            RedCraftChat.getInstance().getLogger().warn("Could not open the mail menu for {}: {}",
+                    player.getUsername(), e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * The list: the mails as readable text, with a reply button each.
+     *
+     * The messages used to be the button labels, which meant reading your
+     * mail off the face of a button and having it cut short to fit. The body
+     * is where text belongs; the buttons do one thing and say so.
+     *
+     * Body and buttons are separate sections, so the rows are numbered and
+     * the buttons carry the same numbers. That is the only thing tying them
+     * together when two mails come from the same person.
+     */
     public static boolean showInbox(Player player) {
         if (!isSupported(player)) {
             return false;
@@ -83,78 +155,108 @@ public final class MailDialog {
             PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);
             List<PlayerMail> mails = MailMessagesManager.getPlayerMail(player, false);
 
+            List<DialogBody> body = new ArrayList<>();
             List<ActionButton> buttons = new ArrayList<>();
-            for (PlayerMail mail : mails) {
-                String sender = MailMessagesManager.getMailSenderDisplayName(mail);
-                String body = PlayerPreferencesManager.localizeMessageForPlayer(preferences, mail.message);
-                String label = (mail.readAt == null ? "● " : "  ") + sender + "  " + preview(body);
 
-                NBTCompound additions = new NBTCompound();
-                additions.setTag(MAIL_ID_KEY, new NBTString(mail.internalId));
-                buttons.add(new ActionButton(
-                        new CommonButtonData(Component.text(label), null, BUTTON_WIDTH_PX),
-                        new DynamicCustomAction(OPEN_MAIL, additions)));
+            if (mails.isEmpty()) {
+                body.add(new PlainMessageDialogBody(new PlainMessage(
+                        Component.text(ui(preferences, UiStrings.MAIL_NO_MAILS), NamedTextColor.GRAY),
+                        BODY_WIDTH_PX)));
             }
 
-            List<DialogBody> body = mails.isEmpty()
-                    ? line(ui(preferences, UiStrings.MAIL_NO_MAILS))
-                    : Collections.emptyList();
+            int shown = 0;
+            boolean anyUnread = false;
+            // One reply button per person, not per mail. Three mails from the
+            // same player used to make three identical buttons, and the most
+            // recent of them is the one worth replying to.
+            Map<String, PlayerMail> senders = new LinkedHashMap<>();
 
-            ActionButton compose = new ActionButton(
-                    new CommonButtonData(Component.text(ui(preferences, UiStrings.MAIL_SEND_TITLE)),
+            for (PlayerMail mail : mails) {
+                if (shown >= MAX_SHOWN) {
+                    break;
+                }
+                shown++;
+                boolean unread = mail.readAt == null;
+                anyUnread |= unread;
+
+                String sender = MailMessagesManager.getMailSenderDisplayName(mail);
+                senders.putIfAbsent(sender, mail);
+
+                String text = PlayerPreferencesManager.localizeMessageForPlayer(preferences, mail.message);
+
+                Component header = Component.text()
+                        .append(Component.text(shown + ". ", NamedTextColor.DARK_GRAY))
+                        .append(Component.text(sender,
+                                unread ? NamedTextColor.YELLOW : NamedTextColor.AQUA)
+                                .decorate(TextDecoration.BOLD))
+                        .append(Component.text(sentAt(mail), NamedTextColor.GRAY))
+                        .append(unread
+                                ? Component.text(" \u25cf", NamedTextColor.GOLD)
+                                : Component.empty())
+                        .build();
+
+                body.add(new PlainMessageDialogBody(new PlainMessage(header, BODY_WIDTH_PX)));
+                // The message reads the same whether or not it has been
+                // opened before, so it is not dimmed once read. Unread is
+                // said by the sender colour and the dot, not by the body.
+                body.add(new PlainMessageDialogBody(new PlainMessage(
+                        Component.text(text, NamedTextColor.WHITE), BODY_WIDTH_PX)));
+            }
+
+            if (mails.size() > shown) {
+                // Saying so beats a list that silently stops
+                body.add(new PlainMessageDialogBody(new PlainMessage(
+                        Component.text("+" + (mails.size() - shown), NamedTextColor.DARK_GRAY)
+                                .decorate(TextDecoration.ITALIC),
+                        BODY_WIDTH_PX)));
+            }
+
+            for (Map.Entry<String, PlayerMail> entry : senders.entrySet()) {
+                NBTCompound additions = new NBTCompound();
+                additions.setTag(MAIL_ID_KEY, new NBTString(entry.getValue().internalId));
+                buttons.add(new ActionButton(
+                        new CommonButtonData(
+                                Component.text()
+                                        .append(Component.text(ui(preferences, UiStrings.MAIL_REPLY) + " ",
+                                                NamedTextColor.WHITE))
+                                        .append(Component.text(entry.getKey(), NamedTextColor.AQUA))
+                                        .build(),
+                                null, BUTTON_WIDTH_PX),
+                        new DynamicCustomAction(REPLY, additions)));
+            }
+
+            buttons.add(new ActionButton(
+                    new CommonButtonData(
+                            Component.text(ui(preferences, UiStrings.MAIL_SEND_TITLE), NamedTextColor.WHITE),
                             null, BUTTON_WIDTH_PX),
-                    new DynamicCustomAction(COMPOSE, null));
+                    new DynamicCustomAction(COMPOSE, null)));
+
+            if (anyUnread) {
+                buttons.add(new ActionButton(
+                        new CommonButtonData(
+                                Component.text(ui(preferences, UiStrings.MAIL_MARK_AS_READ),
+                                        NamedTextColor.GREEN),
+                                null, BUTTON_WIDTH_PX),
+                        new DynamicCustomAction(MARK_READ, null)));
+            }
+
+            // The exit slot is the way out of this screen, which is the menu
+            // rather than the game. It used to hold the compose button, so
+            // the mailbox had no way out at all and only Escape closed it.
+            ActionButton close = new ActionButton(
+                    new CommonButtonData(
+                            Component.text(ui(preferences, UiStrings.SELECTOR_BACK), NamedTextColor.GRAY),
+                            null, BUTTON_WIDTH_PX),
+                    new DynamicCustomAction(MENU, null));
 
             CommonDialogData common = new CommonDialogData(
-                    Component.text(ui(preferences, UiStrings.MAIL_INBOX_HEADER)),
-                    null, true, false, DialogAction.NONE, body, Collections.emptyList());
+                    Component.text(ui(preferences, UiStrings.MAIL_INBOX_HEADER), NamedTextColor.GOLD)
+                            .decorate(TextDecoration.BOLD),
+                    null, true, false, DialogAction.CLOSE, body, Collections.emptyList());
 
-            return NativeDialogSelector.send(player, new MultiActionDialog(common, buttons, compose, 1));
+            return NativeDialogSelector.send(player, new MultiActionDialog(common, buttons, close, 1));
         } catch (Exception e) {
             RedCraftChat.getInstance().getLogger().warn("Could not build the mail inbox for {}: {}",
-                    player.getUsername(), e.getMessage());
-            return false;
-        }
-    }
-
-    /** One mail, whole. The client wraps it, so nothing is truncated. */
-    public static boolean showMail(Player player, PlayerMail mail) {
-        if (!isSupported(player) || mail == null) {
-            return false;
-        }
-        try {
-            PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);
-            String sender = MailMessagesManager.getMailSenderDisplayName(mail);
-            String body = PlayerPreferencesManager.localizeMessageForPlayer(preferences, mail.message);
-
-            List<DialogBody> content = new ArrayList<>(line(body));
-            if (mail.originalLanguage != null && !body.equals(mail.message)) {
-                // The original used to live in a hover, which is exactly the
-                // thing the reader of a translation cannot get at
-                content.addAll(line("[" + mail.originalLanguage.toUpperCase() + "] " + mail.message));
-            }
-
-            NBTCompound additions = new NBTCompound();
-            additions.setTag(MAIL_ID_KEY, new NBTString(mail.internalId));
-
-            List<ActionButton> buttons = new ArrayList<>();
-            buttons.add(new ActionButton(
-                    new CommonButtonData(Component.text(ui(preferences, UiStrings.MAIL_CLICK_TO_REPLY)),
-                            null, BUTTON_WIDTH_PX),
-                    new DynamicCustomAction(REPLY, additions)));
-
-            ActionButton back = new ActionButton(
-                    new CommonButtonData(Component.text(ui(preferences, UiStrings.SELECTOR_BACK)),
-                            null, BUTTON_WIDTH_PX),
-                    new DynamicCustomAction(BACK_TO_INBOX, null));
-
-            CommonDialogData common = new CommonDialogData(
-                    Component.text(sender), null, true, false,
-                    DialogAction.NONE, content, Collections.emptyList());
-
-            return NativeDialogSelector.send(player, new MultiActionDialog(common, buttons, back, 1));
-        } catch (Exception e) {
-            RedCraftChat.getInstance().getLogger().warn("Could not show a mail to {}: {}",
                     player.getUsername(), e.getMessage());
             return false;
         }
@@ -177,20 +279,9 @@ public final class MailDialog {
             List<Input> inputs = new ArrayList<>();
 
             if (presetRecipient == null) {
-                List<SingleOptionInputControl.Entry> options = new ArrayList<>();
-                options.add(new SingleOptionInputControl.Entry(RECIPIENT_OTHER,
-                        Component.text(ui(preferences, UiStrings.MAIL_SOMEBODY_ELSE)), true));
-                for (Player online : RedCraftChat.getInstance().getProxy().getAllPlayers()) {
-                    if (!online.getUniqueId().equals(player.getUniqueId())) {
-                        options.add(new SingleOptionInputControl.Entry(online.getUsername(),
-                                Component.text(online.getUsername()), false));
-                    }
-                }
-                inputs.add(new Input(RECIPIENT_PICK, new SingleOptionInputControl(
-                        INPUT_WIDTH_PX, options,
-                        Component.text(ui(preferences, UiStrings.MAIL_RECIPIENT)), true)));
                 inputs.add(new Input(RECIPIENT_INPUT, new TextInputControl(
-                        INPUT_WIDTH_PX, Component.text(ui(preferences, UiStrings.MAIL_RECIPIENT)),
+                        INPUT_WIDTH_PX,
+                        Component.text(ui(preferences, UiStrings.MAIL_RECIPIENT_NAME)),
                         true, "", 32, null)));
             }
 
@@ -206,21 +297,25 @@ public final class MailDialog {
 
             List<ActionButton> buttons = new ArrayList<>();
             buttons.add(new ActionButton(
-                    new CommonButtonData(Component.text(ui(preferences, UiStrings.SELECTOR_SUBMIT)),
+                    new CommonButtonData(
+                            Component.text(ui(preferences, UiStrings.SELECTOR_SUBMIT), NamedTextColor.GREEN)
+                                    .decorate(TextDecoration.BOLD),
                             null, BUTTON_WIDTH_PX),
                     new DynamicCustomAction(SEND, additions)));
 
             ActionButton back = new ActionButton(
-                    new CommonButtonData(Component.text(ui(preferences, UiStrings.SELECTOR_BACK)),
+                    new CommonButtonData(
+                            Component.text(ui(preferences, UiStrings.SELECTOR_BACK), NamedTextColor.GRAY),
                             null, BUTTON_WIDTH_PX),
                     new DynamicCustomAction(BACK_TO_INBOX, null));
 
             String title = presetRecipient == null
                     ? ui(preferences, UiStrings.MAIL_SEND_TITLE)
-                    : ui(preferences, UiStrings.MAIL_CLICK_TO_REPLY) + "  " + presetRecipient;
+                    : ui(preferences, UiStrings.MAIL_REPLY) + "  " + presetRecipient;
 
             CommonDialogData common = new CommonDialogData(
-                    Component.text(title), null, true, false,
+                    Component.text(title, NamedTextColor.GOLD).decorate(TextDecoration.BOLD),
+                    null, true, false,
                     DialogAction.NONE, Collections.emptyList(), inputs);
 
             return NativeDialogSelector.send(player, new MultiActionDialog(common, buttons, back, 1));
@@ -231,14 +326,22 @@ public final class MailDialog {
         }
     }
 
-    private static List<DialogBody> line(String text) {
-        return Collections.singletonList(new PlainMessageDialogBody(
-                new PlainMessage(Component.text(text), BODY_WIDTH_PX)));
+    /**
+     * When it arrived, or nothing at all if the row has no date. A mail with
+     * no timestamp is not worth an empty gap in the header.
+     */
+    private static String sentAt(PlayerMail mail) {
+        String at = MailMessagesManager.formatSentAt(mail.sentAt);
+        return at == null ? "" : "  " + at;
     }
 
-    private static String preview(String message) {
-        String flat = message == null ? "" : message.replace('\n', ' ');
-        return flat.length() <= 28 ? flat : flat.substring(0, 28) + "...";
+    /**
+     * The unread count, with the number spliced into the translated string
+     * rather than concatenated, because where the number sits in the sentence
+     * is not the same in every language.
+     */
+    private static String unreadLabel(PlayerPreferences preferences, int unread) {
+        return ui(preferences, UiStrings.MAIL_UNREAD_COUNT).replace("%count%", String.valueOf(unread));
     }
 
     private static String ui(PlayerPreferences preferences, String message) {

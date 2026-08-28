@@ -132,12 +132,17 @@ public class MailMinecraftCommand implements SimpleCommand {
             if (!isListing(args)) {
                 return false;
             }
-            if (MailDialog.isSupported(player) && MailDialog.showInbox(player)) {
+            if (MailDialog.isSupported(player) && MailDialog.showMenu(player)) {
                 return true;
             }
             if (BedrockMailInbox.isSupported(player)) {
-                boolean unreadOnly = args.length == 0 || !"listall".equalsIgnoreCase(args[0]);
-                if (BedrockMailInbox.showInbox(player, unreadOnly)) {
+                // Bare /mail opens the menu, the same as the Java dialog.
+                // Naming a list verb says which list is wanted, so that skips
+                // the menu and goes straight to it.
+                boolean opened = args.length == 0
+                        ? BedrockMailInbox.showMenu(player)
+                        : BedrockMailInbox.showInbox(player, !"listall".equalsIgnoreCase(args[0]));
+                if (opened) {
                     return true;
                 }
             }

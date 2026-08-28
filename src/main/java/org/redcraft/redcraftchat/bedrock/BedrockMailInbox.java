@@ -41,6 +41,52 @@ public final class BedrockMailInbox {
         return player != null && BedrockPlayers.isBedrock(player) && BedrockForms.isAvailable();
     }
 
+    /**
+     * The front door, the same two choices the Java dialog opens with: what
+     * is waiting, and the two things you can do about it.
+     *
+     * Bedrock has no exit slot the client draws apart, so the way out is the
+     * form's own close control, which is where a Bedrock player already looks.
+     */
+    public static boolean showMenu(Player player) {
+        if (!isSupported(player)) {
+            return false;
+        }
+
+        PlayerPreferences preferences;
+        int unread;
+        try {
+            preferences = PlayerPreferencesManager.getPlayerPreferences(player);
+            unread = MailMessagesManager.getPlayerMail(player, true).size();
+        } catch (Exception e) {
+            RedCraftChat.getInstance().getLogger().warn("Could not read the mail menu for {}: {}",
+                    player.getUsername(), e.getMessage());
+            return false;
+        }
+
+        SimpleForm.Builder form = SimpleForm.builder()
+                .title(ui(preferences, UiStrings.MAIL_TITLE))
+                .button(ui(preferences, UiStrings.MAIL_OPEN_INBOX) + "\n§7"
+                        + (unread > 0
+                                ? ui(preferences, UiStrings.MAIL_UNREAD_COUNT)
+                                        .replace("%count%", String.valueOf(unread))
+                                : ui(preferences, UiStrings.MAIL_ALL_READ)))
+                .button(ui(preferences, UiStrings.MAIL_SEND_TITLE));
+
+        UUID playerId = player.getUniqueId();
+        form.validResultHandler(response -> {
+            int index = response.clickedButtonId();
+            if (index == 0) {
+                onScheduler(playerId, target -> showInbox(target, false));
+            } else if (index == 1) {
+                onScheduler(playerId, BedrockMailInbox::showCompose);
+            }
+        });
+        form.closedOrInvalidResultHandler(() -> { });
+
+        return BedrockForms.send(playerId, form);
+    }
+
     /** The list. Unread first, since that is what the player came for. */
     public static boolean showInbox(Player player, boolean unreadOnly) {
         if (!isSupported(player)) {
@@ -73,12 +119,17 @@ public final class BedrockMailInbox {
                 String sender = MailMessagesManager.getMailSenderDisplayName(mail);
                 String preview = preview(PlayerPreferencesManager.localizeMessageForPlayer(
                         preferences, mail.message));
-                form.button((mail.readAt == null ? "§l" : "") + sender + "\n§7" + preview);
+                // Same date as the Java dialog: a player coming back after
+                // years needs to know which year a mail is from
+                String at = MailMessagesManager.formatSentAt(mail.sentAt);
+                form.button((mail.readAt == null ? "§l" : "") + sender
+                        + (at == null ? "" : " §7" + at) + "\n§7" + preview);
             }
         }
 
-        // Always last, so its index is stable however many mails there are
+        // Always last, so their indices are stable however many mails there are
         form.button(ui(preferences, UiStrings.MAIL_SEND_TITLE));
+        form.button(ui(preferences, UiStrings.SELECTOR_BACK));
 
         UUID playerId = player.getUniqueId();
         List<PlayerMail> shown = new ArrayList<>(mails);
@@ -86,6 +137,8 @@ public final class BedrockMailInbox {
             int index = response.clickedButtonId();
             if (index == shown.size()) {
                 onScheduler(playerId, BedrockMailInbox::showCompose);
+            } else if (index == shown.size() + 1) {
+                onScheduler(playerId, BedrockMailInbox::showMenu);
             } else if (index >= 0 && index < shown.size()) {
                 onScheduler(playerId, target -> showMail(target, shown.get(index)));
             }
@@ -123,7 +176,7 @@ public final class BedrockMailInbox {
         SimpleForm.Builder form = SimpleForm.builder()
                 .title(ui(preferences, UiStrings.MAIL_INBOX_HEADER))
                 .content(content.toString())
-                .button(ui(preferences, UiStrings.MAIL_CLICK_TO_REPLY))
+                .button(ui(preferences, UiStrings.MAIL_REPLY))
                 .button(mail.readAt == null
                         ? ui(preferences, UiStrings.MAIL_MARK_AS_READ)
                         : ui(preferences, UiStrings.MAIL_ALREADY_READ));
@@ -164,34 +217,22 @@ public final class BedrockMailInbox {
             return false;
         }
 
-        List<String> online = new ArrayList<>();
-        for (Player other : RedCraftChat.getInstance().getProxy().getAllPlayers()) {
-            if (!other.getUniqueId().equals(player.getUniqueId())) {
-                online.add(other.getUsername());
-            }
-        }
-        online.add(ui(preferences, UiStrings.MAIL_SOMEBODY_ELSE));
-
+        // A typed name, not a list of who is online. Mail is how you reach
+        // someone who is not connected, and everyone the proxy can enumerate
+        // is someone you would /msg instead, so the picker offered the wrong
+        // half of the server.
         CustomForm.Builder form = CustomForm.builder()
                 .title(ui(preferences, UiStrings.MAIL_SEND_TITLE))
-                .dropdown(ui(preferences, UiStrings.MAIL_RECIPIENT), online)
-                .input(ui(preferences, UiStrings.MAIL_RECIPIENT))
+                .input(ui(preferences, UiStrings.MAIL_RECIPIENT_NAME))
                 .input(ui(preferences, UiStrings.MAIL_MESSAGE));
 
         UUID playerId = player.getUniqueId();
-        int otherIndex = online.size() - 1;
         form.validResultHandler(response -> {
-            Integer chosen = readInt(response, 0);
-            String typedName = readString(response, 1);
-            String message = readString(response, 2);
+            String recipient = readString(response, 0);
+            String message = readString(response, 1);
             if (message == null || message.trim().isEmpty()) {
                 return;
             }
-            // The dropdown wins unless they picked the escape hatch, in which
-            // case the typed name is the only thing that can be meant
-            String recipient = (chosen != null && chosen == otherIndex)
-                    ? typedName
-                    : (chosen != null && chosen >= 0 && chosen < otherIndex ? online.get(chosen) : typedName);
             if (recipient == null || recipient.trim().isEmpty()) {
                 return;
             }
@@ -206,23 +247,17 @@ public final class BedrockMailInbox {
         PlayerPreferences preferences = PlayerPreferencesManager.getPlayerPreferences(player);
         PlayerPreferences target = PlayerPreferencesManager.getPlayerPreferences(recipient, true, false);
         if (target == null) {
-            BasicMessageFormatter.sendInternalError(player, "That player was not found");
+            BasicMessageFormatter.sendInternalError(player,
+                    PlayerPreferencesManager.localizeUiForPlayer(preferences, UiStrings.MAIL_PLAYER_NOT_FOUND));
             return;
         }
         MailMessagesManager.sendMail(player, target.minecraftUuid, message);
         BasicMessageFormatter.sendInternalMessage(player,
-                PlayerPreferencesManager.localizeUiForPlayer(preferences, "Mail sent to ") + recipient,
+                PlayerPreferencesManager.localizeUiForPlayer(preferences, UiStrings.MAIL_SENT_TO)
+                        .replace("%player%", recipient),
                 NamedTextColor.GREEN);
     }
 
-    private static Integer readInt(org.geysermc.cumulus.response.CustomFormResponse response, int index) {
-        try {
-            Object value = response.valueAt(index);
-            return value instanceof Integer ? (Integer) value : null;
-        } catch (Exception e) {
-            return null;
-        }
-    }
 
     private static String readString(org.geysermc.cumulus.response.CustomFormResponse response, int index) {
         try {
@@ -244,9 +279,9 @@ public final class BedrockMailInbox {
 
         String sender = MailMessagesManager.getMailSenderDisplayName(mail);
         CustomForm.Builder form = CustomForm.builder()
-                .title(ui(preferences, UiStrings.MAIL_CLICK_TO_REPLY))
+                .title(ui(preferences, UiStrings.MAIL_REPLY))
                 .label("§7" + sender)
-                .input(ui(preferences, UiStrings.MAIL_CLICK_TO_REPLY));
+                .input(ui(preferences, UiStrings.MAIL_MESSAGE));
 
         UUID playerId = player.getUniqueId();
         form.validResultHandler(response -> {
@@ -258,7 +293,8 @@ public final class BedrockMailInbox {
             onScheduler(playerId, target -> {
                 MailMessagesManager.sendMail(target, mail.senderUuid, message);
                 BasicMessageFormatter.sendInternalMessage(target,
-                        PlayerPreferencesManager.localizeUiForPlayer(preferences, "Mail sent to ") + sender,
+                        PlayerPreferencesManager.localizeUiForPlayer(preferences, UiStrings.MAIL_SENT_TO)
+                                .replace("%player%", sender),
                         NamedTextColor.GREEN);
             });
         });

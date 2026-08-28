@@ -20,7 +20,7 @@ public class TranslationWarmerSkipTest extends TestCase {
     public void testStringsWithoutOneStillGoToTheProvider() {
         // The fallback is the point: no hand-written entry means the machine
         // still handles it, warmed as before
-        assertTrue(TranslationWarmer.needsWarming(UiStrings.MAIL_INBOX_HEADER, "fr"));
+        assertTrue(TranslationWarmer.needsWarming(UiStrings.DISCORD_RUN_COMMAND, "fr"));
         assertTrue(TranslationWarmer.needsWarming(UiStrings.LEGEND, "de"));
     }
 
