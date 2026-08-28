@@ -40,12 +40,27 @@ public class LineBlockTest extends TestCase {
                 "Добро пожаловать на\nCreative Build сервер!"));
     }
 
-    public void testALineDroppedToNothingDoesNotAlign() {
-        // Right line count, but a line with text came back empty: that is a
-        // reshaped block, not a translation of that line
+    public void testWordsMayCrossALineBreak() {
+        // English puts "server" after the name and French before it, so the
+        // word has to move up a line. Pinning each line to its own translation
+        // corners the engine into leaving "server!" in English, which is
+        // exactly what it did on the spawn hologram
+        Map<String, String> aligned = LineBlock.align(
+                Arrays.asList("Welcome to the", "Creative Build", "server!"),
+                "Bienvenue sur le\nserveur Creative Build\n");
+
+        assertNotNull(aligned);
+        assertEquals("Bienvenue sur le", aligned.get("Welcome to the"));
+        assertEquals("serveur Creative Build", aligned.get("Creative Build"));
+        // The line that gave its words away keeps its entity, now blank
+        assertEquals("", aligned.get("server!"));
+    }
+
+    public void testABlockThatLostItsTextEntirelyDoesNotAlign() {
+        // Every line empty is a reply that went wrong, not a relayout
         assertNull(LineBlock.align(
                 Arrays.asList("Welcome to the", "server!"),
-                "Добро пожаловать на сервер!\n"));
+                "\n"));
     }
 
     public void testADecorativeLineMayComeBackUnchanged() {

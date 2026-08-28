@@ -42,8 +42,20 @@ public final class LineBlock {
 
     /**
      * Maps each source line to its line of the block translation, null unless
-     * the structure held: one output line per input line, with text wherever
-     * the source had text.
+     * the line count held.
+     *
+     * The count is the whole contract, and deliberately so. Where a line ends
+     * is an accident of the display, while languages disagree about word
+     * order: English puts "server" after the name and French puts it before,
+     * so "Welcome to the / Creative Build / server!" has to become "Bienvenue
+     * sur le / serveur Créatif Build" and the words must cross a line break to
+     * get there. Demanding that each line translate to itself corners the
+     * engine into leaving a line in the source language, which is what it did.
+     *
+     * So an individual line may come back empty, having given its words to the
+     * line above. Only a block that lost its text altogether is refused, since
+     * that is a reply that went wrong rather than one that was laid out
+     * differently.
      */
     public static Map<String, String> align(List<String> sourceLines, String translatedBlock) {
         String[] translatedLines = translatedBlock.split("\n", -1);
@@ -51,15 +63,16 @@ public final class LineBlock {
             return null;
         }
 
+        boolean sourceHadText = false;
+        boolean translationHasText = false;
         Map<String, String> aligned = new LinkedHashMap<>();
+
         for (int i = 0; i < translatedLines.length; i++) {
-            if (hasTranslatableText(sourceLines.get(i)) && !hasTranslatableText(translatedLines[i])) {
-                // A line dropped to nothing is a reshaped block, not a
-                // translation of that line
-                return null;
-            }
+            sourceHadText |= hasTranslatableText(sourceLines.get(i));
+            translationHasText |= hasTranslatableText(translatedLines[i]);
             aligned.put(sourceLines.get(i), translatedLines[i]);
         }
-        return aligned;
+
+        return sourceHadText && !translationHasText ? null : aligned;
     }
 }

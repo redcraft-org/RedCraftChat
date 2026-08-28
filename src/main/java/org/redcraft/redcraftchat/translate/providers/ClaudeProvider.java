@@ -10,6 +10,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import org.redcraft.redcraftchat.Config;
 import org.redcraft.redcraftchat.RedCraftChat;
@@ -57,12 +60,24 @@ public class ClaudeProvider implements TranslationProvider {
             "These are markup rather than words: never translate them, never add or remove any,",
             "and keep each one in front of the words it was colouring, following them when word order changes.",
             "Leave anything that is not prose exactly as it appears, character for character:",
-            "player and server names, commands such as /spawn, URLs, emotes,",
+            "player names, commands such as /spawn, URLs, emotes,",
             "and placeholders such as {0}, %%s, %%player%% or <@1234>.",
-            "A message may span several lines, and those lines are one text split up for display:",
-            "read them together for context, then reply with exactly one line per input line in the same order,",
-            "never merging, splitting, reordering or dropping a line.",
-            "A line that needs no translation is repeated unchanged on its own line, never left empty.",
+            // The line breaks are an accident of how the text is displayed, a
+            // hologram column or one chat packet per line, so the model is told
+            // to translate through them and lay the result back out. Only the
+            // count is fixed, because that is what maps the answer back onto
+            // the entities and packets it came from. Pinning the words to their
+            // original line instead would corner it whenever the target
+            // language wants them in another order, and a cornered model
+            // answers by leaving the line in English.
+            "A message may span several lines, and those lines are one text cut up to fit a display,",
+            "so where a line ends is not part of what the text says.",
+            "Read them as one text, translate that text, then lay the result back out over",
+            "exactly as many lines as you were given, top to bottom.",
+            "Move words across those line breaks as the target language needs, keep the lines",
+            "roughly as long as the ones you were given, and where the translation no longer",
+            "fills them all, leave the spare ones empty rather than padding them.",
+            "Never answer with more lines or fewer lines than you were given.",
             "If the message is already in the target language, or is only punctuation, symbols, numbers,",
             "player names or placeholders, repeat it back unchanged.");
 
@@ -121,7 +136,7 @@ public class ClaudeProvider implements TranslationProvider {
         payload.addProperty("model", Config.claudeModel);
         payload.addProperty("max_tokens", MAX_TOKENS);
         payload.addProperty("temperature", 0);
-        payload.addProperty("system", String.format(SYSTEM_PROMPT, sourceLangId, targetLangId));
+        payload.addProperty("system", String.format(SYSTEM_PROMPT, sourceLangId, targetLangId) + serverNameRules());
         payload.add("stop_sequences", stopSequences);
         payload.add("messages", messages);
 
@@ -164,6 +179,60 @@ public class ClaudeProvider implements TranslationProvider {
         CacheManager.put(CacheCategory.CLAUDE_TRANSLATED_MESSAGE, cacheKey, translated);
 
         return translated;
+    }
+
+    /**
+     * The server names, spelled out for the model.
+     *
+     * "Leave server names alone" is not something a translation engine can act
+     * on, it has no idea which words on this network are names: it rendered the
+     * hologram's "Creative Build" as "Construction Créative" while the sign
+     * beside it read "Créatif Build". Naming them removes the guess.
+     *
+     * The ids are listed as well as the display names because players type them
+     * as command arguments, so a translated one is a command that no longer
+     * works. A name that is an ordinary word in its own right, Museum, is
+     * listed in translatable-server-names and left out of this, since a French
+     * player is better served by Musée.
+     */
+    public static String serverNameRules() {
+        Set<String> translatable = new TreeSet<>();
+        for (String name : Config.translatableServerNames) {
+            if (name != null && !name.isBlank()) {
+                translatable.add(name.trim());
+            }
+        }
+
+        Set<String> verbatim = new TreeSet<>();
+        for (Map.Entry<String, String> server : Config.serverDisplayNames.entrySet()) {
+            verbatim.add(server.getKey());
+
+            String display = LegacyText.stripColor(
+                    LegacyText.translateAlternateColorCodes('&', server.getValue())).trim();
+            if (!display.isEmpty() && !translatable.contains(display)) {
+                verbatim.add(display);
+            }
+        }
+
+        if (verbatim.isEmpty()) {
+            return "";
+        }
+
+        StringBuilder rules = new StringBuilder(" The servers on this network are called ");
+        rules.append(String.join(", ", verbatim));
+        rules.append(". Copy each of those exactly wherever it appears, whatever the sentence around it:");
+        rules.append(" they are proper nouns, and the lowercase ones are what players type as command arguments.");
+
+        if (!translatable.isEmpty()) {
+            rules.append(" ").append(String.join(" and ", translatable));
+            rules.append(translatable.size() > 1 ? " are ordinary words" : " is an ordinary word");
+            rules.append(" and should be translated like the rest of the sentence.");
+        }
+
+        rules.append(" The words around a server name are still translated as usual,");
+        rules.append(" never hand a line back in the source language merely because it lists servers.");
+
+        return rules.toString();
     }
 
     // The reply carries a list of content blocks, only the text ones hold the

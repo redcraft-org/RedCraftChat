@@ -73,7 +73,7 @@ import org.redcraft.redcraftchat.runnables.ScheduledAnnouncementsTask;
 
 import org.slf4j.Logger;
 
-@Plugin(id = "redcraftchat", name = RedCraftChat.PLUGIN_NAME, version = "0.1.6-SNAPSHOT", url = "https://redcraft.org", description = "Multi language chat and Discord bridge", authors = {
+@Plugin(id = "redcraftchat", name = RedCraftChat.PLUGIN_NAME, version = "0.1.7-SNAPSHOT", url = "https://redcraft.org", description = "Multi language chat and Discord bridge", authors = {
 		"RedCraft" },
 		// Soft: Floodgate drives the native Bedrock forms, and the
 		// plugin has to load on a proxy that does not run it
