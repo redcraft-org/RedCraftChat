@@ -43,6 +43,7 @@ import org.redcraft.redcraftchat.commands.minecraft.LangMinecraftCommand;
 import org.redcraft.redcraftchat.commands.minecraft.LinkDiscordAccountMinecraftCommand;
 import org.redcraft.redcraftchat.commands.minecraft.MailMinecraftCommand;
 import org.redcraft.redcraftchat.commands.minecraft.MeMinecraftCommand;
+import org.redcraft.redcraftchat.commands.minecraft.ServersMinecraftCommand;
 import org.redcraft.redcraftchat.commands.minecraft.MsgMinecraftCommand;
 import org.redcraft.redcraftchat.commands.minecraft.PlayerSettingsMinecraftCommand;
 import org.redcraft.redcraftchat.commands.minecraft.ReplyMinecraftCommand;
@@ -61,6 +62,8 @@ import org.redcraft.redcraftchat.listeners.minecraft.MinecraftTabCompleteListene
 import org.redcraft.redcraftchat.dialog.DialogClickListener;
 import org.redcraft.redcraftchat.displaykit.DisplayKitIntegration;
 import org.redcraft.redcraftchat.listeners.minecraft.MinecraftLanguageSelectorListener;
+import org.redcraft.redcraftchat.listeners.minecraft.MinecraftLastServerListener;
+import org.redcraft.redcraftchat.listeners.minecraft.MinecraftLoginServerListener;
 import org.redcraft.redcraftchat.listeners.packets.ChatSignatureStripper;
 import org.redcraft.redcraftchat.listeners.packets.HologramTranslator;
 import org.redcraft.redcraftchat.listeners.packets.SystemChatInterceptor;
@@ -72,7 +75,7 @@ import org.redcraft.redcraftchat.runnables.ScheduledAnnouncementsTask;
 
 import org.slf4j.Logger;
 
-@Plugin(id = "redcraftchat", name = RedCraftChat.PLUGIN_NAME, version = "0.2.1-SNAPSHOT", url = "https://redcraft.org", description = "Multi language chat and Discord bridge", authors = {
+@Plugin(id = "redcraftchat", name = RedCraftChat.PLUGIN_NAME, version = "0.2.2-SNAPSHOT", url = "https://redcraft.org", description = "Multi language chat and Discord bridge", authors = {
 		"RedCraft" })
 public class RedCraftChat {
 
@@ -169,6 +172,8 @@ public class RedCraftChat {
 		proxy.getEventManager().register(this, new MinecraftConnectMailListener());
 		proxy.getEventManager().register(this, new MinecraftPlayerPreferencesListener());
 		proxy.getEventManager().register(this, new MinecraftLanguageSelectorListener());
+		proxy.getEventManager().register(this, new MinecraftLastServerListener());
+		proxy.getEventManager().register(this, new MinecraftLoginServerListener());
 		if (Config.enableTabCompletion) {
 			proxy.getEventManager().register(this, new MinecraftTabCompleteListener());
 		}
@@ -220,6 +225,12 @@ public class RedCraftChat {
 		commandManager.register(commandManager.metaBuilder("msg").aliases("tell", "m", "w").plugin(this)
 				.hint(CommandHints.verbWithWordThenText("player", "player", "message").getChild("player"))
 				.build(), new MsgMinecraftCommand());
+		// Server ids are the argument, and they are a fixed list, so they
+		// could be hints. They are left to suggest() so a server added to
+		// the proxy shows up without restarting this plugin.
+		commandManager.register(commandManager.metaBuilder("servers").aliases("serverlist").plugin(this)
+				.build(), new ServersMinecraftCommand());
+
 		commandManager.register(commandManager.metaBuilder("me").plugin(this)
 				.hint(CommandHints.text("message"))
 				.build(), new MeMinecraftCommand());

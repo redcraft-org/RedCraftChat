@@ -27,6 +27,22 @@ public class UiStrings {
     public static final String REMOVE_FROM_LANGUAGES = "Click to remove this languages";
     public static final String CHANGE_MAIN_LANGUAGE = "Change main language";
 
+    public static final String SERVERS_TITLE = "Servers";
+    public static final String SERVERS_DEFAULT_TITLE = "Default server at login";
+    /** %network% is the configured network name, substituted after translation. */
+    public static final String SERVERS_DEFAULT_HELP = "Where to put you when you connect to %network%";
+    /** %server% is the readable name, substituted after translation. */
+    public static final String SERVERS_DEFAULT_BUTTON = "Login: %server%";
+    public static final String SERVERS_DEFAULT_LAST = "Last server";
+    public static final String SERVERS_DEFAULT_SAVED = "You will land on %server% from now on";
+    public static final String SERVERS_HELP = "Pick where you want to go";
+    /** %server% is the readable name, substituted after translation. */
+    public static final String SERVERS_RETURN = "Back to %server%";
+    public static final String SERVERS_YOU_ARE_HERE = "You are here";
+    public static final String SERVERS_NONE = "There is nowhere else to go right now";
+    public static final String SERVERS_SENDING = "Sending you to %server%";
+    public static final String SERVERS_GONE = "That server is not available";
+
     public static final String MAIL_TITLE = "Mail";
     public static final String MAIL_INBOX_HEADER = "MAIL INBOX";
     public static final String MAIL_OPEN_INBOX = "Inbox";
@@ -111,6 +127,18 @@ public class UiStrings {
             SELECTOR_KEEP_CURRENT,
             SELECTOR_APPEARED,
             SELECTOR_CONFIRMED,
+            SERVERS_TITLE,
+            SERVERS_DEFAULT_TITLE,
+            SERVERS_DEFAULT_HELP,
+            SERVERS_DEFAULT_BUTTON,
+            SERVERS_DEFAULT_LAST,
+            SERVERS_DEFAULT_SAVED,
+            SERVERS_HELP,
+            SERVERS_RETURN,
+            SERVERS_YOU_ARE_HERE,
+            SERVERS_NONE,
+            SERVERS_SENDING,
+            SERVERS_GONE,
             MAIL_TITLE,
             MAIL_INBOX_HEADER,
             MAIL_OPEN_INBOX,

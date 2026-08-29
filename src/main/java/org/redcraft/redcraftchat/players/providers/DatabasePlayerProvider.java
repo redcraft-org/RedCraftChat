@@ -143,6 +143,8 @@ public class DatabasePlayerProvider implements PlayerProvider {
 
         playerPreferences.commandSpyEnabled = preferences.commandSpyEnabled;
         playerPreferences.languageSelectorConfirmed = preferences.languageSelectorConfirmed;
+        playerPreferences.lastServer = preferences.lastServer;
+        playerPreferences.loginServer = preferences.loginServer;
 
         return playerPreferences;
     }
@@ -166,6 +168,8 @@ public class DatabasePlayerProvider implements PlayerProvider {
 
         playerPreferences.commandSpyEnabled = preferences.commandSpyEnabled;
         playerPreferences.languageSelectorConfirmed = preferences.languageSelectorConfirmed;
+        playerPreferences.lastServer = preferences.lastServer;
+        playerPreferences.loginServer = preferences.loginServer;
 
         return playerPreferences;
     }

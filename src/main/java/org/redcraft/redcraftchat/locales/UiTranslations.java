@@ -96,6 +96,18 @@ public final class UiTranslations {
         fr.put(UiStrings.MAIL_NO_RECIPIENT, "Aucun destinataire indiqué");
         fr.put(UiStrings.MAIL_PLAYER_NOT_FOUND, "Ce joueur est introuvable");
         fr.put(UiStrings.MAIL_RECIPIENT_NAME, "Nom du joueur");
+        fr.put(UiStrings.SERVERS_TITLE, "Serveurs");
+        fr.put(UiStrings.SERVERS_HELP, "Choisissez où vous voulez aller");
+        fr.put(UiStrings.SERVERS_RETURN, "Retour sur %server%");
+        fr.put(UiStrings.SERVERS_YOU_ARE_HERE, "Vous êtes ici");
+        fr.put(UiStrings.SERVERS_NONE, "Il n'y a nulle part où aller pour le moment");
+        fr.put(UiStrings.SERVERS_SENDING, "Direction %server%");
+        fr.put(UiStrings.SERVERS_GONE, "Ce serveur n'est pas disponible");
+        fr.put(UiStrings.SERVERS_DEFAULT_TITLE, "Serveur par défaut à la connexion");
+        fr.put(UiStrings.SERVERS_DEFAULT_HELP, "Où vous placer quand vous vous connectez à %network%");
+        fr.put(UiStrings.SERVERS_DEFAULT_BUTTON, "Connexion : %server%");
+        fr.put(UiStrings.SERVERS_DEFAULT_LAST, "Dernier serveur");
+        fr.put(UiStrings.SERVERS_DEFAULT_SAVED, "Vous arriverez sur %server% désormais");
         all.put("fr", fr);
 
         Map<String, String> es = new HashMap<>();
@@ -136,6 +148,18 @@ public final class UiTranslations {
         es.put(UiStrings.MAIL_NO_RECIPIENT, "No has indicado un destinatario");
         es.put(UiStrings.MAIL_PLAYER_NOT_FOUND, "No se encontró a ese jugador");
         es.put(UiStrings.MAIL_RECIPIENT_NAME, "Nombre del jugador");
+        es.put(UiStrings.SERVERS_TITLE, "Servidores");
+        es.put(UiStrings.SERVERS_HELP, "Elige a dónde quieres ir");
+        es.put(UiStrings.SERVERS_RETURN, "Volver a %server%");
+        es.put(UiStrings.SERVERS_YOU_ARE_HERE, "Estás aquí");
+        es.put(UiStrings.SERVERS_NONE, "No hay ningún otro sitio al que ir ahora mismo");
+        es.put(UiStrings.SERVERS_SENDING, "Enviándote a %server%");
+        es.put(UiStrings.SERVERS_GONE, "Ese servidor no está disponible");
+        es.put(UiStrings.SERVERS_DEFAULT_TITLE, "Servidor por defecto al entrar");
+        es.put(UiStrings.SERVERS_DEFAULT_HELP, "Dónde ponerte cuando te conectas a %network%");
+        es.put(UiStrings.SERVERS_DEFAULT_BUTTON, "Entrada: %server%");
+        es.put(UiStrings.SERVERS_DEFAULT_LAST, "Último servidor");
+        es.put(UiStrings.SERVERS_DEFAULT_SAVED, "A partir de ahora entrarás en %server%");
         all.put("es", es);
 
         Map<String, String> de = new HashMap<>();
@@ -176,6 +200,18 @@ public final class UiTranslations {
         de.put(UiStrings.MAIL_NO_RECIPIENT, "Kein Empfänger angegeben");
         de.put(UiStrings.MAIL_PLAYER_NOT_FOUND, "Dieser Spieler wurde nicht gefunden");
         de.put(UiStrings.MAIL_RECIPIENT_NAME, "Spielername");
+        de.put(UiStrings.SERVERS_TITLE, "Server");
+        de.put(UiStrings.SERVERS_HELP, "Wähle, wohin du möchtest");
+        de.put(UiStrings.SERVERS_RETURN, "Zurück zu %server%");
+        de.put(UiStrings.SERVERS_YOU_ARE_HERE, "Du bist hier");
+        de.put(UiStrings.SERVERS_NONE, "Im Moment gibt es keinen anderen Ort");
+        de.put(UiStrings.SERVERS_SENDING, "Du wirst zu %server% geschickt");
+        de.put(UiStrings.SERVERS_GONE, "Dieser Server ist nicht verfügbar");
+        de.put(UiStrings.SERVERS_DEFAULT_TITLE, "Standardserver beim Anmelden");
+        de.put(UiStrings.SERVERS_DEFAULT_HELP, "Wohin du kommst, wenn du dich mit %network% verbindest");
+        de.put(UiStrings.SERVERS_DEFAULT_BUTTON, "Anmeldung: %server%");
+        de.put(UiStrings.SERVERS_DEFAULT_LAST, "Letzter Server");
+        de.put(UiStrings.SERVERS_DEFAULT_SAVED, "Du landest ab jetzt auf %server%");
         all.put("de", de);
 
         Map<String, String> it = new HashMap<>();
@@ -216,6 +252,18 @@ public final class UiTranslations {
         it.put(UiStrings.MAIL_NO_RECIPIENT, "Nessun destinatario indicato");
         it.put(UiStrings.MAIL_PLAYER_NOT_FOUND, "Giocatore non trovato");
         it.put(UiStrings.MAIL_RECIPIENT_NAME, "Nome del giocatore");
+        it.put(UiStrings.SERVERS_TITLE, "Server");
+        it.put(UiStrings.SERVERS_HELP, "Scegli dove vuoi andare");
+        it.put(UiStrings.SERVERS_RETURN, "Torna su %server%");
+        it.put(UiStrings.SERVERS_YOU_ARE_HERE, "Sei qui");
+        it.put(UiStrings.SERVERS_NONE, "Non c'è nessun altro posto dove andare al momento");
+        it.put(UiStrings.SERVERS_SENDING, "Ti mando su %server%");
+        it.put(UiStrings.SERVERS_GONE, "Quel server non è disponibile");
+        it.put(UiStrings.SERVERS_DEFAULT_TITLE, "Server predefinito all'accesso");
+        it.put(UiStrings.SERVERS_DEFAULT_HELP, "Dove metterti quando ti colleghi a %network%");
+        it.put(UiStrings.SERVERS_DEFAULT_BUTTON, "Accesso: %server%");
+        it.put(UiStrings.SERVERS_DEFAULT_LAST, "Ultimo server");
+        it.put(UiStrings.SERVERS_DEFAULT_SAVED, "D'ora in poi arriverai su %server%");
         all.put("it", it);
 
         Map<String, String> ru = new HashMap<>();
@@ -256,6 +304,18 @@ public final class UiTranslations {
         ru.put(UiStrings.MAIL_NO_RECIPIENT, "Получатель не указан");
         ru.put(UiStrings.MAIL_PLAYER_NOT_FOUND, "Игрок не найден");
         ru.put(UiStrings.MAIL_RECIPIENT_NAME, "Имя игрока");
+        ru.put(UiStrings.SERVERS_TITLE, "Серверы");
+        ru.put(UiStrings.SERVERS_HELP, "Выберите, куда хотите отправиться");
+        ru.put(UiStrings.SERVERS_RETURN, "Назад на %server%");
+        ru.put(UiStrings.SERVERS_YOU_ARE_HERE, "Вы здесь");
+        ru.put(UiStrings.SERVERS_NONE, "Сейчас больше некуда пойти");
+        ru.put(UiStrings.SERVERS_SENDING, "Отправляем вас на %server%");
+        ru.put(UiStrings.SERVERS_GONE, "Этот сервер недоступен");
+        ru.put(UiStrings.SERVERS_DEFAULT_TITLE, "Сервер по умолчанию при входе");
+        ru.put(UiStrings.SERVERS_DEFAULT_HELP, "Куда вас отправить при подключении к %network%");
+        ru.put(UiStrings.SERVERS_DEFAULT_BUTTON, "Вход: %server%");
+        ru.put(UiStrings.SERVERS_DEFAULT_LAST, "Последний сервер");
+        ru.put(UiStrings.SERVERS_DEFAULT_SAVED, "Теперь вы будете попадать на %server%");
         all.put("ru", ru);
 
         return all;

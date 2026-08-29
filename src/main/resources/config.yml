@@ -7,6 +7,11 @@
 # A BungeeCord plugin to handle chat on Minecraft and Discord
 
 # This is for your Discord bot
+# What to call the network when a message has to name it, such as the login
+# server setting. Its own key rather than borrowed from the Discord activity,
+# so changing what Discord shows does not reword an unrelated screen.
+network-name: 'RedCraft.org'
+
 discord-enabled: true
 discord-token: ''
 discord-channel-minecraft: 'minecraft'
@@ -37,12 +42,13 @@ json-api-bind: '127.0.0.1'
 json-api-port: 8080
 
 # Extra commands that run another command, since Velocity has no alias of its
-# own. /hub runs /server hub, and whatever the player types after the alias is
+# own. /hub runs /servers hub, and whatever the player types after the alias is
 # appended, so /hub museum still works. The command being aliased checks its
 # own permission, an alias grants nothing by itself.
 command-aliases:
-  hub: 'server hub'
-  lobby: 'server hub'
+  hub: 'servers hub'
+  lobby: 'servers hub'
+  s: 'servers'
 
 # Readable names for the backend servers, used in join and leave messages and
 # in the Discord bridge. Falls back to the motd a server answers a ping with,

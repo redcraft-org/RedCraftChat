@@ -19,6 +19,9 @@ import com.velocitypowered.api.proxy.Player;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.models.players.PlayerMail;
 import org.redcraft.redcraftchat.messaging.MailMessagesManager;
+import org.redcraft.redcraftchat.minecraft.ServerDisplayNameManager;
+import org.redcraft.redcraftchat.servers.LoginServer;
+import org.redcraft.redcraftchat.servers.ServerTransfer;
 import org.redcraft.redcraftchat.displaykit.LanguageSelectorSession;
 import org.redcraft.redcraftchat.helpers.BasicMessageFormatter;
 import org.redcraft.redcraftchat.locales.UiStrings;
@@ -116,6 +119,38 @@ public class DialogClickListener extends PacketListenerAbstract {
                             NamedTextColor.GREEN);
                     break;
 
+                case "server_pick": {
+                    String target = readString(values, ServerSelectorDialog.SERVER_KEY);
+                    if (target != null) {
+                        ServerTransfer.send(player, target);
+                    }
+                    break;
+                }
+
+                case "server_list":
+                    ServerSelectorDialog.show(player);
+                    break;
+
+                case "server_defaults":
+                    ServerSelectorDialog.showDefaults(player);
+                    break;
+
+                case "server_set_default": {
+                    String choice = readString(values, ServerSelectorDialog.SERVER_KEY);
+                    // Empty is a real answer here, meaning "leave it to the
+                    // proxy", so it is stored rather than treated as missing
+                    preferences.loginServer = choice == null || choice.isEmpty() ? null : choice;
+                    PlayerPreferencesManager.updatePlayerPreferences(preferences);
+
+                    PlayerPreferences saved = PlayerPreferencesManager.getPlayerPreferences(player);
+                    BasicMessageFormatter.sendInternalMessage(player,
+                            PlayerPreferencesManager.localizeUiForPlayer(saved, UiStrings.SERVERS_DEFAULT_SAVED)
+                                    .replace("%server%", describeDefault(saved)),
+                            NamedTextColor.GREEN);
+                    ServerSelectorDialog.showDefaults(player);
+                    break;
+                }
+
                 case "mail_menu":
                     MailDialog.showMenu(player);
                     break;
@@ -158,6 +193,20 @@ public class DialogClickListener extends PacketListenerAbstract {
             RedCraftChat.getInstance().getLogger().warn("Language dialog action {} failed for {}: {}",
                     id.getKey(), player.getUsername(), e.getMessage());
         }
+    }
+
+    /** The setting in words, for the line confirming it was saved. */
+    private String describeDefault(PlayerPreferences preferences) {
+        String setting = preferences.loginServer;
+        if (LoginServer.LAST.equals(setting)) {
+            return PlayerPreferencesManager.localizeUiForPlayer(preferences, UiStrings.SERVERS_DEFAULT_LAST);
+        }
+        if (setting == null || setting.isEmpty()) {
+            return ServerDisplayNameManager.getDisplayName(
+                    RedCraftChat.getInstance().getProxy().getConfiguration()
+                            .getAttemptConnectionOrder().stream().findFirst().orElse(""));
+        }
+        return ServerDisplayNameManager.getDisplayName(setting);
     }
 
     private PlayerMail findMail(Player player, String internalId) throws Exception {

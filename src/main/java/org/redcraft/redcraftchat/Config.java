@@ -17,6 +17,8 @@ public class Config {
 	public static boolean discordEnabled = false;
 	public static String discordToken = "";
 	public static String discordChannelMinecraft = "minecraft";
+	public static String networkName = "RedCraft.org";
+
 	public static boolean discordActivityEnabled = true;
 	public static String discordActivityType = "playing";
 	public static String discordActivityValue = "RedCraft.org";
@@ -103,6 +105,8 @@ public class Config {
 		discordEnabled = getBoolean(config, "discord-enabled");
 		discordToken = getString(config, "discord-token");
 		discordChannelMinecraft = getString(config, "discord-channel-minecraft");
+		networkName = getString(config, "network-name", networkName);
+
 		discordActivityEnabled = getBoolean(config, "discord-activity-enabled");
 		discordActivityType = getString(config, "discord-activity-type");
 		discordActivityValue = getString(config, "discord-activity-value");

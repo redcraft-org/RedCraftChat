@@ -38,6 +38,12 @@ public class PlayerPreferences {
 
     public boolean commandSpyEnabled;
 
+    /** Where to offer sending them back to. Null until they have moved once. */
+    public String lastServer;
+
+    /** Where to send them on login. See LoginServer for what the values mean. */
+    public String loginServer;
+
     public PlayerPreferences() {
         languages = new ArrayList<String>();
     }
