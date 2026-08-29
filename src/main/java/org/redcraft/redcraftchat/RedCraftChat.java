@@ -75,7 +75,7 @@ import org.redcraft.redcraftchat.runnables.ScheduledAnnouncementsTask;
 
 import org.slf4j.Logger;
 
-@Plugin(id = "redcraftchat", name = RedCraftChat.PLUGIN_NAME, version = "0.2.2-SNAPSHOT", url = "https://redcraft.org", description = "Multi language chat and Discord bridge", authors = {
+@Plugin(id = "redcraftchat", name = RedCraftChat.PLUGIN_NAME, version = "0.2.3-SNAPSHOT", url = "https://redcraft.org", description = "Multi language chat and Discord bridge", authors = {
 		"RedCraft" })
 public class RedCraftChat {
 

@@ -49,6 +49,10 @@ command-aliases:
   hub: 'servers hub'
   lobby: 'servers hub'
   s: 'servers'
+  redstone: 'servers crea_redstone_plot'
+  build: 'servers crea_build_plot'
+  museum: 'servers museum'
+  vanilla: 'servers survival_vanilla'
 
 # Readable names for the backend servers, used in join and leave messages and
 # in the Discord bridge. Falls back to the motd a server answers a ping with,

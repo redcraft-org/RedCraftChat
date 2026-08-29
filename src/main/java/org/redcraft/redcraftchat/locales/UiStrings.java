@@ -40,7 +40,6 @@ public class UiStrings {
     public static final String SERVERS_RETURN = "Back to %server%";
     public static final String SERVERS_YOU_ARE_HERE = "You are here";
     public static final String SERVERS_NONE = "There is nowhere else to go right now";
-    public static final String SERVERS_SENDING = "Sending you to %server%";
     public static final String SERVERS_GONE = "That server is not available";
 
     public static final String MAIL_TITLE = "Mail";
@@ -137,7 +136,6 @@ public class UiStrings {
             SERVERS_RETURN,
             SERVERS_YOU_ARE_HERE,
             SERVERS_NONE,
-            SERVERS_SENDING,
             SERVERS_GONE,
             MAIL_TITLE,
             MAIL_INBOX_HEADER,

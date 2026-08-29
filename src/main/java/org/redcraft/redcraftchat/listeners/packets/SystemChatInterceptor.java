@@ -25,6 +25,7 @@ import com.github.retrooper.packetevents.event.PacketListenerPriority;
 import com.github.retrooper.packetevents.event.PacketSendEvent;
 import com.github.retrooper.packetevents.event.UserDisconnectEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.protocol.ConnectionState;
 import com.github.retrooper.packetevents.protocol.player.User;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSystemChatMessage;
 import com.velocitypowered.api.proxy.Player;
@@ -330,6 +331,20 @@ public class SystemChatInterceptor extends PacketListenerAbstract {
 
     private static void sendMessage(User user, Player player, Component message, boolean overlay) {
         try {
+            // Every message here is a delayed copy: the original was cancelled
+            // and held for the grouping window before being written back. The
+            // player can leave PLAY inside that window, by switching servers
+            // or quitting, and a play packet written to a connection that has
+            // moved to configuration is decoded against the wrong table. The
+            // client does not recover from that, it drops the connection with
+            // an unknown packet id.
+            //
+            // getEncoderState rather than getConnectionState: the latter
+            // throws while the encoder and decoder disagree, which is exactly
+            // the moment being guarded against.
+            if (user.getEncoderState() != ConnectionState.PLAY) {
+                return;
+            }
             // Silently, otherwise the packet goes back through the packetevents
             // encoder and this listener sees its own message again
             user.sendPacketSilently(new WrapperPlayServerSystemChatMessage(overlay, message));

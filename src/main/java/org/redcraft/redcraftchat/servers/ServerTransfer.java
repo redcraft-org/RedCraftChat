@@ -6,11 +6,9 @@ import com.velocitypowered.api.proxy.server.RegisteredServer;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.helpers.BasicMessageFormatter;
 import org.redcraft.redcraftchat.locales.UiStrings;
-import org.redcraft.redcraftchat.minecraft.ServerDisplayNameManager;
 import org.redcraft.redcraftchat.models.players.PlayerPreferences;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
 
-import net.kyori.adventure.text.format.NamedTextColor;
 
 /**
  * Moves a player between backends.
@@ -58,11 +56,10 @@ public final class ServerTransfer {
             return false;
         }
 
-        BasicMessageFormatter.sendInternalMessage(player,
-                ui(preferences, UiStrings.SERVERS_SENDING)
-                        .replace("%server%", ServerDisplayNameManager.getDisplayName(serverName)),
-                NamedTextColor.GREEN);
-
+        // No "sending you to X" line. It is held for the chat grouping window
+        // and then written back, by which time the player is mid-switch, so it
+        // was both the thing that kicked them and a message they would never
+        // have read: the screen changing says it sooner.
         player.createConnectionRequest(server).fireAndForget();
         return true;
     }

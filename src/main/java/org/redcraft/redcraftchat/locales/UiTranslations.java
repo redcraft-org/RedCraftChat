@@ -101,7 +101,6 @@ public final class UiTranslations {
         fr.put(UiStrings.SERVERS_RETURN, "Retour sur %server%");
         fr.put(UiStrings.SERVERS_YOU_ARE_HERE, "Vous êtes ici");
         fr.put(UiStrings.SERVERS_NONE, "Il n'y a nulle part où aller pour le moment");
-        fr.put(UiStrings.SERVERS_SENDING, "Direction %server%");
         fr.put(UiStrings.SERVERS_GONE, "Ce serveur n'est pas disponible");
         fr.put(UiStrings.SERVERS_DEFAULT_TITLE, "Serveur par défaut à la connexion");
         fr.put(UiStrings.SERVERS_DEFAULT_HELP, "Où vous placer quand vous vous connectez à %network%");
@@ -153,7 +152,6 @@ public final class UiTranslations {
         es.put(UiStrings.SERVERS_RETURN, "Volver a %server%");
         es.put(UiStrings.SERVERS_YOU_ARE_HERE, "Estás aquí");
         es.put(UiStrings.SERVERS_NONE, "No hay ningún otro sitio al que ir ahora mismo");
-        es.put(UiStrings.SERVERS_SENDING, "Enviándote a %server%");
         es.put(UiStrings.SERVERS_GONE, "Ese servidor no está disponible");
         es.put(UiStrings.SERVERS_DEFAULT_TITLE, "Servidor por defecto al entrar");
         es.put(UiStrings.SERVERS_DEFAULT_HELP, "Dónde ponerte cuando te conectas a %network%");
@@ -205,7 +203,6 @@ public final class UiTranslations {
         de.put(UiStrings.SERVERS_RETURN, "Zurück zu %server%");
         de.put(UiStrings.SERVERS_YOU_ARE_HERE, "Du bist hier");
         de.put(UiStrings.SERVERS_NONE, "Im Moment gibt es keinen anderen Ort");
-        de.put(UiStrings.SERVERS_SENDING, "Du wirst zu %server% geschickt");
         de.put(UiStrings.SERVERS_GONE, "Dieser Server ist nicht verfügbar");
         de.put(UiStrings.SERVERS_DEFAULT_TITLE, "Standardserver beim Anmelden");
         de.put(UiStrings.SERVERS_DEFAULT_HELP, "Wohin du kommst, wenn du dich mit %network% verbindest");
@@ -257,7 +254,6 @@ public final class UiTranslations {
         it.put(UiStrings.SERVERS_RETURN, "Torna su %server%");
         it.put(UiStrings.SERVERS_YOU_ARE_HERE, "Sei qui");
         it.put(UiStrings.SERVERS_NONE, "Non c'è nessun altro posto dove andare al momento");
-        it.put(UiStrings.SERVERS_SENDING, "Ti mando su %server%");
         it.put(UiStrings.SERVERS_GONE, "Quel server non è disponibile");
         it.put(UiStrings.SERVERS_DEFAULT_TITLE, "Server predefinito all'accesso");
         it.put(UiStrings.SERVERS_DEFAULT_HELP, "Dove metterti quando ti colleghi a %network%");
@@ -309,7 +305,6 @@ public final class UiTranslations {
         ru.put(UiStrings.SERVERS_RETURN, "Назад на %server%");
         ru.put(UiStrings.SERVERS_YOU_ARE_HERE, "Вы здесь");
         ru.put(UiStrings.SERVERS_NONE, "Сейчас больше некуда пойти");
-        ru.put(UiStrings.SERVERS_SENDING, "Отправляем вас на %server%");
         ru.put(UiStrings.SERVERS_GONE, "Этот сервер недоступен");
         ru.put(UiStrings.SERVERS_DEFAULT_TITLE, "Сервер по умолчанию при входе");
         ru.put(UiStrings.SERVERS_DEFAULT_HELP, "Куда вас отправить при подключении к %network%");
