@@ -119,7 +119,7 @@ public final class MailDialog {
 
             ActionButton close = new ActionButton(
                     new CommonButtonData(
-                            Component.text(ui(preferences, UiStrings.SELECTOR_CLOSE), NamedTextColor.GRAY),
+                            Component.text(ui(preferences, UiStrings.SELECTOR_CLOSE)),
                             null, BUTTON_WIDTH_PX),
                     null);
 
@@ -245,7 +245,7 @@ public final class MailDialog {
             // the mailbox had no way out at all and only Escape closed it.
             ActionButton close = new ActionButton(
                     new CommonButtonData(
-                            Component.text(ui(preferences, UiStrings.SELECTOR_BACK), NamedTextColor.GRAY),
+                            Component.text(ui(preferences, UiStrings.SELECTOR_BACK)),
                             null, BUTTON_WIDTH_PX),
                     new DynamicCustomAction(MENU, null));
 
@@ -305,7 +305,7 @@ public final class MailDialog {
 
             ActionButton back = new ActionButton(
                     new CommonButtonData(
-                            Component.text(ui(preferences, UiStrings.SELECTOR_BACK), NamedTextColor.GRAY),
+                            Component.text(ui(preferences, UiStrings.SELECTOR_BACK)),
                             null, BUTTON_WIDTH_PX),
                     new DynamicCustomAction(BACK_TO_INBOX, null));
 

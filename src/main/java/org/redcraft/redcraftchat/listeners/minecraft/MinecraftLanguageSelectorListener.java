@@ -9,7 +9,6 @@ import com.velocitypowered.api.event.player.ServerConnectedEvent;
 import com.velocitypowered.api.proxy.Player;
 
 import org.redcraft.redcraftchat.RedCraftChat;
-import org.redcraft.redcraftchat.bedrock.BedrockLanguageSelector;
 import org.redcraft.redcraftchat.dialog.NativeDialogSelector;
 import org.redcraft.redcraftchat.displaykit.LanguageSelectorManager;
 import org.redcraft.redcraftchat.displaykit.LanguageSelectorManager.SelectorRoute;
@@ -95,14 +94,6 @@ public class MinecraftLanguageSelectorListener {
             SelectorRoute route = LanguageSelectorManager.decideFor(player, preferences, Trigger.FIRST_JOIN);
 
             switch (route) {
-                case FORM_FIRST_JOIN:
-                    if (!BedrockLanguageSelector.showPrimary(player, preferences)) {
-                        // Floodgate said yes and then could not deliver, so
-                        // fall to the text path rather than showing nothing
-                        LanguageSelectorPrompt.sendFirstJoinPrompt(player, preferences);
-                    }
-                    break;
-
                 case DIALOG_FIRST_JOIN:
                     if (NativeDialogSelector.showPrimary(player, preferences)) {
                         scheduleDialogFallback(player);

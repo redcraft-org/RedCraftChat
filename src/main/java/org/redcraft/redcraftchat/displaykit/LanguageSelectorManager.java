@@ -7,7 +7,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.velocitypowered.api.proxy.Player;
 
 import org.redcraft.redcraftchat.Config;
-import org.redcraft.redcraftchat.bedrock.BedrockLanguageSelector;
 import org.redcraft.redcraftchat.dialog.NativeDialogSelector;
 import org.redcraft.redcraftchat.minecraft.BedrockPlayers;
 import org.redcraft.redcraftchat.RedCraftChat;
@@ -31,8 +30,6 @@ public class LanguageSelectorManager {
 
     public enum SelectorRoute {
         NONE,
-        FORM_FIRST_JOIN,
-        FORM_MANAGE,
         DIALOG_FIRST_JOIN,
         DIALOG_MANAGE,
         SURFACE_FIRST_JOIN,
@@ -48,7 +45,7 @@ public class LanguageSelectorManager {
     }
 
     public static SelectorRoute decide(boolean selectorEnabled, boolean dialogSupported,
-            boolean libAvailable, boolean clientSupported, boolean bedrock, boolean formSupported,
+            boolean libAvailable, boolean clientSupported, boolean bedrock,
             boolean confirmed, Trigger trigger) {
         // The native dialog is preferred wherever the client can show one: it
         // is the client's own interface, and its floor is 1.21.6 against the
@@ -56,18 +53,14 @@ public class LanguageSelectorManager {
         // panel is what catches a client that predates dialogs but can still
         // render display entities, and chat catches the rest.
         //
-        // Bedrock is excluded from both regardless of what it reports.
-        // Geyser presents those players as a modern Java client, so
-        // dialogSupported and clientSupported are both true for them and both
-        // are wrong: Geyser renders neither a dialog nor a display entity, and
-        // the dialog's reply never comes back, so the player waits on a
-        // surface that was never drawn.
-        boolean dialogCapable = selectorEnabled && dialogSupported && !bedrock;
+        // Bedrock takes the dialog too. Geyser translates a show_dialog into
+        // its own form, inputs and all, and sends the custom_click_action
+        // back, so the round trip this code already does works there
+        // unchanged. It is still excluded from the in-world panel, which is
+        // built from display entities and interaction packets Geyser does
+        // not put in front of a Bedrock player.
+        boolean dialogCapable = selectorEnabled && dialogSupported;
         boolean surfaceCapable = selectorEnabled && libAvailable && clientSupported && !bedrock;
-        // Bedrock has its own UI, and Floodgate can drive it. That is a real
-        // interface rather than a text fallback, so it outranks the chat menu
-        // wherever Floodgate is actually present.
-        boolean formCapable = selectorEnabled && bedrock && formSupported;
 
         switch (trigger) {
             case FIRST_JOIN:
@@ -81,17 +74,11 @@ public class LanguageSelectorManager {
                 if (!selectorEnabled) {
                     return SelectorRoute.NONE;
                 }
-                if (formCapable) {
-                    return SelectorRoute.FORM_FIRST_JOIN;
-                }
                 if (dialogCapable) {
                     return SelectorRoute.DIALOG_FIRST_JOIN;
                 }
                 return surfaceCapable ? SelectorRoute.SURFACE_FIRST_JOIN : SelectorRoute.CHAT_PROMPT;
             case LANG_NO_ARGS:
-                if (formCapable) {
-                    return SelectorRoute.FORM_MANAGE;
-                }
                 if (dialogCapable) {
                     return SelectorRoute.DIALOG_MANAGE;
                 }
@@ -105,17 +92,29 @@ public class LanguageSelectorManager {
 
     /** The decide() call with live state filled in. */
     public static SelectorRoute decideFor(Player player, PlayerPreferences preferences, Trigger trigger) {
-        return decide(
+        boolean bedrock = BedrockPlayers.isBedrock(player);
+        boolean dialogSupported = NativeDialogSelector.isSupported(player);
+
+        SelectorRoute route = decide(
                 Config.displaykitSelectorEnabled,
                 // Independent of DisplayKit on purpose: the dialog is drawn by
                 // the client, so it still works when the library is missing
-                NativeDialogSelector.isSupported(player),
+                dialogSupported,
                 DisplayKitIntegration.isAvailable(),
                 DisplayKitIntegration.isSupported(player),
-                BedrockPlayers.isBedrock(player),
-                BedrockLanguageSelector.isSupported(player),
+                bedrock,
                 preferences.languageSelectorConfirmed,
                 trigger);
+
+        // Logged with its inputs rather than on its own: the route alone
+        // never says why, and the whole question when one looks wrong is
+        // which capability reported what.
+        RedCraftChat.getInstance().getLogger().info(
+                "Selector route for {}: {} (trigger {}, bedrock {}, dialog {}, confirmed {})",
+                player.getUsername(), route, trigger, bedrock, dialogSupported,
+                preferences.languageSelectorConfirmed);
+
+        return route;
     }
 
     /**

@@ -5,7 +5,6 @@ import org.redcraft.redcraftchat.commands.Suggestions;
 import org.redcraft.redcraftchat.dialog.MailDialog;
 import org.redcraft.redcraftchat.locales.UiStrings;
 import org.redcraft.redcraftchat.messaging.MailView;
-import org.redcraft.redcraftchat.bedrock.BedrockMailInbox;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -132,21 +131,15 @@ public class MailMinecraftCommand implements SimpleCommand {
             if (!isListing(args)) {
                 return false;
             }
-            if (MailDialog.isSupported(player) && MailDialog.showMenu(player)) {
-                return true;
-            }
-            if (BedrockMailInbox.isSupported(player)) {
-                // Bare /mail opens the menu, the same as the Java dialog.
-                // Naming a list verb says which list is wanted, so that skips
-                // the menu and goes straight to it.
-                boolean opened = args.length == 0
-                        ? BedrockMailInbox.showMenu(player)
-                        : BedrockMailInbox.showInbox(player, !"listall".equalsIgnoreCase(args[0]));
-                if (opened) {
-                    return true;
-                }
-            }
-            return false;
+            // One path for every client now. Geyser renders the dialog as a
+            // Bedrock form, so there is no second implementation to keep in
+            // step with this one.
+            boolean supported = MailDialog.isSupported(player);
+            boolean opened = supported && MailDialog.showMenu(player);
+            RedCraftChat.getInstance().getLogger().info(
+                    "Mail interface for {}: dialog supported {}, opened {}",
+                    player.getUsername(), supported, opened);
+            return opened;
         }
 
         /** Bare /mail, /mail list and /mail listall all open the inbox. */

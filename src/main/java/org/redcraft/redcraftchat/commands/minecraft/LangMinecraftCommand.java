@@ -9,7 +9,6 @@ import java.util.Locale;
 import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.helpers.BasicMessageFormatter;
 import org.redcraft.redcraftchat.helpers.LegacyText;
-import org.redcraft.redcraftchat.bedrock.BedrockLanguageSelector;
 import org.redcraft.redcraftchat.dialog.NativeDialogSelector;
 import org.redcraft.redcraftchat.displaykit.LanguageSelectorManager;
 import org.redcraft.redcraftchat.minecraft.BedrockPlayers;
@@ -69,14 +68,8 @@ public class LangMinecraftCommand implements SimpleCommand {
                     // in-world panel, drawn by the client instead of by us,
                     // so the two can be compared side by side in game
                     if (!NativeDialogSelector.isSupported(player)) {
-                        // Two different reasons, and telling a Bedrock player
-                        // to update their client would send them chasing a
-                        // version that will never help
                         BasicMessageFormatter.sendInternalMessage(player,
-                                BedrockPlayers.isBedrock(player)
-                                        ? "Bedrock cannot show these dialogs, use /lang instead"
-                                        : "Native dialogs need a 1.21.6 client or newer",
-                                NamedTextColor.RED);
+                                "Native dialogs need a 1.21.6 client or newer", NamedTextColor.RED);
                         return;
                     }
                     if (!NativeDialogSelector.showPrimary(player, preferences)) {
@@ -102,10 +95,6 @@ public class LangMinecraftCommand implements SimpleCommand {
                     // next when it cannot be shown, so nobody ends up with
                     // nothing.
                     SelectorRoute route = LanguageSelectorManager.decideFor(player, preferences, Trigger.LANG_NO_ARGS);
-                    if (route == SelectorRoute.FORM_MANAGE
-                            && BedrockLanguageSelector.showPrimary(player, preferences)) {
-                        return;
-                    }
                     if (route == SelectorRoute.DIALOG_MANAGE
                             && NativeDialogSelector.showPrimary(player, preferences)) {
                         return;
