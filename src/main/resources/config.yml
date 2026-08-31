@@ -72,6 +72,14 @@ server-display-names:
 # it "Créatif Build". List here the names that are ordinary words after all and
 # read better translated.
 translatable-server-names: ['Museum']
+
+# Other proper nouns the translator must copy rather than translate: worlds,
+# maps, anything a build is called. Same rule as the server names above, for
+# things the plugin cannot enumerate on its own.
+# Be sparing. A word listed here is verbatim in every sentence, so adding an
+# ordinary one like Plot costs its translation everywhere, not only on the sign
+# it was added for.
+protected-names: ['KingdomHills', 'TopRed', 'Freebuild', 'Semi-RP', 'IRS', 'musehub', 'RedCraft']
 # This is to add missing players in tab completion
 enable-tab-completion: true
 # Translate every menu and button into each supported language on startup,

@@ -43,6 +43,7 @@ public class Config {
 
 	public static Map<String, String> serverDisplayNames = new HashMap<String, String>();
 	public static List<String> translatableServerNames = new ArrayList<String>();
+	public static List<String> protectedNames = new ArrayList<String>();
 
 	public static Map<String, String> commandAliases = new HashMap<String, String>();
 
@@ -129,6 +130,7 @@ public class Config {
 		hologramGroupingDelay = getLong(config, "hologram-grouping-delay", hologramGroupingDelay);
 		serverDisplayNames = getStringMap(config, "server-display-names");
 		translatableServerNames = getStringList(config, "translatable-server-names");
+		protectedNames = getStringList(config, "protected-names");
 		commandAliases = getStringMap(config, "command-aliases");
 
 		jsonApiEnabled = getBoolean(config, "json-api-enabled", jsonApiEnabled);

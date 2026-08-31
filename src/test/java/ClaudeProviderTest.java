@@ -1,6 +1,7 @@
 import junit.framework.*;
 
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 import org.redcraft.redcraftchat.Config;
@@ -19,6 +20,42 @@ import org.redcraft.redcraftchat.translate.providers.ModernmtProvider;
  * nothing to translate.
  */
 public class ClaudeProviderTest extends TestCase {
+
+    /**
+     * The name rules read three static fields, and a test that leaves one
+     * populated changes the answer for every test after it. They are replaced
+     * rather than cleared: some tests assign an immutable list, and clear()
+     * throws on those.
+     */
+    @Override
+    protected void setUp() {
+        Config.serverDisplayNames = new LinkedHashMap<>();
+        Config.translatableServerNames = new ArrayList<>();
+        Config.protectedNames = new ArrayList<>();
+    }
+
+    /**
+     * Names that are not servers still have to survive the round trip. The
+     * museum's worlds came back as RoyaumeCollines and Construction libre,
+     * which reads fine and points at a world of neither name.
+     */
+    public void test_protected_names_are_listed_verbatim() {
+        Config.protectedNames = new ArrayList<>(Arrays.asList("KingdomHills", "Freebuild"));
+
+        String rules = ClaudeProvider.serverNameRules();
+        assertTrue(rules.contains("KingdomHills"));
+        assertTrue(rules.contains("Freebuild"));
+        assertTrue(rules.contains("Copy each of those exactly"));
+    }
+
+    public void test_a_protected_name_can_still_be_opted_back_out() {
+        // The escape hatch works the same for these as for server names, so a
+        // word that turns out to be ordinary can be handed back
+        Config.protectedNames = new ArrayList<>(Arrays.asList("Freebuild"));
+        Config.translatableServerNames = new ArrayList<>(Arrays.asList("Freebuild"));
+
+        assertEquals("", ClaudeProvider.serverNameRules());
+    }
 
     public void testOnlyClaudeSkipsTheTokenizer() {
         assertTrue(new ClaudeProvider().translatesRawText());

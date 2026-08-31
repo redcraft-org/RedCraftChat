@@ -6,7 +6,7 @@
 
 	<groupId>org.redcraft.redcraftchat</groupId>
 	<artifactId>RedCraftChat</artifactId>
-	<version>0.2.3-SNAPSHOT</version>
+	<version>0.2.4-SNAPSHOT</version>
 
 	<properties>
 		<maven.compiler.release>25</maven.compiler.release>

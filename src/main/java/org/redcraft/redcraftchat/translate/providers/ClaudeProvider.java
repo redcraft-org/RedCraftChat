@@ -204,6 +204,17 @@ public class ClaudeProvider implements TranslationProvider {
         }
 
         Set<String> verbatim = new TreeSet<>();
+        // Names that are not servers: worlds, maps, anything a build is called.
+        // The museum's worlds went out as RoyaumeCollines and Construction
+        // libre, which is a reasonable translation of words that were never
+        // words, and left the holograms disagreeing with the command that
+        // takes you there.
+        for (String name : Config.protectedNames) {
+            if (name != null && !name.isBlank() && !translatable.contains(name.trim())) {
+                verbatim.add(name.trim());
+            }
+        }
+
         for (Map.Entry<String, String> server : Config.serverDisplayNames.entrySet()) {
             verbatim.add(server.getKey());
 
@@ -218,7 +229,7 @@ public class ClaudeProvider implements TranslationProvider {
             return "";
         }
 
-        StringBuilder rules = new StringBuilder(" The servers on this network are called ");
+        StringBuilder rules = new StringBuilder(" The names on this network are ");
         rules.append(String.join(", ", verbatim));
         rules.append(". Copy each of those exactly wherever it appears, whatever the sentence around it:");
         rules.append(" they are proper nouns, and the lowercase ones are what players type as command arguments.");
