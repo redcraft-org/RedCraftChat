@@ -54,8 +54,20 @@ public class MinecraftConnectDisconnectMessageListener {
     public class AsyncPlayerLeaveHandler implements Runnable {
         DisconnectEvent event;
 
+        /**
+         * Read while the event is still on the wire, not when this runs.
+         *
+         * MinecraftDisplayNameListener drops the name on the same event, and
+         * it does so straight away while this work is handed to the scheduler.
+         * Looking it up in here lost the race and fell back to the bare
+         * username, which then took the colour of the sentence around it, so
+         * a player left as a yellow name having joined as a ranked one.
+         */
+        final String displayName;
+
         AsyncPlayerLeaveHandler(DisconnectEvent event) {
             this.event = event;
+            this.displayName = DisplayNameManager.getDisplayName(event.getPlayer());
         }
 
         @Override
@@ -66,10 +78,10 @@ public class MinecraftConnectDisconnectMessageListener {
             }
             previousServers.remove(playerUniqueId);
 
-            String message = LegacyText.YELLOW + "%player% " + LegacyText.YELLOW + "left the server";
+            String message = LegacyText.YELLOW + "%player% left the server";
 
             Map<String, String> replacements = new HashMap<String, String>();
-            replacements.put("%player%", DisplayNameManager.getDisplayName(event.getPlayer()));
+            replacements.put("%player%", displayName + LegacyText.YELLOW);
 
             MinecraftDiscordBridge.getInstance().broadcastMessage(message, replacements);
         }
