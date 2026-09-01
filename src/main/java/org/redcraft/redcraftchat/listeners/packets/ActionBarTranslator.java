@@ -133,6 +133,7 @@ public class ActionBarTranslator extends PacketListenerAbstract {
         }
         Player player = (Player) receiver;
 
+
         // A TranslatableComponent is vanilla text the client localizes
         // itself; serializing it would bake the fallback string in
         if (!(text instanceof TextComponent)) {
@@ -275,6 +276,18 @@ public class ActionBarTranslator extends PacketListenerAbstract {
                 // NumericTemplate passes them straight to the provider, which
                 // is already told to copy %placeholders% verbatim.
                 String sourceLanguage = DetectionManager.getLanguage(rawLegacy);
+                if (sourceLanguage == null) {
+                    // Detection has nothing to say about twenty characters of
+                    // imperative, and caching that as an identity buried the
+                    // museum bar in English forever. Upstream text on this
+                    // network is written in one language, so assume it: with
+                    // an LLM provider that is self-correcting, since it sees
+                    // the actual words regardless of the claimed source.
+                    sourceLanguage = Config.upstreamFallbackSourceLanguage;
+                    if (sourceLanguage == null || sourceLanguage.isEmpty()) {
+                        sourceLanguage = null;
+                    }
+                }
 
                 String translated;
                 String source;

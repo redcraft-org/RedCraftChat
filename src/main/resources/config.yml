@@ -106,7 +106,12 @@ translate-action-bars: true
 # release while it soaks; any restore failure falls back to the untouched
 # original either way.
 upstream-translate-interactive: false# In-world language selector rendered with DisplayKit for modern clients
-# (1.21.9+); older clients keep the clickable chat menu, and any surface
+
+
+# What language to assume for upstream text the detector cannot place, which
+# is most short action bars. Empty disables the assumption and leaves such
+# text untranslated.
+upstream-fallback-source-language: 'en'# (1.21.9+); older clients keep the clickable chat menu, and any surface
 # failure falls back to it too. First joins are prompted until a language is
 # explicitly chosen or confirmed.
 displaykit-selector-enabled: true

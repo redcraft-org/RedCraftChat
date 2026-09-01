@@ -35,7 +35,11 @@ public class NumericTemplate {
      * placeholder. Splitting "12.3" into two numbers would leave a bare "."
      * for the translator to move around.
      */
-    private static final Pattern NUMBER = Pattern.compile("\\d+(?:[.,:]\\d+)*");
+    // The lookbehind keeps legacy colour codes whole: the 6 in §6 is not a
+    // number, and templating it shipped §%number_a% to the provider and
+    // fragmented the cache by colour. A digit AFTER a code still counts:
+    // in §612, §6 is the code and 12 is real text.
+    private static final Pattern NUMBER = Pattern.compile("(?<!§)\\d+(?:[.,:]\\d+)*");
 
     /**
      * Letters only, so the placeholder matches the existing %([a-z_]*)%

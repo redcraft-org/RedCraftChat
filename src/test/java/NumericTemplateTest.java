@@ -81,4 +81,20 @@ public class NumericTemplateTest extends TestCase {
         assertEquals("§aVitesse: §f12.3",
                 template.restore("§aVitesse: §f%number_a%"));
     }
+
+    public void test_a_colour_codes_digit_is_not_a_number() {
+        // The 6 in §6 is a colour, and templating it shipped §%number_a% to
+        // the provider and buried the museum action bar. Found live.
+        NumericTemplate template = NumericTemplate.of("§6§lUse /musehub to quit");
+        assertFalse(template.isTemplated());
+        assertEquals("§6§lUse /musehub to quit", template.template());
+    }
+
+    public void test_a_number_directly_after_a_colour_code_still_counts() {
+        // In §612 the code is §6 and the 12 is real text
+        NumericTemplate template = NumericTemplate.of("§6§l12 points");
+        assertTrue(template.isTemplated());
+        assertEquals("§6§l%number_a% points", template.template());
+        assertEquals("§6§l12 punkte", template.restore("§6§l%number_a% punkte"));
+    }
 }
