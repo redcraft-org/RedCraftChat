@@ -17,5 +17,7 @@ public class MinecraftDisplayNameListener {
     @Subscribe
     public void onDisconnect(DisconnectEvent event) {
         DisplayNameManager.removeDisplayName(event.getPlayer().getUniqueId());
+        org.redcraft.redcraftchat.listeners.packets.ActionBarTranslator
+                .onDisconnect(event.getPlayer().getUniqueId());
     }
 }

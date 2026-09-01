@@ -121,6 +121,18 @@ public class SystemChatInterceptor extends PacketListenerAbstract {
         }
     }
 
+    /**
+     * ActionBarTranslator owns both wire forms of the action bar and rewrites
+     * in place, so an overlay message is neither cancelled nor held here when
+     * that path is on. It also stops paying the grouping delay and a
+     * scheduler hop for a surface that repaints itself anyway. With the flag
+     * off, overlay messages take the buffer exactly as before, which is the
+     * rollback lever.
+     */
+    public static boolean leaveToActionBarPath(boolean overlay) {
+        return overlay && Config.translateActionBars;
+    }
+
     public SystemChatInterceptor() {
         super(PacketListenerPriority.NORMAL);
     }
@@ -143,6 +155,10 @@ public class SystemChatInterceptor extends PacketListenerAbstract {
 
         // On 1.19.1 and later the position is this boolean, true meaning action bar
         boolean overlay = wrapper.isOverlay();
+
+        if (leaveToActionBarPath(overlay)) {
+            return;
+        }
 
         if (message instanceof TranslatableComponent
                 && SKIPPED_TRANSLATION_KEYS.contains(((TranslatableComponent) message).key())) {

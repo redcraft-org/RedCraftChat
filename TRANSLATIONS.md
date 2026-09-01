@@ -120,3 +120,27 @@ Write the English so it survives being read alone. No pronouns pointing at anoth
 You are free to suggest changes by opening an issue ticket.
 
 You can also open PRs, remember to bump the version in `pom.xml` before opening a pull request.
+
+## Action bars
+
+Two wire forms exist and they are different packets: the dedicated
+`SET_ACTION_BAR_TEXT` most plugins emit through Adventure, and system chat
+with the overlay flag, which is how CMI writes its bar. `ActionBarTranslator`
+handles both, rewriting in place from a cache: a hit costs nothing on the
+netty thread, a miss passes the original through and warms the cache so the
+next repeat is translated. Counters collapse onto one template through
+`NumericTemplate`, so a HUD repainting every tick costs one provider call
+ever. A per-player churn guard stops new provider spending (never cache hits)
+when more than eight uncached templates appear inside ten seconds.
+
+`translate-action-bars` turns the whole path off, which also returns overlay
+system chat to the grouping buffer it used before.
+
+## Clients before 1.19.1
+
+Unsupported for system chat and action bar translation, deliberately. Those
+clients receive the legacy chat packet, which nothing here listens for, and
+thirty days of logs show no real player below 1.21.5 (the 1.7 and 1.8
+traffic is scanners pinging and never connecting). Player-to-player chat is
+unaffected: it is re-emitted through the Velocity API, which speaks every
+client's own protocol.

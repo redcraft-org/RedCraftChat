@@ -37,6 +37,7 @@ public class Config {
 
 	public static boolean pretranslateUiEnabled = true;
 	public static boolean translateHolograms = true;
+	public static boolean translateActionBars = true;
 
 	public static long upstreamChatGroupingDelay = 110;
 	public static long hologramGroupingDelay = 250;
@@ -126,6 +127,7 @@ public class Config {
 		displaykitSelectorEnabled = getBoolean(config, "displaykit-selector-enabled", false);
 		pretranslateUiEnabled = getBoolean(config, "pretranslate-ui-enabled", true);
 		translateHolograms = getBoolean(config, "translate-holograms", true);
+		translateActionBars = getBoolean(config, "translate-action-bars", true);
 		upstreamChatGroupingDelay = getLong(config, "upstream-chat-grouping-delay", upstreamChatGroupingDelay);
 		hologramGroupingDelay = getLong(config, "hologram-grouping-delay", hologramGroupingDelay);
 		serverDisplayNames = getStringMap(config, "server-display-names");

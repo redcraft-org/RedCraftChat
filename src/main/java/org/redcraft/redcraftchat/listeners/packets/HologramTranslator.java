@@ -231,7 +231,7 @@ public class HologramTranslator extends PacketListenerAbstract {
         final String target;
         final Set<String> spoken;
 
-        PlayerLanguages(String target, Set<String> spoken) {
+        public PlayerLanguages(String target, Set<String> spoken) {
             this.target = target;
             this.spoken = spoken;
         }
@@ -245,11 +245,11 @@ public class HologramTranslator extends PacketListenerAbstract {
      * source means detection had no answer, which is deterministic and safe
      * to remember, unlike a provider failure which is never cached.
      */
-    static class CachedTranslation {
-        final String source;
-        final String translated;
+    public static class CachedTranslation {
+        public final String source;
+        public final String translated;
 
-        CachedTranslation(String source, String translated) {
+        public CachedTranslation(String source, String translated) {
             this.source = source;
             this.translated = translated;
         }

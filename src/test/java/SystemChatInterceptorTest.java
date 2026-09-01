@@ -84,4 +84,21 @@ public class SystemChatInterceptorTest extends TestCase {
                 SystemChatInterceptor.blockOf(batch));
         assertEquals(3, batch.size());
     }
+
+    public void testOverlayIsLeftToTheActionBarPath() {
+        boolean before = org.redcraft.redcraftchat.Config.translateActionBars;
+        try {
+            // Flag on: an overlay message belongs to ActionBarTranslator and
+            // must not enter the buffer
+            org.redcraft.redcraftchat.Config.translateActionBars = true;
+            assertTrue(SystemChatInterceptor.leaveToActionBarPath(true));
+            assertFalse(SystemChatInterceptor.leaveToActionBarPath(false));
+
+            // Flag off: the pre-existing behaviour, overlay takes the buffer
+            org.redcraft.redcraftchat.Config.translateActionBars = false;
+            assertFalse(SystemChatInterceptor.leaveToActionBarPath(true));
+        } finally {
+            org.redcraft.redcraftchat.Config.translateActionBars = before;
+        }
+    }
 }

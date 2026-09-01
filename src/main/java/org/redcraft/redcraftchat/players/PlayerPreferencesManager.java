@@ -11,6 +11,7 @@ import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.caching.CacheManager;
 import org.redcraft.redcraftchat.displaykit.LanguageSelectorManager;
 import org.redcraft.redcraftchat.listeners.packets.HologramTranslator;
+import org.redcraft.redcraftchat.listeners.packets.ActionBarTranslator;
 import org.redcraft.redcraftchat.detection.DetectionManager;
 import org.redcraft.redcraftchat.locales.LocaleManager;
 import org.redcraft.redcraftchat.locales.UiTranslations;
@@ -180,6 +181,7 @@ public class PlayerPreferencesManager {
         // Holograms only resend on their own when their text changes, so a
         // language change has to push corrected packets itself.
         HologramTranslator.onPreferencesUpdated(preferences.minecraftUuid);
+        ActionBarTranslator.onPreferencesUpdated(preferences.minecraftUuid);
         LanguageSelectorManager.onPreferencesUpdated(preferences.minecraftUuid);
     }
 

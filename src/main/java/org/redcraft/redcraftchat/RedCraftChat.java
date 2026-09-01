@@ -66,6 +66,7 @@ import org.redcraft.redcraftchat.listeners.minecraft.MinecraftLastServerListener
 import org.redcraft.redcraftchat.listeners.minecraft.MinecraftLoginServerListener;
 import org.redcraft.redcraftchat.listeners.packets.ChatSignatureStripper;
 import org.redcraft.redcraftchat.listeners.packets.HologramTranslator;
+import org.redcraft.redcraftchat.listeners.packets.ActionBarTranslator;
 import org.redcraft.redcraftchat.listeners.packets.SystemChatInterceptor;
 import org.redcraft.redcraftchat.runnables.DiscordChannelSynchronizerTask;
 import org.redcraft.redcraftchat.runnables.DiscordUsersSynchronizerTask;
@@ -75,7 +76,7 @@ import org.redcraft.redcraftchat.runnables.ScheduledAnnouncementsTask;
 
 import org.slf4j.Logger;
 
-@Plugin(id = "redcraftchat", name = RedCraftChat.PLUGIN_NAME, version = "0.2.5-SNAPSHOT", url = "https://redcraft.org", description = "Multi language chat and Discord bridge", authors = {
+@Plugin(id = "redcraftchat", name = RedCraftChat.PLUGIN_NAME, version = "0.2.6-SNAPSHOT", url = "https://redcraft.org", description = "Multi language chat and Discord bridge", authors = {
 		"RedCraft" })
 public class RedCraftChat {
 
@@ -156,6 +157,9 @@ public class RedCraftChat {
 		PacketEvents.getAPI().getEventManager().registerListener(new SystemChatInterceptor());
 		if (Config.translationEnabled && Config.translateHolograms) {
 			PacketEvents.getAPI().getEventManager().registerListener(new HologramTranslator());
+		}
+		if (Config.translationEnabled && Config.translateActionBars) {
+			PacketEvents.getAPI().getEventManager().registerListener(new ActionBarTranslator());
 		}
 		// The native dialog's return channel: dialog buttons make the client
 		// send a custom click action, which crosses the proxy like any packet

@@ -93,6 +93,11 @@ pretranslate-ui-enabled: true
 # that it is served from cache. Only effective when translation-enabled is on.
 translate-holograms: true
 
+# Action bars, both wire forms: the dedicated packet most plugins send and
+# the chat-with-overlay form CMI uses. Rewritten in place from a cache, so a
+# HUD repainting every tick costs one translation ever; the first repeat
+# after a brand-new text goes through untranslated while the cache warms.
+translate-action-bars: true
 # In-world language selector rendered with DisplayKit for modern clients
 # (1.21.9+); older clients keep the clickable chat menu, and any surface
 # failure falls back to it too. First joins are prompted until a language is
