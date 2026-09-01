@@ -101,4 +101,42 @@ public class SystemChatInterceptorTest extends TestCase {
             org.redcraft.redcraftchat.Config.translateActionBars = before;
         }
     }
+
+    public void testAClickableLineJoinsTheBlockWhenTemplated() {
+        boolean before = org.redcraft.redcraftchat.Config.upstreamTranslateInteractive;
+        try {
+            org.redcraft.redcraftchat.Config.upstreamTranslateInteractive = true;
+            Component clickable = Component.text()
+                    .content("Click ")
+                    .append(Component.text("here")
+                            .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand("/x")))
+                    .build();
+            SystemChatInterceptor.BufferedMessage buffered =
+                    new SystemChatInterceptor.BufferedMessage(clickable, false);
+            assertNotNull("the skeleton is an ordinary line to the pipeline", buffered.legacy);
+            assertNotNull(buffered.template);
+            assertTrue(buffered.groupable);
+            assertTrue(buffered.legacy.contains("%click_a%"));
+        } finally {
+            org.redcraft.redcraftchat.Config.upstreamTranslateInteractive = before;
+        }
+    }
+
+    public void testAClickableLineIsStillLeftAloneWhenDisabled() {
+        boolean before = org.redcraft.redcraftchat.Config.upstreamTranslateInteractive;
+        try {
+            org.redcraft.redcraftchat.Config.upstreamTranslateInteractive = false;
+            Component clickable = Component.text()
+                    .content("Click ")
+                    .append(Component.text("here")
+                            .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand("/x")))
+                    .build();
+            SystemChatInterceptor.BufferedMessage buffered =
+                    new SystemChatInterceptor.BufferedMessage(clickable, false);
+            assertNull(buffered.legacy);
+            assertNull(buffered.template);
+        } finally {
+            org.redcraft.redcraftchat.Config.upstreamTranslateInteractive = before;
+        }
+    }
 }

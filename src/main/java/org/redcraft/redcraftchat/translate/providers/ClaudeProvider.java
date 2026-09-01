@@ -62,6 +62,9 @@ public class ClaudeProvider implements TranslationProvider {
             "Leave anything that is not prose exactly as it appears, character for character:",
             "player names, commands such as /spawn, URLs, emotes,",
             "and placeholders such as {0}, %%s, %%player%% or <@1234>.",
+            "Markers shaped like %%click_a%% and %%end_a%% bracket a clickable label:",
+            "copy the pair exactly, translate the words between them as part of the",
+            "sentence, and keep those words between their own pair.",
             // The line breaks are an accident of how the text is displayed, a
             // hologram column or one chat packet per line, so the model is told
             // to translate through them and lay the result back out. Only the

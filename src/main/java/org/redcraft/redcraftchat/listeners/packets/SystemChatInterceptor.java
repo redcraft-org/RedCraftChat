@@ -17,6 +17,7 @@ import org.redcraft.redcraftchat.RedCraftChat;
 import org.redcraft.redcraftchat.bridge.MinecraftDiscordBridge;
 import org.redcraft.redcraftchat.detection.DetectionManager;
 import org.redcraft.redcraftchat.players.PlayerPreferencesManager;
+import org.redcraft.redcraftchat.translate.ComponentTemplate;
 import org.redcraft.redcraftchat.translate.LineBlock;
 import org.redcraft.redcraftchat.translate.TranslationManager;
 
@@ -102,22 +103,48 @@ public class SystemChatInterceptor extends PacketListenerAbstract {
         /** Whether it may share a block with the other messages. */
         public final boolean groupable;
 
+        /** Non-null when the message was lifted for translation with its events kept aside. */
+        public final ComponentTemplate template;
+
         public BufferedMessage(Component message, boolean overlay) {
             this.message = message;
             this.overlay = overlay;
 
             String text = null;
-            if (message instanceof TextComponent && !isInteractive(message)) {
-                String serialized = LegacyComponentSerializer.legacySection().serialize(message);
-                if (LineBlock.hasTranslatableText(serialized)) {
-                    text = serialized;
+            ComponentTemplate lifted = null;
+            if (message instanceof TextComponent) {
+                if (Config.upstreamTranslateInteractive) {
+                    ComponentTemplate candidate = ComponentTemplate.of(message);
+                    if (candidate.isTemplated()) {
+                        // The skeleton is an ordinary legacy line as far as
+                        // the rest of the pipeline is concerned; the events
+                        // wait in the template for restore
+                        if (candidate.hasWordsLeft()) {
+                            lifted = candidate;
+                            text = candidate.skeleton();
+                        }
+                        // Templated but wordless: nothing to translate,
+                        // forwarded untouched
+                    } else if (!candidate.hadInteractiveContent()) {
+                        text = plainText(message);
+                    }
+                    // Interactive but refused (too many lifts, marker-shaped
+                    // user text): forwarded untouched, today's behaviour
+                } else if (!isInteractive(message)) {
+                    text = plainText(message);
                 }
             }
 
+            this.template = lifted;
             this.legacy = text;
             // Action bar text is its own display, blocking it together with
             // chat would translate two unrelated things as one sentence
             this.groupable = text != null && !overlay;
+        }
+
+        private static String plainText(Component message) {
+            String serialized = LegacyComponentSerializer.legacySection().serialize(message);
+            return LineBlock.hasTranslatableText(serialized) ? serialized : null;
         }
     }
 
@@ -267,10 +294,32 @@ public class SystemChatInterceptor extends PacketListenerAbstract {
 
                 if (result != null && !result.equals(buffered.legacy)) {
                     LegacyComponentSerializer serializer = LegacyComponentSerializer.legacySection();
-                    // The original text only hovers over messages that were
-                    // actually translated
-                    message = serializer.deserialize(result)
-                            .hoverEvent(HoverEvent.showText(serializer.deserialize(buffered.legacy)));
+                    if (buffered.template != null) {
+                        // Fail closed: a restore that cannot place every
+                        // event sends the original untouched. The WARN is
+                        // the canary for provider marker discipline, worth
+                        // watching before the default ever flips on.
+                        try {
+                            Component restored = buffered.template.restore(result,
+                                    serializer.deserialize(buffered.template.originalLegacy()));
+                            if (restored != null) {
+                                message = restored;
+                            } else {
+                                RedCraftChat.getInstance().getLogger().warn(
+                                        "Interactive restore fell back for {}: {}",
+                                        player.getUsername(), buffered.template.skeleton());
+                            }
+                        } catch (Exception e) {
+                            RedCraftChat.getInstance().getLogger().warn(
+                                    "Interactive restore threw for {}: {}",
+                                    player.getUsername(), e.getMessage());
+                        }
+                    } else {
+                        // The original text only hovers over messages that
+                        // were actually translated
+                        message = serializer.deserialize(result)
+                                .hoverEvent(HoverEvent.showText(serializer.deserialize(buffered.legacy)));
+                    }
                 }
             }
 

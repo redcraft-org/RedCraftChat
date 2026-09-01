@@ -98,7 +98,14 @@ translate-holograms: true
 # HUD repainting every tick costs one translation ever; the first repeat
 # after a brand-new text goes through untranslated while the cache warms.
 translate-action-bars: true
-# In-world language selector rendered with DisplayKit for modern clients
+
+
+# Messages with clickable or hoverable parts. The sentence and the button
+# labels are translated together, with the events kept on the proxy and
+# reattached afterwards, so a provider can never corrupt a click. Off for one
+# release while it soaks; any restore failure falls back to the untouched
+# original either way.
+upstream-translate-interactive: false# In-world language selector rendered with DisplayKit for modern clients
 # (1.21.9+); older clients keep the clickable chat menu, and any surface
 # failure falls back to it too. First joins are prompted until a language is
 # explicitly chosen or confirmed.

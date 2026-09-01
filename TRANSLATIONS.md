@@ -136,6 +136,23 @@ when more than eight uncached templates appear inside ten seconds.
 `translate-action-bars` turns the whole path off, which also returns overlay
 system chat to the grouping buffer it used before.
 
+## Messages with clickable parts
+
+Behind `upstream-translate-interactive`, off for one release while it soaks.
+Every subtree carrying a click, hover or insertion is lifted out before
+serialization and its visible text left inline between paired markers, so the
+provider translates the sentence and the button labels together, with full
+context:
+
+    §6Click %click_a%here%end_a% to teleport
+
+The events never travel: they wait on the proxy, keyed by marker name, and
+are reattached to the translated label afterwards, so a provider cannot
+corrupt a click. Restore validates the pair discipline string-level and
+returns the untouched original on any violation, which is exactly what these
+messages got before the feature existed. A WARN line logs every fallback;
+watch it before flipping the default on.
+
 ## Clients before 1.19.1
 
 Unsupported for system chat and action bar translation, deliberately. Those
