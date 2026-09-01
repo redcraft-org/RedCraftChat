@@ -21,6 +21,24 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
  */
 public class SystemChatInterceptorTest extends TestCase {
 
+    private boolean interactiveBefore;
+
+    /**
+     * Most of this class predates interactive translation and pins the
+     * flag-off contract, which is also what disabling the flag must restore.
+     * The tests that exercise the flag turn it on themselves.
+     */
+    @Override
+    protected void setUp() {
+        interactiveBefore = org.redcraft.redcraftchat.Config.upstreamTranslateInteractive;
+        org.redcraft.redcraftchat.Config.upstreamTranslateInteractive = false;
+    }
+
+    @Override
+    protected void tearDown() {
+        org.redcraft.redcraftchat.Config.upstreamTranslateInteractive = interactiveBefore;
+    }
+
     private static BufferedMessage chat(String legacy) {
         return new BufferedMessage(LegacyComponentSerializer.legacySection().deserialize(legacy), false);
     }
@@ -125,6 +143,7 @@ public class SystemChatInterceptorTest extends TestCase {
     public void testAClickableLineIsStillLeftAloneWhenDisabled() {
         boolean before = org.redcraft.redcraftchat.Config.upstreamTranslateInteractive;
         try {
+            // setUp already forced false; kept explicit for the reader
             org.redcraft.redcraftchat.Config.upstreamTranslateInteractive = false;
             Component clickable = Component.text()
                     .content("Click ")
