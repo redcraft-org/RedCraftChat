@@ -262,20 +262,104 @@ public class ClaudeProvider implements TranslationProvider {
                 return new NameMask(text, found);
             }
 
-            // Longest first, so RedCraftChat is hidden before RedCraft can
-            // take a bite out of it.
-            List<String> candidates = new ArrayList<>(verbatimNames());
-            candidates.sort((left, right) -> right.length() - left.length());
-
-            String masked = text;
-            for (String name : candidates) {
-                if (name.isEmpty() || !masked.contains(name)) {
+            // The name is searched for with the formatting taken out, because
+            // a hologram writes KingdomHills as §3§lKingdom§b§lHills and the
+            // literal name is nowhere in that string. Split across two colours
+            // the model reads two ordinary words, translates both, and French
+            // word order hands back CollinesRoyaume.
+            StringBuilder plainBuilder = new StringBuilder(text.length());
+            List<Integer> origin = new ArrayList<>(text.length());
+            for (int i = 0; i < text.length(); i++) {
+                char c = text.charAt(i);
+                if (c == LegacyText.COLOR_CHAR && i + 1 < text.length()) {
+                    i++;
                     continue;
                 }
-                masked = masked.replace(name, "{" + found.size() + "}");
-                found.add(name);
+                plainBuilder.append(c);
+                origin.add(i);
             }
-            return new NameMask(masked, found);
+            String plain = plainBuilder.toString();
+
+            // A server id spelled the same as its ordinary word is left
+            // alone: museum the id is listed verbatim for the prompt so
+            // /server museum keeps working, but hiding it here would also
+            // hide "the museum" in a sentence and leave it in English.
+            Set<String> spared = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+            spared.addAll(translatableNames());
+
+            // Longest first, so RedCraftChat is hidden before RedCraft can
+            // take a bite out of it.
+            List<String> candidates = new ArrayList<>();
+            for (String name : verbatimNames()) {
+                if (!spared.contains(name)) {
+                    candidates.add(name);
+                }
+            }
+            candidates.sort((left, right) -> right.length() - left.length());
+
+            // Spans are collected against the original string and applied in
+            // one pass, so replacing one name cannot move another one's index.
+            List<int[]> spans = new ArrayList<>();
+            boolean[] taken = new boolean[text.length()];
+
+            for (String name : candidates) {
+                if (name == null || name.isEmpty()) {
+                    continue;
+                }
+                int at = plain.indexOf(name);
+                while (at >= 0) {
+                    // Only whole words. IRS ships in the default list and
+                    // sits inside FIRST, so a bare substring match turns
+                    // "FIRST JOIN REWARD" into "F{0}T JOIN REWARD" and hands
+                    // the model something to mistranslate rather than
+                    // something to leave alone.
+                    if (!standsAlone(plain, at, name.length())) {
+                        at = plain.indexOf(name, at + 1);
+                        continue;
+                    }
+                    int start = origin.get(at);
+                    int last = origin.get(at + name.length() - 1);
+                    int end = last + 1;
+
+                    boolean overlaps = false;
+                    for (int i = start; i < end && !overlaps; i++) {
+                        overlaps = taken[i];
+                    }
+                    if (!overlaps) {
+                        for (int i = start; i < end; i++) {
+                            taken[i] = true;
+                        }
+                        spans.add(new int[] { start, end });
+                    }
+                    at = plain.indexOf(name, at + name.length());
+                }
+            }
+
+            if (spans.isEmpty()) {
+                return new NameMask(text, found);
+            }
+
+            spans.sort((left, right) -> left[0] - right[0]);
+
+            // Rebuild left to right. The token stands for the whole span,
+            // formatting codes included, so restoring puts those back exactly
+            // as they were rather than trusting the model with them.
+            StringBuilder masked = new StringBuilder(text.length());
+            int cursor = 0;
+            for (int[] span : spans) {
+                String original = text.substring(span[0], span[1]);
+                int index = found.indexOf(original);
+                if (index < 0) {
+                    index = found.size();
+                    found.add(original);
+                }
+                masked.append(text, cursor, span[0]);
+                masked.append("{").append(index).append("}");
+                cursor = span[1];
+            }
+            masked.append(text, cursor, text.length());
+
+            return new NameMask(masked.toString(), found);
         }
 
         /**
@@ -297,8 +381,25 @@ public class ClaudeProvider implements TranslationProvider {
                 }
                 restored = restored.replace(token, names.get(i));
             }
+
+            // Masking only runs on text that had no placeholder of its own,
+            // so anything {0} shaped still here is one the model invented.
+            // Letting it through would put "{3}" in front of players and
+            // cache it, which is the mess this class exists to prevent.
+            if (PLACEHOLDER.matcher(restored).find()) {
+                return null;
+            }
             return restored;
         }
+    }
+
+    /** Whether a match is a whole word rather than the middle of a longer one. */
+    private static boolean standsAlone(String text, int start, int length) {
+        if (start > 0 && Character.isLetterOrDigit(text.charAt(start - 1))) {
+            return false;
+        }
+        int after = start + length;
+        return after >= text.length() || !Character.isLetterOrDigit(text.charAt(after));
     }
 
     private static final java.util.regex.Pattern PLACEHOLDER =

@@ -64,6 +64,84 @@ public class ClaudeProviderTest extends TestCase {
         assertEquals("Bienvenue sur KingdomHills", mask.restore("Bienvenue sur {0}"));
     }
 
+    public void test_a_name_split_by_colour_codes_is_still_hidden() {
+        // The one that actually bit. A hologram writes the name as
+        // §3§lKingdom§b§lHills, so the literal KingdomHills is nowhere in the
+        // string, the model reads two ordinary words, and French word order
+        // hands back CollinesRoyaume.
+        Config.protectedNames = new ArrayList<>(Arrays.asList("KingdomHills"));
+        Config.translatableServerNames = new ArrayList<>();
+        Config.serverDisplayNames = new LinkedHashMap<>();
+
+        String hologram = "\u00a73\u00a7lKingdom\u00a7b\u00a7lHills";
+        ClaudeProvider.NameMask mask = ClaudeProvider.NameMask.of(hologram);
+
+        assertFalse(mask.isEmpty());
+        // The colour in front stays outside the token, so the model still sees
+        // that the placeholder is coloured and keeps the code with it. The one
+        // splitting the name is inside, where it cannot be moved or dropped.
+        assertEquals("\u00a73\u00a7l{0}", mask.masked());
+        assertEquals(hologram, mask.restore("\u00a73\u00a7l{0}"));
+    }
+
+    public void test_a_split_name_inside_a_sentence_keeps_the_rest_translatable() {
+        Config.protectedNames = new ArrayList<>(Arrays.asList("KingdomHills"));
+        Config.translatableServerNames = new ArrayList<>();
+        Config.serverDisplayNames = new LinkedHashMap<>();
+
+        ClaudeProvider.NameMask mask =
+                ClaudeProvider.NameMask.of("Welcome to \u00a73Kingdom\u00a7bHills today");
+        assertEquals("Welcome to \u00a73{0} today", mask.masked());
+        assertEquals("Bienvenue sur \u00a73Kingdom\u00a7bHills aujourd'hui",
+                mask.restore("Bienvenue sur \u00a73{0} aujourd'hui"));
+    }
+
+    public void test_a_short_name_does_not_eat_the_middle_of_a_word() {
+        // IRS ships in the default protected-names and sits inside FIRST, so
+        // a bare substring match sent the model "F{0}T JOIN REWARD" and got
+        // back whatever it made of that.
+        Config.protectedNames = new ArrayList<>(Arrays.asList("IRS"));
+        Config.translatableServerNames = new ArrayList<>();
+        Config.serverDisplayNames = new LinkedHashMap<>();
+
+        assertEquals("FIRST JOIN REWARD", ClaudeProvider.NameMask.of("FIRST JOIN REWARD").masked());
+        assertTrue(ClaudeProvider.NameMask.of("FIRST JOIN REWARD").isEmpty());
+        // Standing on its own it is still hidden.
+        assertEquals("the {0} is here", ClaudeProvider.NameMask.of("the IRS is here").masked());
+    }
+
+    public void test_a_name_is_not_hidden_inside_a_longer_word() {
+        Config.protectedNames = new ArrayList<>(Arrays.asList("TopRed"));
+        Config.translatableServerNames = new ArrayList<>();
+        Config.serverDisplayNames = new LinkedHashMap<>();
+
+        assertTrue(ClaudeProvider.NameMask.of("TopRedstone builds").isEmpty());
+        assertEquals("{0} builds", ClaudeProvider.NameMask.of("TopRed builds").masked());
+    }
+
+    public void test_a_placeholder_the_model_invented_fails_closed() {
+        // restore used to check only the tokens it owned, so an extra {3}
+        // walked into player chat and got cached there.
+        Config.protectedNames = new ArrayList<>(Arrays.asList("KingdomHills"));
+        Config.translatableServerNames = new ArrayList<>();
+        Config.serverDisplayNames = new LinkedHashMap<>();
+
+        ClaudeProvider.NameMask mask = ClaudeProvider.NameMask.of("Welcome to KingdomHills");
+        assertEquals("Bienvenue sur KingdomHills", mask.restore("Bienvenue sur {0}"));
+        assertNull(mask.restore("Bienvenue sur {0} et {3}"));
+    }
+
+    public void test_an_id_that_is_an_ordinary_word_stays_translatable() {
+        // museum is listed verbatim so /server museum keeps working, but
+        // hiding it here would leave "the museum" in English mid sentence.
+        Config.protectedNames = new ArrayList<>();
+        Config.translatableServerNames = new ArrayList<>(Arrays.asList("Museum"));
+        Config.serverDisplayNames = new LinkedHashMap<>();
+        Config.serverDisplayNames.put("museum", "&6Museum");
+
+        assertTrue(ClaudeProvider.NameMask.of("Welcome to the museum, it is free").isEmpty());
+    }
+
     public void test_a_name_the_model_dropped_fails_closed() {
         // The whole point. A translation that lost the placeholder cannot have
         // its names put back, so it comes back null and the caller sends the
