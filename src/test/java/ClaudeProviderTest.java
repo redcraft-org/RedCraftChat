@@ -48,6 +48,91 @@ public class ClaudeProviderTest extends TestCase {
         assertTrue(rules.contains("Copy each of those exactly"));
     }
 
+    /*
+     * Listing the names in the prompt is a request the model can lose, and it
+     * did, twice, on the museum holograms. These cover the guarantee that
+     * replaced it: a name the model never sees cannot come back translated.
+     */
+    public void test_a_protected_name_is_hidden_before_the_model_sees_it() {
+        Config.protectedNames = new ArrayList<>(Arrays.asList("KingdomHills"));
+        Config.translatableServerNames = new ArrayList<>();
+        Config.serverDisplayNames = new LinkedHashMap<>();
+
+        ClaudeProvider.NameMask mask = ClaudeProvider.NameMask.of("Welcome to KingdomHills");
+        assertEquals("Welcome to {0}", mask.masked());
+        assertFalse(mask.isEmpty());
+        assertEquals("Bienvenue sur KingdomHills", mask.restore("Bienvenue sur {0}"));
+    }
+
+    public void test_a_name_the_model_dropped_fails_closed() {
+        // The whole point. A translation that lost the placeholder cannot have
+        // its names put back, so it comes back null and the caller sends the
+        // original English rather than a French name for a world that has none.
+        Config.protectedNames = new ArrayList<>(Arrays.asList("KingdomHills"));
+        Config.translatableServerNames = new ArrayList<>();
+        Config.serverDisplayNames = new LinkedHashMap<>();
+
+        ClaudeProvider.NameMask mask = ClaudeProvider.NameMask.of("Welcome to KingdomHills");
+        assertNull(mask.restore("Bienvenue sur CollinesRoyaume"));
+    }
+
+    public void test_the_longest_name_is_hidden_first() {
+        // Otherwise RedCraft takes a bite out of RedCraftChat and the leftover
+        // Chat gets translated on its own.
+        Config.protectedNames = new ArrayList<>(Arrays.asList("RedCraft", "RedCraftChat"));
+        Config.translatableServerNames = new ArrayList<>();
+        Config.serverDisplayNames = new LinkedHashMap<>();
+
+        ClaudeProvider.NameMask mask = ClaudeProvider.NameMask.of("RedCraftChat on RedCraft");
+        assertEquals("RedCraftChat on RedCraft", mask.restore(mask.masked()));
+        assertFalse(mask.masked().contains("RedCraft"));
+    }
+
+    public void test_a_name_appearing_twice_comes_back_twice() {
+        Config.protectedNames = new ArrayList<>(Arrays.asList("TopRed"));
+        Config.translatableServerNames = new ArrayList<>();
+        Config.serverDisplayNames = new LinkedHashMap<>();
+
+        ClaudeProvider.NameMask mask = ClaudeProvider.NameMask.of("TopRed and TopRed");
+        assertEquals("{0} and {0}", mask.masked());
+        assertEquals("TopRed et TopRed", mask.restore("{0} et {0}"));
+    }
+
+    public void test_text_that_already_has_a_placeholder_is_left_alone() {
+        // Masking here would make our placeholder and theirs impossible to tell
+        // apart on the way back, so it goes unmasked and keeps the prompt rule.
+        Config.protectedNames = new ArrayList<>(Arrays.asList("KingdomHills"));
+        Config.translatableServerNames = new ArrayList<>();
+        Config.serverDisplayNames = new LinkedHashMap<>();
+
+        ClaudeProvider.NameMask mask = ClaudeProvider.NameMask.of("{0} joined KingdomHills");
+        assertTrue(mask.isEmpty());
+        assertEquals("{0} joined KingdomHills", mask.masked());
+        assertEquals("anything", mask.restore("anything"));
+    }
+
+    public void test_a_name_that_is_opted_back_out_is_not_hidden() {
+        Config.protectedNames = new ArrayList<>(Arrays.asList("Freebuild"));
+        Config.translatableServerNames = new ArrayList<>(Arrays.asList("Freebuild"));
+        Config.serverDisplayNames = new LinkedHashMap<>();
+
+        ClaudeProvider.NameMask mask = ClaudeProvider.NameMask.of("Welcome to Freebuild");
+        assertTrue(mask.isEmpty());
+        assertEquals("Welcome to Freebuild", mask.masked());
+    }
+
+    public void test_a_line_that_is_only_a_name_needs_no_translating() {
+        // Most hologram titles. Once the name is hidden there are no words
+        // left, so nothing is sent and nothing can come back wrong.
+        Config.protectedNames = new ArrayList<>(Arrays.asList("KingdomHills"));
+        Config.translatableServerNames = new ArrayList<>();
+        Config.serverDisplayNames = new LinkedHashMap<>();
+
+        ClaudeProvider.NameMask mask = ClaudeProvider.NameMask.of("§6KingdomHills");
+        assertFalse(mask.isEmpty());
+        assertFalse(ClaudeProvider.hasTranslatableContent(mask.masked()));
+    }
+
     public void test_a_protected_name_can_still_be_opted_back_out() {
         // The escape hatch works the same for these as for server names, so a
         // word that turns out to be ordinary can be handed back

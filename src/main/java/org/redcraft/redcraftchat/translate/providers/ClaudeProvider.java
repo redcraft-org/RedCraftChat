@@ -126,8 +126,19 @@ public class ClaudeProvider implements TranslationProvider {
             return cachedClaudeResponse;
         }
 
+        // The names go behind placeholders here, so the model is translating a
+        // sentence with a hole in it rather than being asked nicely to leave a
+        // word alone.
+        NameMask mask = NameMask.of(text);
+
+        // A line that was nothing but a name has nothing left to translate,
+        // which is most hologram titles. No request, no coin flip.
+        if (!mask.isEmpty() && !hasTranslatableContent(mask.masked())) {
+            return text;
+        }
+
         JsonArray messages = new JsonArray();
-        messages.add(buildMessage("user", text));
+        messages.add(buildMessage("user", mask.masked()));
         // Opening the tag on the model's behalf means the reply can only continue
         // it, so there is nowhere to put a preamble.
         messages.add(buildMessage("assistant", OPEN_TAG));
@@ -166,6 +177,16 @@ public class ClaudeProvider implements TranslationProvider {
                     + targetLangId);
         }
 
+        // Fail closed, the same way the interactive restore does: a
+        // translation that dropped a placeholder is one whose names cannot be
+        // put back, and the caller sends the original instead.
+        String restored = mask.restore(translated);
+        if (restored == null) {
+            throw new IllegalStateException("Claude lost a protected name translating " + sourceLangId + " to "
+                    + targetLangId + ", falling back to the original message");
+        }
+        translated = restored;
+
         // The reply is broadcast to every player and to Discord, so a message that
         // talked the model into answering instead of translating must not be
         // relayed. A translation stays near the length of its source, and the
@@ -198,13 +219,93 @@ public class ClaudeProvider implements TranslationProvider {
      * listed in translatable-server-names and left out of this, since a French
      * player is better served by Musée.
      */
-    public static String serverNameRules() {
-        Set<String> translatable = new TreeSet<>();
-        for (String name : Config.translatableServerNames) {
-            if (name != null && !name.isBlank()) {
-                translatable.add(name.trim());
-            }
+    /**
+     * Hides the protected names behind placeholders before the model sees them.
+     *
+     * Listing them in the prompt and asking for them back unchanged is a
+     * request, not a guarantee: it works most of the time and loses a coin
+     * flip on short text, which is how a hologram reading KingdomHills came
+     * back as CollinesRoyaume for the second time. A name the model never
+     * receives is a name it cannot translate.
+     *
+     * The placeholders are the {0} shape the prompt already tells it to copy
+     * character for character, so this leans on an instruction that was
+     * already there and already works for URLs and player names.
+     */
+    public static final class NameMask {
+        private final String masked;
+        private final List<String> names;
+
+        private NameMask(String masked, List<String> names) {
+            this.masked = masked;
+            this.names = names;
         }
+
+        public String masked() {
+            return masked;
+        }
+
+        public boolean isEmpty() {
+            return names.isEmpty();
+        }
+
+        public static NameMask of(String text) {
+            List<String> found = new ArrayList<>();
+            if (text == null || text.isEmpty()) {
+                return new NameMask(text, found);
+            }
+
+            // A message that already contains a placeholder cannot be masked
+            // without the two becoming impossible to tell apart on the way
+            // back, so it goes through unmasked and keeps the prompt rule.
+            if (PLACEHOLDER.matcher(text).find()) {
+                return new NameMask(text, found);
+            }
+
+            // Longest first, so RedCraftChat is hidden before RedCraft can
+            // take a bite out of it.
+            List<String> candidates = new ArrayList<>(verbatimNames());
+            candidates.sort((left, right) -> right.length() - left.length());
+
+            String masked = text;
+            for (String name : candidates) {
+                if (name.isEmpty() || !masked.contains(name)) {
+                    continue;
+                }
+                masked = masked.replace(name, "{" + found.size() + "}");
+                found.add(name);
+            }
+            return new NameMask(masked, found);
+        }
+
+        /**
+         * Puts the names back, or returns null if the model lost one.
+         *
+         * Null is the fail closed answer: the caller throws, and the original
+         * untranslated text goes out. An English hologram is a much smaller
+         * problem than a French one naming a world that does not exist.
+         */
+        public String restore(String translated) {
+            if (translated == null) {
+                return null;
+            }
+            String restored = translated;
+            for (int i = 0; i < names.size(); i++) {
+                String token = "{" + i + "}";
+                if (!restored.contains(token)) {
+                    return null;
+                }
+                restored = restored.replace(token, names.get(i));
+            }
+            return restored;
+        }
+    }
+
+    private static final java.util.regex.Pattern PLACEHOLDER =
+            java.util.regex.Pattern.compile("\\{\\d+\\}");
+
+    public static Set<String> verbatimNames() {
+        Set<String> translatable = translatableNames();
 
         Set<String> verbatim = new TreeSet<>();
         // Names that are not servers: worlds, maps, anything a build is called.
@@ -227,6 +328,22 @@ public class ClaudeProvider implements TranslationProvider {
                 verbatim.add(display);
             }
         }
+        return verbatim;
+    }
+
+    private static Set<String> translatableNames() {
+        Set<String> translatable = new TreeSet<>();
+        for (String name : Config.translatableServerNames) {
+            if (name != null && !name.isBlank()) {
+                translatable.add(name.trim());
+            }
+        }
+        return translatable;
+    }
+
+    public static String serverNameRules() {
+        Set<String> translatable = translatableNames();
+        Set<String> verbatim = verbatimNames();
 
         if (verbatim.isEmpty()) {
             return "";

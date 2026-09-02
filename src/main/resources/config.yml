@@ -76,6 +76,9 @@ translatable-server-names: ['Museum']
 # Other proper nouns the translator must copy rather than translate: worlds,
 # maps, anything a build is called. Same rule as the server names above, for
 # things the plugin cannot enumerate on its own.
+# These are hidden from the translator behind a placeholder and put back after,
+# so a name listed here cannot come back translated. If one goes missing on the
+# way back the original text is sent untranslated instead.
 # Be sparing. A word listed here is verbatim in every sentence, so adding an
 # ordinary one like Plot costs its translation everywhere, not only on the sign
 # it was added for.
